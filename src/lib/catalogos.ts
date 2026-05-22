@@ -328,6 +328,26 @@ export const CAT_ESTADO_CONSERVACION = [
   'En desecho: estado ruinoso o no habitable, daños estructurales severos.',
 ];
 
+// Uso actual del lote (Cap IV)
+export const CAT_USO_LOTE = [
+  'CASA DE HABITACIÓN',
+  'APARTAMENTO',
+  'LOCAL COMERCIAL',
+  'TERRENO BALDÍO',
+  'PROYECTO EN CONSTRUCCIÓN',
+];
+
+// Estado de ocupación del lote (Cap IV)
+export const CAT_ESTADO_OCUPACION_LOTE = [
+  'HABITADO',
+  'DESOCUPADO',
+  'EN OPERACIÓN',
+  'EN OBRA',
+  'TERRENO SIN USO',
+];
+
+
+
 // -------------- DESCRIPCIONES CONSTRUCTIVAS (catálogo) --------
 export const ELEMENTOS_CONSTRUCTIVOS = [
   'Cimientos', 'Sistema constructivo', 'Estructura de techo', 'Cubierta de techo',
