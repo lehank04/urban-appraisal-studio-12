@@ -113,10 +113,17 @@ export interface DocumentoLegal {
 
 // -------------------- ENTORNO --------------------
 
+export interface EquipamientoItem {
+  id: string;
+  nombre: string;
+  distanciaKm: number;
+  observaciones?: string;
+}
+
 export interface Entorno {
-  clasificacionZona: string;       // RESIDENCIAL / TRANSICIÓN / etc.
+  clasificacionZona: string;
   tipoConstruccion: string;
-  indiceSaturacion: string;        // MEDIA (31-70%), etc.
+  indiceSaturacion: string;
   densidadPoblacional: string;
   // vías de acceso (zona / inmediato)
   carpetaZona: string;
@@ -129,10 +136,11 @@ export interface Entorno {
   importanciaInmueble: string;
   proximidadZona: string;
   proximidadInmueble: string;
-  contaminacion: string;
-  serviciosPublicos: string;
-  equipamientoUrbano: string;
-  distancias: string;              // multi-línea
+  // multi-select editable
+  contaminacion: string[];
+  serviciosPublicos: string[];
+  equipamientoUrbano: EquipamientoItem[];
+  distancias: string;
 }
 
 // -------------------- TERRENO --------------------
@@ -433,8 +441,8 @@ export const emptyEntorno = (): Entorno => ({
   estadoZona: '', estadoInmueble: '',
   importanciaZona: '', importanciaInmueble: '',
   proximidadZona: '', proximidadInmueble: '',
-  contaminacion: '', serviciosPublicos: '',
-  equipamientoUrbano: '', distancias: '',
+  contaminacion: [], serviciosPublicos: [],
+  equipamientoUrbano: [], distancias: '',
 });
 
 export const emptyLinderos = (): Lindero[] => (['NORTE','SUR','ESTE','OESTE'] as const).map((o) => ({
