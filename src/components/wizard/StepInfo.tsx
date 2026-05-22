@@ -157,18 +157,16 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
             placeholder="Nombre del propietario registral"
           />
           <div className="grid grid-cols-2 gap-3">
-            <TextField
-              label={`Valuador ${perito ? '(perito firmante)' : ''}`}
-              value={i.valuadorNombre}
-              onChange={(v) => set('valuadorNombre', v)}
-              placeholder="Nombre del perito"
-            />
-            <TextField
-              label="NIPEV / Licencia"
-              value={i.valuadorNipev}
-              onChange={(v) => set('valuadorNipev', v)}
-              placeholder="RNA-1234"
-            />
+            <Field label="Valuador (perito firmante)">
+              <Input value={i.valuadorNombre} readOnly disabled className="bg-muted/40" placeholder="— sin perito asignado —" />
+            </Field>
+            <Field label="NIPEV / Licencia">
+              <Input value={i.valuadorNipev} readOnly disabled className="bg-muted/40 font-mono" placeholder="—" />
+            </Field>
+            <p className="col-span-2 text-xs text-muted-foreground">
+              Se toma automáticamente del perito firmante asignado. Para cambiarlo, edita el registro en
+              <span className="font-medium"> Peritos</span> o cambia el perito en el paso inicial.
+            </p>
           </div>
         </div>
       </section>
@@ -177,14 +175,14 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fechas</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Fecha de inspección (aa/mm/dd)">
+          <Field label="Fecha de inspección (dd/mm/aa)">
             <Input
               type="date"
               value={i.fechaInspeccion}
               onChange={(e) => set('fechaInspeccion', e.target.value)}
             />
             {i.fechaInspeccion && (
-              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtAaMmDd(i.fechaInspeccion)}</div>
+              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtFecha(i.fechaInspeccion)}</div>
             )}
           </Field>
           <Field label="Fecha de emisión (portada · carta · resumen)">
@@ -194,7 +192,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
               onChange={(e) => set('fechaAvaluo', e.target.value)}
             />
             {i.fechaAvaluo && (
-              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtAaMmDd(i.fechaAvaluo)}</div>
+              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtFecha(i.fechaAvaluo)}</div>
             )}
           </Field>
         </div>
