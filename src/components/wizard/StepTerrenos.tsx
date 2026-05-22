@@ -86,7 +86,37 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     patchAvaluo(avaluo.id, (a) => ({ ...a, terrenos: a.terrenos.filter((t) => t.id !== id) }));
   };
 
+  // -------- helpers LINDERO MEDIDAS --------
+  const patchLinderoMedida = (terrenoId: string, lIdx: number, mId: string, patch: Partial<LinderoMedida>) => {
+    patchAvaluo(avaluo.id, (a) => ({
+      ...a, terrenos: a.terrenos.map((t) => t.id !== terrenoId ? t : {
+        ...t, linderos: t.linderos.map((l, i) => i !== lIdx ? l : {
+          ...l, medidas: l.medidas.map((m) => m.id === mId ? { ...m, ...patch } : m),
+        }),
+      }),
+    }));
+  };
+  const addLinderoMedida = (terrenoId: string, lIdx: number) => {
+    patchAvaluo(avaluo.id, (a) => ({
+      ...a, terrenos: a.terrenos.map((t) => t.id !== terrenoId ? t : {
+        ...t, linderos: t.linderos.map((l, i) => i !== lIdx ? l : {
+          ...l, medidas: [...l.medidas, emptyLinderoMedida('escritura')],
+        }),
+      }),
+    }));
+  };
+  const removeLinderoMedida = (terrenoId: string, lIdx: number, mId: string) => {
+    patchAvaluo(avaluo.id, (a) => ({
+      ...a, terrenos: a.terrenos.map((t) => t.id !== terrenoId ? t : {
+        ...t, linderos: t.linderos.map((l, i) => i !== lIdx ? l : {
+          ...l, medidas: l.medidas.filter((m) => m.id !== mId),
+        }),
+      }),
+    }));
+  };
+
   // -------- helpers para AREAS --------
+
   const patchArea = (terrenoId: string, areaId: string, patch: Partial<AreaItem>) => {
     patchAvaluo(avaluo.id, (a) => ({
       ...a,
