@@ -24,7 +24,10 @@ export interface Perito {
   id: ID;
   nombre: string;
   cedula?: string;
-  registroSIBOIF: string;  // NIPEV
+  registroSIBOIF?: string;  // NIPEV
+  /** alias legado */
+  registro?: string;
+  cargo?: string;
   email?: string;
   telefono?: string;
   plantilla: PlantillaId;
