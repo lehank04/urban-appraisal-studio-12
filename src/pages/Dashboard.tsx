@@ -7,7 +7,7 @@ import { consolidados, fmtMoney } from '@/lib/calculations';
 
 export default function Dashboard() {
   const { avaluos, clientes, peritos } = useStore();
-  const totalValor = avaluos.reduce((a, av) => a + consolidados(av).total, 0);
+  const totalValor = avaluos.reduce((a, av) => a + consolidados(av).totalReposicionNeto, 0);
 
   const stats = [
     { label: 'Avalúos', value: avaluos.length, icon: FileText },
@@ -56,16 +56,17 @@ export default function Dashboard() {
                 return (
                   <Link to={`/avaluos/${a.id}`} key={a.id} className="flex items-center justify-between py-3 hover:bg-muted/30 px-2 rounded">
                     <div>
-                      <div className="font-medium text-sm">{a.info.codigoExpediente || 'Sin código'} · {a.info.propietario || 'Sin propietario'}</div>
+                      <div className="font-medium text-sm">{a.info.numeroExpediente || 'Sin código'} · {a.info.propietario || 'Sin propietario'}</div>
                       <div className="text-xs text-muted-foreground mono">{a.id.slice(0, 8)} · {a.estado}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">{fmtMoney(c.total, a.info.moneda)}</div>
+                      <div className="font-semibold">{fmtMoney(c.totalReposicionNeto, a.info.moneda)}</div>
                       <div className="text-xs text-muted-foreground">{a.terrenos.length} terreno(s)</div>
                     </div>
                   </Link>
                 );
               })}
+
             </div>
           )}
         </CardContent>
