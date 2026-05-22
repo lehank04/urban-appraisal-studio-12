@@ -168,7 +168,16 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
   };
 
   // -------- cálculos de diferencia / tolerancia --------
-  const areaM2 = (ar: AreaItem) => convertArea(ar.valor1, ar.unidad1, 'm²') || convertArea(ar.valor2, ar.unidad2, 'm²');
+  const areaM2 = (ar: AreaItem): number => {
+    if (ar.origen === 'doc_legal' && ar.docLegalId) {
+      const d = (avaluo.documentoLegal?.documentos ?? []).find((x) => x.id === ar.docLegalId);
+      if (d) {
+        if (d.areaM2) return d.areaM2;
+        if (d.areaVr2) return convertArea(d.areaVr2, 'vr²', 'm²');
+      }
+    }
+    return convertArea(ar.valor1, ar.unidad1, 'm²') || convertArea(ar.valor2, ar.unidad2, 'm²');
+  };
 
   const renderToleranciaRow = (lev: AreaItem | undefined, ar: AreaItem) => {
     if (!lev || lev.id === ar.id) return null;
@@ -404,7 +413,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
 
                       {/* Conversión informativa */}
                       <div className="text-[11px] text-muted-foreground px-1">
-                        {fmtNum(ar.valor1, 4)} {ar.unidad1} = {fmtNum(convertArea(ar.valor1, ar.unidad1, 'm²'), 4)} m² · {fmtNum(convertArea(ar.valor1, ar.unidad1, 'vr²'), 4)} vr²
+                        {fmtNum(displayV1, 4)} {displayU1} = {fmtNum(convertArea(displayV1, displayU1, 'm²'), 4)} m² · {fmtNum(convertArea(displayV1, displayU1, 'vr²'), 4)} vr²
                         {ar.usarHomologacion && <span className="ml-2 font-semibold text-primary">★ HOMOLOGACIÓN / REPOSICIÓN</span>}
                       </div>
 
