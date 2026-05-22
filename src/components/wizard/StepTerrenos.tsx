@@ -3,23 +3,35 @@ import { Avaluo, emptyTerreno, emptyAreaItem, emptyLinderoMedida, Terreno, Linde
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { TextField, TextArea, Field } from '@/components/forms/Fields';
-import { StringSelectWithCustom } from '@/components/forms/CatSelect';
+import { TextField, TextArea } from '@/components/forms/Fields';
+import { StringSelectWithCustom, MultiSelectWithCustom } from '@/components/forms/CatSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from 'lucide-react';
 import { fmtNum } from '@/lib/calculations';
 import {
-  FORMAS_TERRENO, UNIDADES_AREA, ORIGENES_AREA,
+  FORMAS_TERRENO, UNIDADES_AREA,
   convertArea, toleranciaArea, M2_PER_UNIT,
+  CAT_TOPOGRAFIA, CAT_FORMA_TERRENO, CAT_PANORAMICAS,
+  CAT_USO_LOTE, CAT_ESTADO_OCUPACION_LOTE,
 } from '@/lib/catalogos';
 import { useEffect } from 'react';
 
-const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA'];
+const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA', ...CAT_TOPOGRAFIA];
+const FORMA_OPTS = [...FORMAS_TERRENO, ...CAT_FORMA_TERRENO];
 
-const labelOrigen = (a: AreaItem) =>
-  a.origen === 'personalizado' ? (a.origenLabel || 'PERSONALIZADO') : a.origen.toUpperCase();
+const labelArea = (a: AreaItem, docs: { id: string; titulo?: string; nombre?: string; tipo?: string }[]) => {
+  if (a.origen === 'doc_legal' && a.docLegalId) {
+    const d = docs.find((x) => x.id === a.docLegalId);
+    return (d?.titulo || d?.nombre || d?.tipo || 'DOC. LEGAL').toUpperCase();
+  }
+  if (a.origen === 'nueva' || a.origen === 'personalizado') return (a.origenLabel || 'NUEVA ÁREA').toUpperCase();
+  return (a.origenLabel || a.origen).toUpperCase();
+};
+
 
 export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
   const { patchAvaluo } = useStore();
