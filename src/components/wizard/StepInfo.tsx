@@ -111,7 +111,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
               <Input
                 value={i.numeroExpediente}
                 onChange={(e) => set('numeroExpediente', e.target.value)}
-                placeholder="IUC01-RV-26/05/22-CLIENTE"
+                placeholder="IUC01-RV-260522-CLIENTE"
                 className="font-mono"
               />
               <Button
