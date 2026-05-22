@@ -382,8 +382,40 @@ export const PROPOSITOS = [
 
 export const FORMAS_TERRENO = ['REGULAR', 'IRREGULAR', 'TRAPEZOIDAL', 'RECTANGULAR', 'TRIANGULAR'];
 
-// FACTOR DE CONVERSIÓN OFICIAL INETER
+// FACTOR DE CONVERSIÓN OFICIAL INETER (m² → vr²)
 export const FACTOR_CONVERSION_M2_VR2 = 1.418415;
+
+// -------------- UNIDADES DE SUPERFICIE --------------
+// Factor para convertir 1 unidad → m² (tabla INETER)
+export const M2_PER_UNIT: Record<string, number> = {
+  'm²': 1,
+  'vr²': 1 / 1.418415,
+  'pie²': 1 / 10.76391,
+  'yarda²': 1 / 1.1960,
+  'área': 100,
+  'hectárea': 10000,
+  'manzana': 7050.12,
+  'caballería': 427900,
+  'acre': 4046,
+};
+export const UNIDADES_AREA = Object.keys(M2_PER_UNIT);
+
+export const ORIGENES_AREA = ['escritura', 'plano', 'levantamiento', 'contrato', 'personalizado'] as const;
+export type OrigenArea = typeof ORIGENES_AREA[number];
+
+/** Convierte un valor entre unidades de área */
+export const convertArea = (value: number, from: string, to: string): number => {
+  const f = M2_PER_UNIT[from] ?? 1;
+  const t = M2_PER_UNIT[to] ?? 1;
+  return (value * f) / t;
+};
+
+/** Tolerancia oficial de diferencia de áreas (inmuebles urbanos) */
+export const toleranciaArea = (areaM2: number): { pct: number; rango: string } => {
+  if (areaM2 < 200) return { pct: 0.025, rango: 'MENOR DE 200 M²' };
+  if (areaM2 <= 1000) return { pct: 0.020, rango: 'ENTRE 200 M² Y 1,000 M²' };
+  return { pct: 0.010, rango: 'MAYOR A 1,000 M²' };
+};
 
 // helper para obtener opción
 export const findOpcion = (tabla: TablaFactor, key: string) =>
