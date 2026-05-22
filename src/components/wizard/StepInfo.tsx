@@ -94,7 +94,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => set('numeroExpediente', generarExpediente(i.tipoInmueble, avaluo.id))}
+                onClick={() => set('numeroExpediente', generarExpediente(i.proposito, avaluo.id))}
                 title="Regenerar"
               >
                 <RefreshCw className="h-4 w-4" />
