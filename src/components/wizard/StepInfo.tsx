@@ -20,11 +20,11 @@ const sufijoProposito = (p: string) => {
   return m ? m[1] : (p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX');
 };
 
-// yyyy-mm-dd → aa/mm/dd
-const fmtAaMmDd = (iso: string) => {
+// yyyy-mm-dd → dd/mm/aa (formato natural: día / mes / año corto).
+const fmtFecha = (iso: string) => {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
-  return `${y?.slice(-2) ?? ''}/${m ?? ''}/${d ?? ''}`;
+  return `${d ?? ''}/${m ?? ''}/${y?.slice(-2) ?? ''}`;
 };
 
 // Limpieza para usar el nombre del cliente en el código (sin espacios, sin acentos).
@@ -35,17 +35,17 @@ const slugCliente = (n: string) =>
     .toUpperCase()
     .slice(0, 20) || 'CLIENTE';
 
-// Fecha actual aa/mm/dd como fallback.
-const hoyAaMmDd = () => {
+// Fecha actual dd/mm/aa como fallback.
+const hoyFecha = () => {
   const d = new Date();
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  return `${yy}/${mm}/${dd}`;
+  return `${dd}/${mm}/${yy}`;
 };
 
 const generarExpediente = (tipo: string, proposito: string, fechaIso: string, clienteNombre: string) => {
-  const fecha = fechaIso ? fmtAaMmDd(fechaIso) : hoyAaMmDd();
+  const fecha = fechaIso ? fmtFecha(fechaIso) : hoyFecha();
   return `${codigoTipo(tipo)}-${sufijoProposito(proposito)}-${fecha}-${slugCliente(clienteNombre)}`;
 };
 
