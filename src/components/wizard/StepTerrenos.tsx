@@ -194,7 +194,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     return (
       <div className={`text-[11px] px-3 py-1.5 rounded border ${dentro ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
         <span className="font-semibold mr-2">
-          Δ vs {labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
+          Δ vs Homologación ({labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}): {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
         </span>
         — {txt}
       </div>
@@ -239,8 +239,8 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
       <Accordion type="multiple" className="space-y-2" defaultValue={avaluo.terrenos.map((t) => t.id)}>
         {avaluo.terrenos.map((t) => {
           const areas = t.areas ?? [];
-          const lev = areas.find((a) => a.usarHomologacion) ?? areas.find((a) => a.origen === 'levantamiento');
-          const homArea = areas.find((a) => a.usarHomologacion);
+          const lev = areas.find((a) => a.usarHomologacion);
+          const homArea = lev;
           return (
           <AccordionItem key={t.id} value={t.id} className="border border-border rounded-md bg-card px-4">
             <AccordionTrigger className="hover:no-underline">
