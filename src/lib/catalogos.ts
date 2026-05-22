@@ -157,6 +157,46 @@ export const ROSS_HEIDECKE: EstadoConservacionRH[] = [
 
 export const factorQ = (fe: number) => ROSS_HEIDECKE.find((r) => r.fe === fe)?.q ?? 1;
 
+// -------------- ETAPAS DE REPOSICIÓN (ponderación automática) --
+export interface EtapaPonderacion {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  unidad: string;
+  pct: number;                  // % de incidencia sobre Costos Directos
+}
+
+export const ETAPAS_DIRECTOS: EtapaPonderacion[] = [
+  { id: 'preliminares',  nombre: 'OBRAS PRELIMINARES', unidad: 'M²', pct: 0.03,
+    descripcion: 'Limpieza del terreno, trazo y nivelación, construcciones provisionales para iniciar la obra.' },
+  { id: 'fundaciones',   nombre: 'FUNDACIONES Y ESTRUCTURA', unidad: 'M³', pct: 0.12,
+    descripcion: 'Cimentación superficial y lineal de concreto reforzado bajo muros de carga.' },
+  { id: 'sistema',       nombre: 'SISTEMA CONSTRUCTIVO (ESTRUCTURA Y CERRAMIENTO)', unidad: 'M²', pct: 0.25,
+    descripcion: 'Mampostería confinada: muros de carga con columnas y vigas de concreto reforzado.' },
+  { id: 'est_techo',     nombre: 'ESTRUCTURA DE TECHO', unidad: 'M²', pct: 0.17,
+    descripcion: 'Estructura metálica (perlines): vigas de acero liviano tipo C o Z.' },
+  { id: 'cubierta',      nombre: 'CUBIERTA DE TECHO', unidad: 'M²', pct: 0.11,
+    descripcion: 'Lámina de zinc galvanizada, durabilidad y rapidez de instalación.' },
+  { id: 'pisos',         nombre: 'ACABADO DE PISOS', unidad: 'M²', pct: 0.14,
+    descripcion: 'Concreto lujado o pulido: superficie lisa, durable, apariencia moderna.' },
+  { id: 'cielo',         nombre: 'ACABADO DE CIELO', unidad: 'M²', pct: 0.00,
+    descripcion: 'No aplica / a definir.' },
+  { id: 'puertas',       nombre: 'PUERTAS', unidad: 'UND', pct: 0.03, descripcion: 'Puertas interiores y exteriores.' },
+  { id: 'ventanas',      nombre: 'VENTANAS', unidad: 'UND', pct: 0.00, descripcion: 'Ventanas según diseño.' },
+  { id: 'sanitarias',    nombre: 'INSTALACIONES SANITARIAS', unidad: 'GLB', pct: 0.07, descripcion: 'Obras sanitarias.' },
+  { id: 'electricas',    nombre: 'INSTALACIONES ELÉCTRICAS', unidad: 'GLB', pct: 0.08, descripcion: 'Obras eléctricas.' },
+];
+
+export const ETAPAS_INDIRECTOS: EtapaPonderacion[] = [
+  { id: 'diseno',  nombre: 'DISEÑO, SUPERVISIÓN, ETC.', unidad: 'GLB', pct: 0.20, descripcion: 'Honorarios profesionales.' },
+  { id: 'admin',   nombre: 'ADMINISTRACIÓN Y UTILIDADES', unidad: 'GLB', pct: 0.70, descripcion: 'Administración de obra y utilidad del constructor.' },
+  { id: 'imprev',  nombre: 'IMPREVISTOS', unidad: 'GLB', pct: 0.10, descripcion: 'Reserva para imprevistos.' },
+];
+
+export const RATIO_INDIRECTOS = 0.15;   // 15% de los directos
+export const RATIO_IVA = 0.15;
+export const RATIO_IBI = 0.01;
+
 // ============================================================
 // CATÁLOGOS OFICIALES INMOVAL (checklist de inspección)
 // Todas las listas admiten valor personalizado vía StringSelectWithCustom
