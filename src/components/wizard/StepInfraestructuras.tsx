@@ -184,60 +184,6 @@ function InfraEditor({ infra, onChange, onRemove }: {
           </div>
         </Card>
 
-        {/* Memoria de costos */}
-        <Card className="p-3 bg-card">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Memoria de costos por etapas</div>
-
-          {(['directos','indirectos','impuestos'] as const).map((grupo) => {
-            const opciones = grupo === 'directos' ? ETAPAS_DIRECTAS : grupo === 'indirectos' ? ETAPAS_INDIRECTAS : ETAPAS_IMPUESTOS;
-            const items = infra.costos.filter((c) => c.grupo === grupo);
-            const subtotal = items.reduce((a, c) => a + totalEtapa(c), 0);
-            return (
-              <div key={grupo} className="mb-3 border border-border rounded">
-                <div className="flex items-center justify-between p-2 bg-muted/30">
-                  <div className="text-sm font-medium capitalize">{grupo}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs mono">{fmtMoney(subtotal)}</span>
-                    <Button size="sm" variant="outline" onClick={() => setCostos([...infra.costos, {
-                      id: crypto.randomUUID(), grupo, etapa: '', descripcion: '', unidad: 'm²', cantidad: 0, costoUnitario: 0,
-                    }])}><Plus className="h-3 w-3" /></Button>
-                  </div>
-                </div>
-                <table className="w-full text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr><th className="text-left p-1 w-1/4">Etapa</th><th className="text-left p-1">Descripción</th>
-                      <th className="text-left p-1 w-16">Unid.</th><th className="text-right p-1 w-20">Cant.</th>
-                      <th className="text-right p-1 w-24">C.Unit.</th><th className="text-right p-1 w-28">Total</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    {items.map((c) => (
-                      <tr key={c.id} className="border-t border-border">
-                        <td className="p-1">
-                          <Select value={c.etapa} onValueChange={(v) => setCostos(infra.costos.map((x) => x.id === c.id ? { ...x, etapa: v } : x))}>
-                            <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Etapa..." /></SelectTrigger>
-                            <SelectContent>{opciones.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </td>
-                        <td className="p-1"><Input className="h-7 text-xs" value={c.descripcion} onChange={(e) => setCostos(infra.costos.map((x) => x.id === c.id ? { ...x, descripcion: e.target.value } : x))} /></td>
-                        <td className="p-1"><Input className="h-7 text-xs" value={c.unidad} onChange={(e) => setCostos(infra.costos.map((x) => x.id === c.id ? { ...x, unidad: e.target.value } : x))} /></td>
-                        <td className="p-1"><Input className="h-7 text-xs text-right mono" type="number" value={c.cantidad || ''} onChange={(e) => setCostos(infra.costos.map((x) => x.id === c.id ? { ...x, cantidad: Number(e.target.value) || 0 } : x))} /></td>
-                        <td className="p-1"><Input className="h-7 text-xs text-right mono" type="number" value={c.costoUnitario || ''} onChange={(e) => setCostos(infra.costos.map((x) => x.id === c.id ? { ...x, costoUnitario: Number(e.target.value) || 0 } : x))} /></td>
-                        <td className="p-1 text-right mono">{fmtMoney(totalEtapa(c))}</td>
-                        <td className="p-1"><button className="text-muted-foreground hover:text-destructive" onClick={() => setCostos(infra.costos.filter((x) => x.id !== c.id))}><Trash2 className="h-3 w-3" /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-          <div className="grid grid-cols-4 gap-2 text-xs pt-2 border-t border-border">
-            <div className="p-2 bg-muted/30 rounded"><div className="text-muted-foreground">Directos</div><div className="mono">{fmtMoney(tot.directos)}</div></div>
-            <div className="p-2 bg-muted/30 rounded"><div className="text-muted-foreground">Indirectos</div><div className="mono">{fmtMoney(tot.indirectos)}</div></div>
-            <div className="p-2 bg-muted/30 rounded"><div className="text-muted-foreground">Impuestos</div><div className="mono">{fmtMoney(tot.impuestos)}</div></div>
-            <div className="p-2 bg-primary/10 border border-primary/30 rounded"><div className="text-muted-foreground">VRN total</div><div className="mono font-semibold">{fmtMoney(tot.vrn)}</div></div>
-          </div>
-        </Card>
 
         <TextArea label="Observaciones" value={infra.observaciones} onChange={(v) => onChange({ observaciones: v })} rows={2} />
       </AccordionContent>
