@@ -71,6 +71,7 @@ export const useStore = create<State>()(
           info: emptyInfo(),
           documentoLegal: emptyDocLegal(),
           entorno: emptyEntorno(),
+          descripcionGeneralTerrenos: emptyDescripcionGeneralTerrenos(),
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),
