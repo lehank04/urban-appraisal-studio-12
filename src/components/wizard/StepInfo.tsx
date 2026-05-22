@@ -58,15 +58,16 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
   const set = <K extends keyof typeof i>(k: K, v: (typeof i)[K]) =>
     patchAvaluo(avaluo.id, (a) => ({ ...a, info: { ...a.info, [k]: v } }));
 
-  // Auto-generar número de expediente al elegir/cambiar el propósito del avalúo.
+  // Auto-generar número de expediente con tipo + propósito + fecha inspección + cliente.
   useEffect(() => {
-    if (!i.proposito) return;
-    const auto = generarExpediente(i.proposito, avaluo.id);
-    if (!i.numeroExpediente || /^INM-[A-Z]{2,4}-\d{4}-[A-Z0-9]{4}$/.test(i.numeroExpediente)) {
+    if (!i.tipoInmueble || !i.proposito) return;
+    const auto = generarExpediente(i.tipoInmueble, i.proposito, i.fechaInspeccion, i.clienteNombre || cliente?.nombre || '');
+    // Auto-rellenar si está vacío o sigue el patrón generado (TIPO-PROP-AA/MM/DD-CLIENTE)
+    if (!i.numeroExpediente || /^[A-Z]{2,5}\d{0,3}-[A-Z]{2,4}-\d{2}\/\d{2}\/\d{2}-[A-Z0-9]+$/.test(i.numeroExpediente)) {
       if (i.numeroExpediente !== auto) set('numeroExpediente', auto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i.proposito]);
+  }, [i.tipoInmueble, i.proposito, i.fechaInspeccion, i.clienteNombre, cliente?.nombre]);
 
   // Prefill solicitante / cliente desde el registro si están vacíos
   useEffect(() => {
