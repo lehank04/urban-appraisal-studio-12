@@ -20,11 +20,11 @@ const sufijoProposito = (p: string) => {
   return m ? m[1] : (p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX');
 };
 
-// yyyy-mm-dd → dd/mm/aa (formato natural: día / mes / año corto).
+// yyyy-mm-dd → aammdd (sin separadores, para el código del expediente).
 const fmtFecha = (iso: string) => {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
-  return `${d ?? ''}/${m ?? ''}/${y?.slice(-2) ?? ''}`;
+  return `${y?.slice(-2) ?? ''}${m ?? ''}${d ?? ''}`;
 };
 
 // Limpieza para usar el nombre del cliente en el código (sin espacios, sin acentos).
@@ -35,13 +35,13 @@ const slugCliente = (n: string) =>
     .toUpperCase()
     .slice(0, 20) || 'CLIENTE';
 
-// Fecha actual dd/mm/aa como fallback.
+// Fecha actual aammdd como fallback.
 const hoyFecha = () => {
   const d = new Date();
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  return `${dd}/${mm}/${yy}`;
+  return `${yy}${mm}${dd}`;
 };
 
 const generarExpediente = (tipo: string, proposito: string, fechaIso: string, clienteNombre: string) => {
@@ -63,7 +63,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
     if (!i.tipoInmueble || !i.proposito) return;
     const auto = generarExpediente(i.tipoInmueble, i.proposito, i.fechaInspeccion, i.clienteNombre || cliente?.nombre || '');
     // Auto-rellenar si está vacío o sigue el patrón generado (TIPO-PROP-AA/MM/DD-CLIENTE)
-    if (!i.numeroExpediente || /^[A-Z]{2,5}\d{0,3}-[A-Z]{2,4}-\d{2}\/\d{2}\/\d{2}-[A-Z0-9]+$/.test(i.numeroExpediente)) {
+    if (!i.numeroExpediente || /^[A-Z]{2,5}\d{0,3}-[A-Z]{2,4}-\d{6}-[A-Z0-9]+$/.test(i.numeroExpediente)) {
       if (i.numeroExpediente !== auto) set('numeroExpediente', auto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,7 +111,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
               <Input
                 value={i.numeroExpediente}
                 onChange={(e) => set('numeroExpediente', e.target.value)}
-                placeholder="IUC01-RV-26/05/22-CLIENTE"
+                placeholder="IUC01-RV-260522-CLIENTE"
                 className="font-mono"
               />
               <Button
@@ -175,7 +175,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fechas</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Fecha de inspección (dd/mm/aa)">
+          <Field label="Fecha de inspección (aammdd)">
             <Input
               type="date"
               value={i.fechaInspeccion}
