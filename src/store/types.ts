@@ -163,15 +163,27 @@ export interface DescripcionGeneralTerrenos {
   personaEntrevistada: string;
 }
 
+export type LinderoFuente = 'escritura' | 'plano' | 'levantamiento' | 'personalizado';
+
+export interface LinderoMedida {
+  id: string;
+  fuente: LinderoFuente;
+  fuenteLabel?: string;        // editable cuando fuente='personalizado'
+  colindante: string;
+  medida: number;              // metros lineales
+}
+
 export interface Lindero {
   orientacion: 'NORTE' | 'SUR' | 'ESTE' | 'OESTE';
+  medidas: LinderoMedida[];
+  delimitanteFisico: string;
+  // ---- legacy ----
   levantamientoColindante: string;
   levantamientoMedida: number;
   escrituraColindante: string;
   escrituraMedida: number;
   planoColindante: string;
   planoMedida: number;
-  delimitanteFisico: string;
 }
 
 export interface Terreno {
