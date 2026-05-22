@@ -6,6 +6,8 @@ import { StepperSidebar, Step } from '@/components/wizard/StepperSidebar';
 import { StepCliente } from '@/components/wizard/StepCliente';
 import { StepPerito } from '@/components/wizard/StepPerito';
 import { StepInfo } from '@/components/wizard/StepInfo';
+import { StepLegal } from '@/components/wizard/StepLegal';
+import { StepEntorno } from '@/components/wizard/StepEntorno';
 import { StepTerrenos } from '@/components/wizard/StepTerrenos';
 import { StepInfraestructuras } from '@/components/wizard/StepInfraestructuras';
 import { StepMetodologias } from '@/components/wizard/StepMetodologias';
@@ -17,10 +19,9 @@ import { toast } from 'sonner';
 export default function AvaluoWizard() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { avaluos, createAvaluo, getAvaluo, updateAvaluo } = useStore();
+  const { createAvaluo, getAvaluo, updateAvaluo } = useStore();
   const [current, setCurrent] = useState(0);
 
-  // Crear si no hay id
   useEffect(() => {
     if (!id) {
       const av = createAvaluo();
@@ -32,26 +33,30 @@ export default function AvaluoWizard() {
   if (!avaluo) return <div className="p-8 text-muted-foreground">Cargando...</div>;
 
   const steps: Step[] = [
-    { id: 1, title: 'Cliente', subtitle: 'Buscar o crear' },
-    { id: 2, title: 'Perito / Plantilla', subtitle: 'Define documento' },
-    { id: 3, title: 'Información general', subtitle: 'Datos del expediente' },
-    { id: 4, title: 'Terrenos', subtitle: `${avaluo.terrenos.length} terreno(s)` },
-    { id: 5, title: 'Infraestructuras', subtitle: 'Reposición y depreciación' },
-    { id: 6, title: 'Metodologías', subtitle: 'Memorias de cálculo' },
-    { id: 7, title: 'Fotografías', subtitle: 'Registro visual' },
-    { id: 8, title: 'Vista previa', subtitle: 'Consolidados' },
+    { id: 1, title: 'Perito firmante',          subtitle: 'Define plantilla INMOVAL' },
+    { id: 2, title: 'Cliente / Solicitante',    subtitle: 'Datos del solicitante' },
+    { id: 3, title: 'Cap. I — Información general', subtitle: 'Expediente y propósito' },
+    { id: 4, title: 'Cap. II — Documentación legal', subtitle: 'Escritura · Registro · Catastro' },
+    { id: 5, title: 'Cap. III — Entorno urbano',     subtitle: 'Zona · Servicios · Vías' },
+    { id: 6, title: 'Cap. IV — Terreno(s)',          subtitle: `${avaluo.terrenos.length} terreno(s) · linderos` },
+    { id: 7, title: 'Cap. V — Infraestructuras',     subtitle: 'Memoria de costos · Ross-Heidecke' },
+    { id: 8, title: 'Cap. VI — Metodología',         subtitle: 'Costo · Mercado · Realización' },
+    { id: 9, title: 'Cap. VII — Anexo fotográfico',  subtitle: 'Registro visual' },
+    { id: 10,title: 'Vista previa',                  subtitle: 'Documento final' },
   ];
 
   const render = () => {
     switch (current) {
-      case 0: return <StepCliente avaluo={avaluo} />;
-      case 1: return <StepPerito avaluo={avaluo} />;
+      case 0: return <StepPerito avaluo={avaluo} />;
+      case 1: return <StepCliente avaluo={avaluo} />;
       case 2: return <StepInfo avaluo={avaluo} />;
-      case 3: return <StepTerrenos avaluo={avaluo} />;
-      case 4: return <StepInfraestructuras avaluo={avaluo} />;
-      case 5: return <StepMetodologias avaluo={avaluo} />;
-      case 6: return <StepFotos avaluo={avaluo} />;
-      case 7: return <StepPreview avaluo={avaluo} />;
+      case 3: return <StepLegal avaluo={avaluo} />;
+      case 4: return <StepEntorno avaluo={avaluo} />;
+      case 5: return <StepTerrenos avaluo={avaluo} />;
+      case 6: return <StepInfraestructuras avaluo={avaluo} />;
+      case 7: return <StepMetodologias avaluo={avaluo} />;
+      case 8: return <StepFotos avaluo={avaluo} />;
+      case 9: return <StepPreview avaluo={avaluo} />;
     }
   };
 
@@ -59,9 +64,7 @@ export default function AvaluoWizard() {
     <div className="flex min-h-[calc(100vh-3rem)]">
       <StepperSidebar steps={steps} current={current} onJump={setCurrent} />
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 p-6 overflow-auto">
-          {render()}
-        </div>
+        <div className="flex-1 p-6 overflow-auto">{render()}</div>
         <footer className="border-t border-border bg-card/50 p-4 flex items-center justify-between">
           <Button variant="outline" onClick={() => setCurrent((c) => Math.max(0, c - 1))} disabled={current === 0}>
             <ChevronLeft className="h-4 w-4 mr-1" />Anterior
