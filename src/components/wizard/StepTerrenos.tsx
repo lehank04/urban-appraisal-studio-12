@@ -239,8 +239,8 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
       <Accordion type="multiple" className="space-y-2" defaultValue={avaluo.terrenos.map((t) => t.id)}>
         {avaluo.terrenos.map((t) => {
           const areas = t.areas ?? [];
-          const lev = areas.find((a) => a.usarHomologacion) ?? areas.find((a) => a.origen === 'levantamiento');
-          const homArea = areas.find((a) => a.usarHomologacion);
+          const lev = areas.find((a) => a.usarHomologacion);
+          const homArea = lev;
           return (
           <AccordionItem key={t.id} value={t.id} className="border border-border rounded-md bg-card px-4">
             <AccordionTrigger className="hover:no-underline">
