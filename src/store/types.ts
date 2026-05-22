@@ -43,13 +43,16 @@ export interface InfoGeneral {
   regimen: string;
   proposito: string;
   propietario: string;
+  solicitante: string;
+  clienteNombre: string;
+  valuadorNombre: string;
+  valuadorNipev: string;
   fechaInspeccion: string;
-  fechaAvaluo: string;
-  moneda: string;
+  fechaAvaluo: string;     // fecha emisión (portada)
   observaciones: string;
   // ---- alias / campos legados (UI prototipo) ----
+  moneda?: string;
   codigoExpediente?: string;
-  solicitante?: string;
   tipoAvaluo?: string;
   finalidad?: string;
   fechaElaboracion?: string;
@@ -378,8 +381,11 @@ export interface Avaluo {
 export const emptyInfo = (): InfoGeneral => ({
   numeroExpediente: '', tipoInmueble: 'CASA DE HABITACIÓN - IU',
   regimen: 'PRIVADA INDIVIDUAL', proposito: 'REFERENCIA DE VALORES - RV',
-  propietario: '', fechaInspeccion: '', fechaAvaluo: '',
-  moneda: 'US$', observaciones: '',
+  propietario: '',
+  solicitante: '', clienteNombre: '',
+  valuadorNombre: '', valuadorNipev: '',
+  fechaInspeccion: '', fechaAvaluo: '',
+  observaciones: '',
 });
 
 export const emptyDocLegal = (): DocumentoLegal => ({
