@@ -95,12 +95,8 @@ export function StepInfraestructuras({ avaluo }: { avaluo: Avaluo }) {
 function InfraEditor({ infra, onChange, onRemove }: {
   infra: Infraestructura; onChange: (p: Partial<Infraestructura>) => void; onRemove: () => void;
 }) {
-  const tot = totalesCostos(infra);
-  const vno = valorNetoInfra(infra);
-
   const setDesc = (descripciones: DescripcionConstructiva[]) => onChange({ descripciones });
   const setAmb = (ambientes: AmbienteCount[]) => onChange({ ambientes });
-  const setCostos = (costos: CostoEtapa[]) => onChange({ costos });
 
   return (
     <AccordionItem value={infra.id} className="border border-border rounded-md bg-muted/10 px-4">
@@ -109,7 +105,7 @@ function InfraEditor({ infra, onChange, onRemove }: {
           <div className="text-left">
             <div className="font-medium">{infra.nombre || '(sin nombre)'} <span className="text-xs text-muted-foreground ml-2 capitalize">{infra.tipo.replace('_',' ')}</span></div>
             <div className="text-xs text-muted-foreground">
-              VRN: {fmtMoney(vno.vrn)} · Dep: {fmtPct(vno.depPct)} · VNO: <span className="text-foreground font-medium">{fmtMoney(vno.vno)}</span>
+              Área: {infra.areaTotalM2 || 0} m² · Niveles: {infra.niveles || 0} · Año: {infra.anioConstruccion || '—'}
             </div>
           </div>
           <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-muted-foreground hover:text-destructive">
