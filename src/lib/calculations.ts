@@ -224,13 +224,15 @@ export const rossHeidecke = (edad: number, vidaUtil: number, fe: number) => {
 export const totalEtapa = (e: CostoEtapa) => e.cantidad * e.costoUnitario;
 
 export const totalesCostos = (infra: Infraestructura) => {
-  const directos = infra.costos.filter((c) => c.grupo === 'directos').reduce((a, c) => a + totalEtapa(c), 0);
-  const indirectos = infra.costos.filter((c) => c.grupo === 'indirectos').reduce((a, c) => a + totalEtapa(c), 0);
-  const impuestos = infra.costos.filter((c) => c.grupo === 'impuestos').reduce((a, c) => a + totalEtapa(c), 0);
+  const costos = infra.costos ?? [];
+  const directos = costos.filter((c) => c.grupo === 'directos').reduce((a, c) => a + totalEtapa(c), 0);
+  const indirectos = costos.filter((c) => c.grupo === 'indirectos').reduce((a, c) => a + totalEtapa(c), 0);
+  const impuestos = costos.filter((c) => c.grupo === 'impuestos').reduce((a, c) => a + totalEtapa(c), 0);
   const vrn = directos + indirectos + impuestos;
-  const costoUnitarioM2 = infra.areaTotalM2 > 0 ? vrn / infra.areaTotalM2 : 0;
+  const costoUnitarioM2 = (infra.areaTotalM2 ?? 0) > 0 ? vrn / (infra.areaTotalM2 as number) : 0;
   return { directos, indirectos, impuestos, vrn, costoUnitarioM2 };
 };
+
 
 export const valorNetoInfra = (infra: Infraestructura) => {
   const { vrn } = totalesCostos(infra);
