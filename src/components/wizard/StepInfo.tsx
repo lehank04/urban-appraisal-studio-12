@@ -109,14 +109,14 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
               <Input
                 value={i.numeroExpediente}
                 onChange={(e) => set('numeroExpediente', e.target.value)}
-                placeholder="INM-IU-2026-AB12"
+                placeholder="IUC01-RV-26/05/22-CLIENTE"
                 className="font-mono"
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => set('numeroExpediente', generarExpediente(i.proposito, avaluo.id))}
+                onClick={() => set('numeroExpediente', generarExpediente(i.tipoInmueble, i.proposito, i.fechaInspeccion, i.clienteNombre || cliente?.nombre || ''))}
                 title="Regenerar"
               >
                 <RefreshCw className="h-4 w-4" />
