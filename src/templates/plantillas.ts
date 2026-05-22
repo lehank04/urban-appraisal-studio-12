@@ -5,93 +5,112 @@ export interface Plantilla {
   nombre: string;
   empresa: string;
   color: string;
-  capitulos: string[];
+  colorAccent: string;
+  portadaTitulo: string;
   portadaSubtitulo: string;
+  capitulos: string[];
   textoIntroduccion: string;
+  textoMetodologia: string;
   textoAlcance: string;
   textosNoAplica: Record<string, string>;
+  normativa: string;
 }
+
+const TEXTO_INMOVAL_METODO = `EL PRESENTE INFORME TÉCNICO SE ELABORA SIGUIENDO LOS MÉTODOS Y TÉCNICAS DE VALUACIÓN ESTABLECIDAS EN LA RESOLUCIÓN N° CD-SIBOIF-868-1-DIC10-2014, "NORMA SOBRE PERITOS VALUADORES". EL ANÁLISIS SE BASA EN LA INSPECCIÓN FÍSICA DEL INMUEBLE, LA DOCUMENTACIÓN LEGAL PROPORCIONADA Y LA INVESTIGACIÓN DE MERCADO, PARA PRODUCIR UN DICTAMEN TÉCNICO OBJETIVO Y VERIFICABLE.`;
 
 export const PLANTILLAS: Record<PlantillaId, Plantilla> = {
   inmoval: {
     id: 'inmoval',
     nombre: 'INMOVAL',
-    empresa: 'INMOVAL S.A.S.',
-    color: '#0c4a6e',
-    portadaSubtitulo: 'Informe Técnico de Avalúo Comercial',
+    empresa: 'INMOVAL · Avalúos Urbanos',
+    color: '#1d4f8b',
+    colorAccent: '#f5b41a',
+    portadaTitulo: 'AVALÚO DE INMUEBLE URBANO',
+    portadaSubtitulo: 'CASA DE HABITACIÓN',
     capitulos: [
-      '1. Información general',
-      '2. Identificación del inmueble',
-      '3. Descripción del terreno',
-      '4. Descripción de infraestructuras',
-      '5. Metodologías valuatorias',
-      '6. Memorias de cálculo',
-      '7. Registro fotográfico',
-      '8. Consolidado de valores',
-      '9. Conclusiones',
-      '10. Anexos',
+      'I. METODOLOGÍA',
+      'I.1. Objeto y propósito del avalúo',
+      'I.2. Enfoques de valuación aplicados',
+      'I.3. Metodología del enfoque de costo o reposición',
+      'I.4. Metodología del enfoque de mercado y factores de homologación',
+      'II. CARACTERÍSTICAS DEL INMUEBLE',
+      'II.1. Información general',
+      'II.1.1. Documentación legal presentada',
+      'II.2. Análisis del entorno',
+      'II.3. Descripción del terreno',
+      'II.4. Descripción de la infraestructura física',
+      'III. ANÁLISIS DE VALORACIÓN',
+      'III.1. Valor de mercado (enfoque de mercado)',
+      'III.2. Valor de realización',
+      'III.3. Valor de reposición (enfoque de costos)',
+      '3.1. Valor del terreno',
+      '3.2. Memoria de cálculo de la depreciación',
+      '3.3. Memoria de costos de infraestructuras (VRN)',
+      '3.4. Consolidado de valores y cálculo del VNR',
+      'III.4. Resumen y conciliación de valores',
+      'IV. RESUMEN DE VALORES',
+      'V. CERTIFICACIÓN',
+      'VI. ANEXOS',
     ],
-    textoIntroduccion:
-      'El presente informe corresponde al avalúo técnico-comercial del inmueble objeto del estudio, elaborado conforme a las normas vigentes de la Resolución 620 de 2008 del IGAC, las NIIF y las prácticas profesionales aceptadas por el Registro Nacional de Avaluadores.',
+    textoIntroduccion: TEXTO_INMOVAL_METODO,
+    textoMetodologia: TEXTO_INMOVAL_METODO,
     textoAlcance:
-      'El alcance del presente avalúo comprende la inspección física del inmueble, el análisis de la documentación legal aportada, la consulta de información catastral y de mercado, la aplicación de las metodologías valuatorias pertinentes y la emisión del informe técnico con su correspondiente valor comercial.',
+      'EL ALCANCE DEL PRESENTE AVALÚO COMPRENDE LA INSPECCIÓN FÍSICA DEL INMUEBLE, EL ANÁLISIS DE LA DOCUMENTACIÓN LEGAL APORTADA, LA CONSULTA DE INFORMACIÓN CATASTRAL Y DE MERCADO, LA APLICACIÓN DE LAS METODOLOGÍAS VALUATORIAS PERTINENTES Y LA EMISIÓN DEL INFORME TÉCNICO CON SU CORRESPONDIENTE VALOR COMERCIAL.',
     textosNoAplica: {
-      comparativo: 'El método comparativo de mercado no se aplica al presente avalúo por inexistencia de comparables suficientes en la zona de influencia que cumplan los criterios de homogeneidad requeridos.',
-      reposicion: 'El método de costo de reposición no se aplica por tratarse de un inmueble sin construcciones o mejoras significativas que requieran valoración por este método.',
-      mercadoTerreno: 'No se aplica valor de mercado de terreno de manera independiente por integrarse al método principal.',
-      mercadoMejoras: 'No se aplica valor de mercado de mejoras de manera independiente.',
+      enfoqueMercado: 'EL ENFOQUE DE MERCADO NO SE APLICA POR INEXISTENCIA DE COMPARABLES SUFICIENTES EN LA ZONA DE INFLUENCIA QUE CUMPLAN LOS CRITERIOS DE HOMOGENEIDAD REQUERIDOS.',
+      enfoqueCosto: 'EL ENFOQUE DE COSTO NO SE APLICA POR TRATARSE DE UN INMUEBLE SIN CONSTRUCCIONES O MEJORAS SIGNIFICATIVAS QUE REQUIERAN VALORACIÓN POR ESTE MÉTODO.',
+      enfoqueIngresos: 'EN CUMPLIMIENTO DEL ARTÍCULO 31 DE LA NORMA SOBRE PERITOS VALUADORES, EL ENFOQUE DE INGRESOS NO SE INCLUYE MIENTRAS LA SUPERINTENDENCIA NO DICTE LOS PARÁMETROS Y CRITERIOS PARA QUE LOS PERITOS DETERMINEN LA TASA DE CAPITALIZACIÓN.',
     },
+    normativa: 'RESOLUCIÓN N° CD-SIBOIF-868-1-DIC10-2014 — NORMA SOBRE PERITOS VALUADORES',
   },
   adalberto: {
     id: 'adalberto',
     nombre: 'Adalberto',
-    empresa: 'Adalberto Rodríguez · Perito',
+    empresa: 'Adalberto Rodríguez · Perito Valuador',
     color: '#7c2d12',
-    portadaSubtitulo: 'Avalúo Comercial Independiente',
+    colorAccent: '#fbbf24',
+    portadaTitulo: 'AVALÚO COMERCIAL',
+    portadaSubtitulo: 'Informe técnico independiente',
     capitulos: [
       '1. Datos generales',
       '2. Descripción del bien',
       '3. Análisis de terreno',
       '4. Análisis de construcciones',
       '5. Métodos aplicados',
-      '6. Cálculos',
+      '6. Memorias de cálculo',
       '7. Anexo fotográfico',
       '8. Conclusión de valor',
     ],
-    textoIntroduccion:
-      'Atendiendo la solicitud recibida, se realiza el presente avalúo comercial bajo criterios técnicos y de mercado.',
-    textoAlcance:
-      'El presente trabajo comprende la inspección, recopilación documental, análisis técnico y emisión del valor comercial del inmueble.',
+    textoIntroduccion: 'Atendiendo la solicitud recibida, se realiza el presente avalúo comercial bajo criterios técnicos y de mercado.',
+    textoMetodologia: 'Se aplican los enfoques de mercado y costo, conforme a la mejor evidencia disponible.',
+    textoAlcance: 'Inspección, recopilación documental, análisis técnico y emisión del valor comercial del inmueble.',
     textosNoAplica: {
-      comparativo: 'Método comparativo no aplicable en este caso.',
-      reposicion: 'Método de reposición no aplicable.',
-      mercadoTerreno: 'No aplica.',
-      mercadoMejoras: 'No aplica.',
+      enfoqueMercado: 'Método comparativo no aplicable en este caso.',
+      enfoqueCosto: 'Método de reposición no aplicable.',
+      enfoqueIngresos: 'No aplica.',
     },
+    normativa: 'Estándares profesionales nacionales',
   },
   adicional: {
     id: 'adicional',
     nombre: 'Perito adicional',
     empresa: 'Plantilla genérica',
     color: '#1f2937',
-    portadaSubtitulo: 'Informe de Avalúo',
+    colorAccent: '#3b82f6',
+    portadaTitulo: 'INFORME DE AVALÚO',
+    portadaSubtitulo: 'Plantilla técnica',
     capitulos: [
-      '1. Información general',
-      '2. Inmueble',
-      '3. Terreno',
-      '4. Construcciones',
-      '5. Metodología',
-      '6. Cálculos',
-      '7. Fotografías',
-      '8. Conclusiones',
+      '1. Información general', '2. Inmueble', '3. Terreno', '4. Construcciones',
+      '5. Metodología', '6. Cálculos', '7. Fotografías', '8. Conclusiones',
     ],
     textoIntroduccion: 'Informe de avalúo elaborado conforme a las normas técnicas aplicables.',
+    textoMetodologia: 'Se aplica un esquema estándar de valuación.',
     textoAlcance: 'Alcance estándar de inspección, análisis y emisión de valor.',
     textosNoAplica: {
-      comparativo: 'Metodología no aplicada.',
-      reposicion: 'Metodología no aplicada.',
-      mercadoTerreno: 'No aplica.',
-      mercadoMejoras: 'No aplica.',
+      enfoqueMercado: 'Metodología no aplicada.',
+      enfoqueCosto: 'Metodología no aplicada.',
+      enfoqueIngresos: 'No aplica.',
     },
+    normativa: '—',
   },
 };
