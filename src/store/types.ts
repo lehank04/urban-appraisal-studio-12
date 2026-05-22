@@ -38,15 +38,29 @@ export interface Perito {
 // -------------------- INFORMACIÓN GENERAL --------------------
 
 export interface InfoGeneral {
-  numeroExpediente: string;     // IU_RV_AAAAMMDD_##_NOMBRE
-  tipoInmueble: string;         // CASA DE HABITACIÓN, LOTE, etc.
-  regimen: string;              // PRIVADA INDIVIDUAL, etc.
-  proposito: string;            // REFERENCIA DE VALORES - RV
+  numeroExpediente: string;
+  tipoInmueble: string;
+  regimen: string;
+  proposito: string;
   propietario: string;
   fechaInspeccion: string;
   fechaAvaluo: string;
-  moneda: string;               // US$
+  moneda: string;
   observaciones: string;
+  // ---- alias / campos legados (UI prototipo) ----
+  codigoExpediente?: string;
+  solicitante?: string;
+  tipoAvaluo?: string;
+  finalidad?: string;
+  fechaElaboracion?: string;
+  direccionInmueble?: string;
+  departamento?: string;
+  municipio?: string;
+  matricula?: string;
+  numeroCatastral?: string;
+  areaRegistrada?: string;
+  areaLevantada?: string;
+  observacionesGenerales?: string;
 }
 
 // -------------------- DOCUMENTACIÓN LEGAL --------------------
