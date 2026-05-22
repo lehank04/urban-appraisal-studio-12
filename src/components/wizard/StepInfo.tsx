@@ -8,17 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
-// Extrae el código de 2 letras al final ("REFERENCIA DE VALORES - RV" → "RV").
-const sufijoProposito = (p: string) => {
-  const m = p.match(/-\s*([A-Z]{2,4})\s*$/);
-  if (m) return m[1];
-  return p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX';
+// Código del tipo de inmueble: prefijo al inicio ("IUC01 - Residencial · ..." → "IUC01").
+const codigoTipo = (t: string) => {
+  const m = t.match(/^\s*([A-Z]{2,4}\d{0,3})/);
+  return m ? m[1] : (t.replace(/[^A-Za-z0-9]/g, '').slice(0, 5).toUpperCase() || 'XXX');
 };
 
-const generarExpediente = (proposito: string, id: string) => {
-  const year = new Date().getFullYear();
-  const short = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `INM-${sufijoProposito(proposito)}-${year}-${short}`;
+// Código del propósito: 2-4 letras al final ("REFERENCIA DE VALORES - RV" → "RV").
+const sufijoProposito = (p: string) => {
+  const m = p.match(/-\s*([A-Z]{2,4})\s*$/);
+  return m ? m[1] : (p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX');
 };
 
 // yyyy-mm-dd → aa/mm/dd
@@ -26,6 +25,28 @@ const fmtAaMmDd = (iso: string) => {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
   return `${y?.slice(-2) ?? ''}/${m ?? ''}/${d ?? ''}`;
+};
+
+// Limpieza para usar el nombre del cliente en el código (sin espacios, sin acentos).
+const slugCliente = (n: string) =>
+  (n || 'CLIENTE')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '')
+    .toUpperCase()
+    .slice(0, 20) || 'CLIENTE';
+
+// Fecha actual aa/mm/dd como fallback.
+const hoyAaMmDd = () => {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}/${mm}/${dd}`;
+};
+
+const generarExpediente = (tipo: string, proposito: string, fechaIso: string, clienteNombre: string) => {
+  const fecha = fechaIso ? fmtAaMmDd(fechaIso) : hoyAaMmDd();
+  return `${codigoTipo(tipo)}-${sufijoProposito(proposito)}-${fecha}-${slugCliente(clienteNombre)}`;
 };
 
 export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
