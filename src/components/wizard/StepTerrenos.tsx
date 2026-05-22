@@ -185,7 +185,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     return (
       <div className={`text-[11px] px-3 py-1.5 rounded border ${dentro ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
         <span className="font-semibold mr-2">
-          Δ vs {labelOrigen(lev)}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
+          Δ vs {labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
         </span>
         — {txt}
       </div>
@@ -240,7 +240,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                   <div className="font-medium">{t.titulo}</div>
                   <div className="text-xs text-muted-foreground">
                     {homArea
-                      ? `Homologación: ${labelOrigen(homArea)} · ${fmtNum(homArea.valor1)} ${homArea.unidad1} · ${fmtNum(homArea.valor2)} ${homArea.unidad2}`
+                      ? `Homologación: ${labelArea(homArea, avaluo.documentoLegal?.documentos ?? [])} · ${fmtNum(homArea.valor1)} ${homArea.unidad1} · ${fmtNum(homArea.valor2)} ${homArea.unidad2}`
                       : 'Sin área de homologación seleccionada'}
                   </div>
                 </div>
@@ -251,9 +251,8 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-4 space-y-5">
               {/* Datos del terreno */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div>
                 <TextField label="Título del terreno" value={t.titulo} onChange={(v) => updateTerreno(t.id, { titulo: v })} />
-                <TextField label="Estado de ocupación" value={t.estadoOcupacion} onChange={(v) => updateTerreno(t.id, { estadoOcupacion: v })} />
               </div>
 
               {/* TABLA COMPARATIVA DE ÁREAS */}
@@ -310,10 +309,6 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </Card>
 
-              {/* Uso actual del lote (después de áreas) */}
-              <div>
-                <TextField label="Uso actual del terreno" value={t.usoTipo} onChange={(v) => updateTerreno(t.id, { usoTipo: v })} />
-              </div>
 
               {/* Morfología — sin obras complementarias */}
               <div className="grid md:grid-cols-2 gap-3">
@@ -380,12 +375,54 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </Card>
 
+              {/* Características panorámicas (multi-check con personalizables) */}
+              <MultiSelectWithCustom
+                label="Características panorámicas"
+                values={(t.caracteristicasPanoramicas || '').split('|').filter(Boolean)}
+                onChange={(v) => updateTerreno(t.id, { caracteristicasPanoramicas: v.join('|') })}
+                options={CAT_PANORAMICAS}
+                placeholder="Añadir característica personalizada y presionar Enter"
+              />
+
               {/* Notas */}
-              <div className="grid md:grid-cols-3 gap-3">
+              <div className="grid md:grid-cols-2 gap-3">
                 <TextArea label="Servidumbres" value={t.servidumbres} onChange={(v) => updateTerreno(t.id, { servidumbres: v })} rows={2} />
-                <TextArea label="Características panorámicas" value={t.caracteristicasPanoramicas} onChange={(v) => updateTerreno(t.id, { caracteristicasPanoramicas: v })} rows={2} />
                 <TextArea label="Consideraciones adicionales" value={t.consideracionesAdicionales} onChange={(v) => updateTerreno(t.id, { consideracionesAdicionales: v })} rows={2} />
               </div>
+
+              {/* USO ACTUAL / ESTADO DE OCUPACIÓN / OBRAS COMPLEMENTARIAS (al final) */}
+              <Card className="p-3 bg-muted/20 space-y-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Uso actual y estado de ocupación</div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <StringSelectWithCustom label="Tipo de uso" value={t.usoTipo}
+                    onChange={(v) => updateTerreno(t.id, { usoTipo: v })} options={CAT_USO_LOTE} />
+                  <StringSelectWithCustom label="Estado de ocupación" value={t.estadoOcupacion}
+                    onChange={(v) => updateTerreno(t.id, { estadoOcupacion: v })} options={CAT_ESTADO_OCUPACION_LOTE} />
+                </div>
+                <div className="border border-border rounded p-3 bg-background space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">¿Tiene obras complementarias?</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{t.tieneObrasComplementarias ? 'Sí' : 'No'}</span>
+                      <Switch checked={!!t.tieneObrasComplementarias}
+                        onCheckedChange={(v) => updateTerreno(t.id, { tieneObrasComplementarias: v })} />
+                    </div>
+                  </div>
+                  {t.tieneObrasComplementarias && (
+                    <>
+                      <TextArea
+                        label="Obras complementarias (referencia)"
+                        value={t.obrasComplementarias}
+                        onChange={(v) => updateTerreno(t.id, { obrasComplementarias: v })}
+                        rows={2}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        El detalle constructivo de estas obras se describe en el <strong>Capítulo V — Descripción de Infraestructuras</strong>.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </Card>
             </AccordionContent>
           </AccordionItem>
           );
