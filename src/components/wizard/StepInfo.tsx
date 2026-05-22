@@ -8,17 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
-// Sufijo después del " - " (CASA DE HABITACIÓN - IU → IU). Fallback: primeras 2 letras.
-const sufijoTipo = (t: string) => {
-  const m = t.match(/-\s*([A-Z]{1,4})\s*$/);
+// Extrae el código de 2 letras al final ("REFERENCIA DE VALORES - RV" → "RV").
+const sufijoProposito = (p: string) => {
+  const m = p.match(/-\s*([A-Z]{2,4})\s*$/);
   if (m) return m[1];
-  return t.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX';
+  return p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX';
 };
 
-const generarExpediente = (tipo: string, id: string) => {
+const generarExpediente = (proposito: string, id: string) => {
   const year = new Date().getFullYear();
   const short = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `INM-${sufijoTipo(tipo)}-${year}-${short}`;
+  return `INM-${sufijoProposito(proposito)}-${year}-${short}`;
 };
 
 // yyyy-mm-dd → aa/mm/dd
