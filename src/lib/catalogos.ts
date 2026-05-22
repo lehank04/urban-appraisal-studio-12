@@ -1,0 +1,20 @@
+export const CATALOGOS = {
+  tipoAvaluo: ['Comercial', 'Hipotecario', 'Garantía', 'Judicial', 'Seguros', 'Contable', 'Expropiación'],
+  finalidad: ['Crédito hipotecario', 'Compra-venta', 'Garantía bancaria', 'Sucesión', 'Aseguramiento', 'Estados financieros'],
+  moneda: ['COP', 'USD', 'EUR'],
+  forma: ['Regular', 'Irregular', 'Trapezoidal', 'Rectangular', 'Triangular'],
+  topografia: ['Plana', 'Pendiente leve', 'Pendiente moderada', 'Pendiente fuerte', 'Quebrada'],
+  tipoAcceso: ['Vía pavimentada', 'Vía afirmada', 'Camino vecinal', 'Vía privada', 'Sin acceso vehicular'],
+  serviciosPublicos: ['Acueducto, alcantarillado, energía, gas, internet', 'Acueducto, energía', 'Energía únicamente', 'Sin servicios'],
+  zonificacion: ['Residencial', 'Comercial', 'Industrial', 'Mixta', 'Rural', 'Institucional', 'Suburbana'],
+  usoActual: ['Vivienda', 'Comercio', 'Bodega', 'Oficina', 'Lote sin construir', 'Producción agrícola'],
+  usoPotencial: ['Vivienda', 'Comercial', 'Mixto', 'Industrial', 'Urbanístico'],
+  entorno: ['Residencial consolidado', 'Comercial activo', 'Industrial', 'Rural', 'En desarrollo', 'Mixto'],
+  estadoConservacion: ['Excelente', 'Bueno', 'Regular', 'Malo', 'Ruinoso'],
+  unidadMedida: ['m²', 'ml', 'unidad', 'm³', 'global'],
+  tipoInfra: [
+    { value: 'principal', label: 'Infraestructura principal' },
+    { value: 'complementaria', label: 'Infraestructura complementaria' },
+    { value: 'obra_exterior', label: 'Obra exterior' },
+  ],
+};
