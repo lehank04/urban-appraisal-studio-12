@@ -147,13 +147,14 @@ export interface Entorno {
 
 export interface AreaItem {
   id: string;
-  origen: 'escritura' | 'plano' | 'levantamiento' | 'contrato' | 'personalizado';
-  origenLabel?: string;             // editable si origen = 'personalizado'
+  origen: 'doc_legal' | 'nueva' | 'escritura' | 'plano' | 'levantamiento' | 'contrato' | 'personalizado';
+  origenLabel?: string;             // editable si origen = 'nueva' / 'personalizado'
+  docLegalId?: string;              // referencia al documento legal (Cap II) si origen='doc_legal'
   unidad1: string;                  // ej. 'm²'
   valor1: number;
   unidad2: string;                  // ej. 'vr²'
   valor2: number;
-  usarHomologacion: boolean;        // marca el área usada en homologación
+  usarHomologacion: boolean;        // marca el área usada en homologación / reposición
   observaciones?: string;
 }
 
