@@ -8,17 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
-// Sufijo después del " - " (CASA DE HABITACIÓN - IU → IU). Fallback: primeras 2 letras.
-const sufijoTipo = (t: string) => {
-  const m = t.match(/-\s*([A-Z]{1,4})\s*$/);
+// Extrae el código de 2 letras al final ("REFERENCIA DE VALORES - RV" → "RV").
+const sufijoProposito = (p: string) => {
+  const m = p.match(/-\s*([A-Z]{2,4})\s*$/);
   if (m) return m[1];
-  return t.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX';
+  return p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX';
 };
 
-const generarExpediente = (tipo: string, id: string) => {
+const generarExpediente = (proposito: string, id: string) => {
   const year = new Date().getFullYear();
   const short = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `INM-${sufijoTipo(tipo)}-${year}-${short}`;
+  return `INM-${sufijoProposito(proposito)}-${year}-${short}`;
 };
 
 // yyyy-mm-dd → aa/mm/dd
@@ -37,16 +37,15 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
   const set = <K extends keyof typeof i>(k: K, v: (typeof i)[K]) =>
     patchAvaluo(avaluo.id, (a) => ({ ...a, info: { ...a.info, [k]: v } }));
 
-  // Auto-generar número de expediente cuando esté vacío o cuando cambie el tipo de inmueble.
+  // Auto-generar número de expediente al elegir/cambiar el propósito del avalúo.
   useEffect(() => {
-    if (!i.tipoInmueble) return;
-    const auto = generarExpediente(i.tipoInmueble, avaluo.id);
-    // Solo auto-rellenar si está vacío o si sigue el patrón generado (para reaccionar al cambio de tipo)
-    if (!i.numeroExpediente || /^INM-[A-Z]{1,4}-\d{4}-[A-Z0-9]{4}$/.test(i.numeroExpediente)) {
+    if (!i.proposito) return;
+    const auto = generarExpediente(i.proposito, avaluo.id);
+    if (!i.numeroExpediente || /^INM-[A-Z]{2,4}-\d{4}-[A-Z0-9]{4}$/.test(i.numeroExpediente)) {
       if (i.numeroExpediente !== auto) set('numeroExpediente', auto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i.tipoInmueble]);
+  }, [i.proposito]);
 
   // Prefill solicitante / cliente desde el registro si están vacíos
   useEffect(() => {
@@ -95,7 +94,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => set('numeroExpediente', generarExpediente(i.tipoInmueble, avaluo.id))}
+                onClick={() => set('numeroExpediente', generarExpediente(i.proposito, avaluo.id))}
                 title="Regenerar"
               >
                 <RefreshCw className="h-4 w-4" />

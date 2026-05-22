@@ -352,8 +352,21 @@ export const ETAPAS_INDIRECTAS = ['Diseño, supervisión, etc.', 'Administració
 export const ETAPAS_IMPUESTOS = ['Impuesto al Valor Agregado (IVA) 15%', 'Impuesto Municipalidad (IBI) 1%'];
 
 export const TIPOS_INMUEBLE = [
-  'CASA DE HABITACIÓN - IU', 'LOTE DE TERRENO - LU', 'EDIFICIO COMERCIAL - EC',
-  'BODEGA - BD', 'APARTAMENTO - AP', 'LOCAL COMERCIAL - LC',
+  'IUC01 - Residencial · Vivienda Básica / Interés Social',
+  'IUC02 - Residencial · Vivienda Media / Residencial Ampliada',
+  'IUC03 - Residencial · Vivienda de Lujo / Condominio / Diseños Especiales',
+  'IUT01 - Terreno Urbano · 160-300 m²',
+  'IUT02 - Terreno Urbano · 300-700 m²',
+  'IUT03 - Terreno Urbano · 700-1000 m²',
+  'IRT01 - Terreno Semi Urbano · 1000-3000 m²',
+  'IRT02 - Terreno Semi Urbano · 3000-7000 m²',
+  'IUL01 - Terreno Semi Urbano · 7000-10000 m²',
+  'IUL02 - Terreno por manzana · 1-5 mz',
+  'IUE01 - Terreno por manzana · 5-10 mz',
+  'IUE02 - Terreno por manzana · 10-20 mz',
+  'IUE03 - Terreno por manzana · >20 mz',
+  'IUI01 - Locales comerciales · Bodega / Ofibodega Estándar',
+  'IUI02 - Locales comerciales · Centro Logístico / Distribución (CEDIS)',
 ];
 
 export const REGIMENES = ['PRIVADA INDIVIDUAL', 'PROPIEDAD HORIZONTAL', 'COMUNAL'];
