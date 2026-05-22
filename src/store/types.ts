@@ -147,6 +147,17 @@ export interface Terreno {
   valorUnitarioVr2: number;          // calculado, US$/vr²
   // infraestructuras (anidadas)
   infraestructuras: Infraestructura[];
+  // ---- alias / legados (UI prototipo) ----
+  area?: number;
+  valorUnitario?: number;
+  tipoAcceso?: string;
+  serviciosPublicos?: string;
+  zonificacion?: string;
+  usoActual?: string;
+  usoPotencial?: string;
+  entorno?: string;
+  descripcionFisica?: string;
+  observaciones?: string;
 }
 
 // -------------------- INFRAESTRUCTURA --------------------
