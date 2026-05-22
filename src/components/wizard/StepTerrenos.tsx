@@ -170,7 +170,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
   // -------- cálculos de diferencia / tolerancia --------
   const areaM2 = (ar: AreaItem): number => {
     if (ar.origen === 'doc_legal' && ar.docLegalId) {
-      const d = docs.find((x) => x.id === ar.docLegalId);
+      const d = (avaluo.documentoLegal?.documentos ?? []).find((x) => x.id === ar.docLegalId);
       if (d) {
         if (d.areaM2) return d.areaM2;
         if (d.areaVr2) return convertArea(d.areaVr2, 'vr²', 'm²');
