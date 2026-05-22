@@ -194,7 +194,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     return (
       <div className={`text-[11px] px-3 py-1.5 rounded border ${dentro ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
         <span className="font-semibold mr-2">
-          Δ vs {labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
+          Δ vs Homologación ({labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}): {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
         </span>
         — {txt}
       </div>
