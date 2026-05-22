@@ -323,7 +323,8 @@ export const valorComparable = (c: Comparable) => {
   return { factor, ajustado, unitario };
 };
 
-export const promedioUnitarioComparables = (comps: Comparable[]) => {
-  const vs = comps.map((c) => valorComparable(c).unitario).filter((v) => v > 0);
+export const promedioUnitarioComparables = (comps: Comparable[] | undefined) => {
+  const vs = (comps ?? []).map((c) => valorComparable(c).unitario).filter((v) => v > 0);
+
   return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
 };
