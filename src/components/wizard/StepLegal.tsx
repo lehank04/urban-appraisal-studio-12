@@ -143,7 +143,7 @@ export function StepLegal({ avaluo }: { avaluo: Avaluo }) {
                     <NumberField
                       label="Área (vr²)"
                       value={doc.areaVr2}
-                      onChange={(v) => patchDoc(doc.id, { areaVr2: v })}
+                      onChange={(v) => patchDoc(doc.id, { areaVr2: v, areaM2: +(v / 1.418415).toFixed(4) })}
                     />
                   </div>
                 </div>
