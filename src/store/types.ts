@@ -213,6 +213,7 @@ export interface Terreno {
   consideracionesAdicionales: string;
   usoTipo: string;
   estadoOcupacion: string;
+  tieneObrasComplementarias: boolean;
   obrasComplementarias: string;
   // linderos
   linderos: Lindero[];
