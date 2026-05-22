@@ -145,6 +145,24 @@ export interface Entorno {
 
 // -------------------- TERRENO --------------------
 
+export interface AreaItem {
+  id: string;
+  origen: 'escritura' | 'plano' | 'levantamiento' | 'contrato' | 'personalizado';
+  origenLabel?: string;             // editable si origen = 'personalizado'
+  unidad1: string;                  // ej. 'm²'
+  valor1: number;
+  unidad2: string;                  // ej. 'vr²'
+  valor2: number;
+  usarHomologacion: boolean;        // marca el área usada en homologación
+  observaciones?: string;
+}
+
+export interface DescripcionGeneralTerrenos {
+  direccion: string;
+  coordenadas: string;
+  personaEntrevistada: string;
+}
+
 export interface Lindero {
   orientacion: 'NORTE' | 'SUR' | 'ESTE' | 'OESTE';
   levantamientoColindante: string;
