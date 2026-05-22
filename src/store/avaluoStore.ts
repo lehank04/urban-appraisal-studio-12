@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   Avaluo, Cliente, Perito, ID,
-  emptyInfo, emptyFotos, emptyMetodologias,
+  emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno,
 } from './types';
 
 interface State {
