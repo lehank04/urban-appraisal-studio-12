@@ -35,13 +35,13 @@ const slugCliente = (n: string) =>
     .toUpperCase()
     .slice(0, 20) || 'CLIENTE';
 
-// Fecha actual dd/mm/aa como fallback.
+// Fecha actual aammdd como fallback.
 const hoyFecha = () => {
   const d = new Date();
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  return `${dd}/${mm}/${yy}`;
+  return `${yy}${mm}${dd}`;
 };
 
 const generarExpediente = (tipo: string, proposito: string, fechaIso: string, clienteNombre: string) => {
