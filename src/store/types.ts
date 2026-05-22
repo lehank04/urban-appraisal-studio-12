@@ -428,6 +428,7 @@ export interface Avaluo {
   info: InfoGeneral;
   documentoLegal: DocumentoLegal;
   entorno: Entorno;
+  descripcionGeneralTerrenos: DescripcionGeneralTerrenos;
   terrenos: Terreno[];
   metodologias: Metodologias;
   fotos: Fotografias;
