@@ -520,7 +520,7 @@ export const emptyTerreno = (n = 1): Terreno => ({
   diferenciaArea: 0, observacionesArea: '',
   topografia: '', forma: '', servidumbres: '',
   caracteristicasPanoramicas: '', consideracionesAdicionales: '',
-  usoTipo: '', estadoOcupacion: '', obrasComplementarias: '',
+  usoTipo: '', estadoOcupacion: '', tieneObrasComplementarias: false, obrasComplementarias: '',
   linderos: emptyLinderos(),
   valorUnitarioVr2: 0,
   infraestructuras: [],
