@@ -69,11 +69,39 @@ export interface InfoGeneral {
 
 // -------------------- DOCUMENTACIÓN LEGAL --------------------
 
+export type TipoDocumentoLegal =
+  | 'escritura'
+  | 'contrato'
+  | 'plano_topografico'
+  | 'razon_inscripcion'
+  | 'personalizado';
+
+export interface DocumentoLegalItem {
+  id: string;
+  tipo: TipoDocumentoLegal;
+  titulo: string;             // editable; default según tipo
+  nombre: string;             // nombre / número del documento
+  fecha: string;              // yyyy-mm-dd
+  autorizante: string;        // notario / topógrafo / firmante
+  areaM2: number;
+  areaVr2: number;
+  // datos de inscripción (desplegables, opcionales)
+  tieneInscripcion: boolean;
+  numeroRegistral: string;
+  tomo: string;
+  folio: string;
+  asiento: string;
+  numeroCatastral: string;
+  observaciones: string;
+}
+
 export interface DocumentoLegal {
+  documentos: DocumentoLegalItem[];
+  // Campos legacy (compatibilidad con avalúos antiguos)
   numeroEscritura: string;
   fechaEscritura: string;
   notario: string;
-  areaTerrenoEscritura: number;  // m²
+  areaTerrenoEscritura: number;
   areaTerrenoEscrituraVr2: number;
   numeroCatastral: string;
   numeroRegistral: string;
@@ -390,6 +418,7 @@ export const emptyInfo = (): InfoGeneral => ({
 });
 
 export const emptyDocLegal = (): DocumentoLegal => ({
+  documentos: [],
   numeroEscritura: '', fechaEscritura: '', notario: '',
   areaTerrenoEscritura: 0, areaTerrenoEscrituraVr2: 0,
   numeroCatastral: '', numeroRegistral: '', tomo: '', folio: '', asiento: '',
