@@ -1,7 +1,7 @@
 import { useStore } from '@/store/avaluoStore';
 import { Avaluo } from '@/store/types';
 import { TextField, TextArea } from '@/components/forms/Fields';
-import { StringSelect } from '@/components/forms/CatSelect';
+import { StringSelectWithCustom } from '@/components/forms/CatSelect';
 import { Card } from '@/components/ui/card';
 import {
   CAT_CLASIFICACION_ZONA, CAT_INDICE_SATURACION, CAT_DENSIDAD,
@@ -25,10 +25,10 @@ export function StepEntorno({ avaluo }: { avaluo: Avaluo }) {
       <Card className="p-4 space-y-4">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">Caracterización de la zona</div>
         <div className="grid md:grid-cols-2 gap-4">
-          <StringSelect label="Clasificación de zona" value={e.clasificacionZona} onChange={(v) => set('clasificacionZona', v)} options={CAT_CLASIFICACION_ZONA} />
+          <StringSelectWithCustom label="Clasificación de zona" value={e.clasificacionZona} onChange={(v) => set('clasificacionZona', v)} options={CAT_CLASIFICACION_ZONA} />
           <TextField label="Tipo de construcción predominante" value={e.tipoConstruccion} onChange={(v) => set('tipoConstruccion', v)} />
-          <StringSelect label="Índice de saturación" value={e.indiceSaturacion} onChange={(v) => set('indiceSaturacion', v)} options={CAT_INDICE_SATURACION} />
-          <StringSelect label="Densidad poblacional" value={e.densidadPoblacional} onChange={(v) => set('densidadPoblacional', v)} options={CAT_DENSIDAD} />
+          <StringSelectWithCustom label="Índice de saturación" value={e.indiceSaturacion} onChange={(v) => set('indiceSaturacion', v)} options={CAT_INDICE_SATURACION} />
+          <StringSelectWithCustom label="Densidad poblacional" value={e.densidadPoblacional} onChange={(v) => set('densidadPoblacional', v)} options={CAT_DENSIDAD} />
         </div>
       </Card>
 
@@ -50,12 +50,12 @@ export function StepEntorno({ avaluo }: { avaluo: Avaluo }) {
                 <td className="py-2 pr-2 text-sm">{label}</td>
                 <td className="py-2 pr-2">
                   {opts
-                    ? <StringSelect label="" value={(e as any)[kz as string]} onChange={(v) => set(kz as any, v as any)} options={opts as string[]} />
+                    ? <StringSelectWithCustom label="" value={(e as any)[kz as string]} onChange={(v) => set(kz as any, v as any)} options={opts as string[]} />
                     : <TextField label="" value={(e as any)[kz as string]} onChange={(v) => set(kz as any, v as any)} />}
                 </td>
                 <td className="py-2">
                   {opts
-                    ? <StringSelect label="" value={(e as any)[ki as string]} onChange={(v) => set(ki as any, v as any)} options={opts as string[]} />
+                    ? <StringSelectWithCustom label="" value={(e as any)[ki as string]} onChange={(v) => set(ki as any, v as any)} options={opts as string[]} />
                     : <TextField label="" value={(e as any)[ki as string]} onChange={(v) => set(ki as any, v as any)} />}
                 </td>
               </tr>
