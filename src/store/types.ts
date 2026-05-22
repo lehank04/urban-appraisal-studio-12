@@ -203,6 +203,14 @@ export interface Infraestructura {
   unidadObraExterior?: string;
   cantidadObraExterior?: number;
   descripcionObraExterior?: string;
+  // ---- alias / legados (UI prototipo) ----
+  unidadMedida?: string;
+  area?: number;
+  costoUnitario?: number;
+  estadoConservacion?: string;
+  vidaUtil?: number;
+  edad?: number;
+  descripcion?: string;
 }
 
 // -------------------- ENFOQUE DE MERCADO (homologación) --------------------
