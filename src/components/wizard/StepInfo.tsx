@@ -63,7 +63,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
     if (!i.tipoInmueble || !i.proposito) return;
     const auto = generarExpediente(i.tipoInmueble, i.proposito, i.fechaInspeccion, i.clienteNombre || cliente?.nombre || '');
     // Auto-rellenar si está vacío o sigue el patrón generado (TIPO-PROP-AA/MM/DD-CLIENTE)
-    if (!i.numeroExpediente || /^[A-Z]{2,5}\d{0,3}-[A-Z]{2,4}-\d{2}\/\d{2}\/\d{2}-[A-Z0-9]+$/.test(i.numeroExpediente)) {
+    if (!i.numeroExpediente || /^[A-Z]{2,5}\d{0,3}-[A-Z]{2,4}-\d{6}-[A-Z0-9]+$/.test(i.numeroExpediente)) {
       if (i.numeroExpediente !== auto) set('numeroExpediente', auto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
