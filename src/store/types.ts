@@ -163,15 +163,27 @@ export interface DescripcionGeneralTerrenos {
   personaEntrevistada: string;
 }
 
+export type LinderoFuente = 'escritura' | 'plano' | 'levantamiento' | 'personalizado';
+
+export interface LinderoMedida {
+  id: string;
+  fuente: LinderoFuente;
+  fuenteLabel?: string;        // editable cuando fuente='personalizado'
+  colindante: string;
+  medida: number;              // metros lineales
+}
+
 export interface Lindero {
   orientacion: 'NORTE' | 'SUR' | 'ESTE' | 'OESTE';
+  medidas: LinderoMedida[];
+  delimitanteFisico: string;
+  // ---- legacy ----
   levantamientoColindante: string;
   levantamientoMedida: number;
   escrituraColindante: string;
   escrituraMedida: number;
   planoColindante: string;
   planoMedida: number;
-  delimitanteFisico: string;
 }
 
 export interface Terreno {
@@ -466,11 +478,17 @@ export const emptyEntorno = (): Entorno => ({
   equipamientoUrbano: [], distancias: '',
 });
 
+export const emptyLinderoMedida = (fuente: LinderoFuente = 'levantamiento'): LinderoMedida => ({
+  id: crypto.randomUUID(), fuente, fuenteLabel: '', colindante: '', medida: 0,
+});
+
 export const emptyLinderos = (): Lindero[] => (['NORTE','SUR','ESTE','OESTE'] as const).map((o) => ({
-  orientacion: o, levantamientoColindante: '', levantamientoMedida: 0,
+  orientacion: o,
+  medidas: [emptyLinderoMedida('levantamiento')],
+  delimitanteFisico: '',
+  levantamientoColindante: '', levantamientoMedida: 0,
   escrituraColindante: '', escrituraMedida: 0,
   planoColindante: '', planoMedida: 0,
-  delimitanteFisico: '',
 }));
 
 export const emptyDescripcionGeneralTerrenos = (): DescripcionGeneralTerrenos => ({
