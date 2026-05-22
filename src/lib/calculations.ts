@@ -20,6 +20,8 @@ import {
   TABLA_EQUIPAMIENTO, TABLA_TOPOGRAFIA, TABLA_POSICION,
   COEF_AMBIENTES, rangoPorDias, factorQ, findOpcion,
   FACTOR_CONVERSION_M2_VR2,
+  ETAPAS_DIRECTOS, ETAPAS_INDIRECTOS, RATIO_INDIRECTOS, RATIO_IVA, RATIO_IBI,
+  EtapaPonderacion,
 } from './catalogos';
 
 // -------------------- FORMATEO --------------------
