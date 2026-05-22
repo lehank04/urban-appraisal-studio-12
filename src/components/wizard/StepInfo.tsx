@@ -76,12 +76,14 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cliente?.id]);
 
-  // Prefill valuador desde el perito firmante
+  // Sincronizar SIEMPRE valuador y NIPEV desde el perito firmante (no editable aquí).
   useEffect(() => {
-    if (perito && !i.valuadorNombre) set('valuadorNombre', perito.nombre);
-    if (perito && !i.valuadorNipev) set('valuadorNipev', perito.registroSIBOIF || perito.registro || '');
+    if (!perito) return;
+    const nipev = perito.registroSIBOIF || perito.registro || '';
+    if (i.valuadorNombre !== perito.nombre) set('valuadorNombre', perito.nombre);
+    if (i.valuadorNipev !== nipev) set('valuadorNipev', nipev);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perito?.id]);
+  }, [perito?.id, perito?.nombre, perito?.registroSIBOIF, perito?.registro]);
 
   return (
     <div className="space-y-6 max-w-5xl">
