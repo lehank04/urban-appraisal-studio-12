@@ -3,23 +3,35 @@ import { Avaluo, emptyTerreno, emptyAreaItem, emptyLinderoMedida, Terreno, Linde
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { TextField, TextArea, Field } from '@/components/forms/Fields';
-import { StringSelectWithCustom } from '@/components/forms/CatSelect';
+import { TextField, TextArea } from '@/components/forms/Fields';
+import { StringSelectWithCustom, MultiSelectWithCustom } from '@/components/forms/CatSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from 'lucide-react';
 import { fmtNum } from '@/lib/calculations';
 import {
-  FORMAS_TERRENO, UNIDADES_AREA, ORIGENES_AREA,
+  FORMAS_TERRENO, UNIDADES_AREA,
   convertArea, toleranciaArea, M2_PER_UNIT,
+  CAT_TOPOGRAFIA, CAT_FORMA_TERRENO, CAT_PANORAMICAS,
+  CAT_USO_LOTE, CAT_ESTADO_OCUPACION_LOTE,
 } from '@/lib/catalogos';
 import { useEffect } from 'react';
 
-const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA'];
+const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA', ...CAT_TOPOGRAFIA];
+const FORMA_OPTS = [...FORMAS_TERRENO, ...CAT_FORMA_TERRENO];
 
-const labelOrigen = (a: AreaItem) =>
-  a.origen === 'personalizado' ? (a.origenLabel || 'PERSONALIZADO') : a.origen.toUpperCase();
+const labelArea = (a: AreaItem, docs: { id: string; titulo?: string; nombre?: string; tipo?: string }[]) => {
+  if (a.origen === 'doc_legal' && a.docLegalId) {
+    const d = docs.find((x) => x.id === a.docLegalId);
+    return (d?.titulo || d?.nombre || d?.tipo || 'DOC. LEGAL').toUpperCase();
+  }
+  if (a.origen === 'nueva' || a.origen === 'personalizado') return (a.origenLabel || 'NUEVA ÁREA').toUpperCase();
+  return (a.origenLabel || a.origen).toUpperCase();
+};
+
 
 export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
   const { patchAvaluo } = useStore();
@@ -131,7 +143,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     patchAvaluo(avaluo.id, (a) => ({
       ...a,
       terrenos: a.terrenos.map((t) => t.id !== terrenoId ? t : {
-        ...t, areas: [...t.areas, emptyAreaItem('escritura')],
+        ...t, areas: [...t.areas, emptyAreaItem('nueva')],
       }),
     }));
   };
@@ -173,7 +185,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     return (
       <div className={`text-[11px] px-3 py-1.5 rounded border ${dentro ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
         <span className="font-semibold mr-2">
-          Δ vs {labelOrigen(lev)}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
+          Δ vs {labelArea(lev, avaluo.documentoLegal?.documentos ?? [])}: {fmtNum(diff, 2)} m² ({(diffPct * 100).toFixed(2)}%)
         </span>
         — {txt}
       </div>
@@ -228,7 +240,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                   <div className="font-medium">{t.titulo}</div>
                   <div className="text-xs text-muted-foreground">
                     {homArea
-                      ? `Homologación: ${labelOrigen(homArea)} · ${fmtNum(homArea.valor1)} ${homArea.unidad1} · ${fmtNum(homArea.valor2)} ${homArea.unidad2}`
+                      ? `Homologación: ${labelArea(homArea, avaluo.documentoLegal?.documentos ?? [])} · ${fmtNum(homArea.valor1)} ${homArea.unidad1} · ${fmtNum(homArea.valor2)} ${homArea.unidad2}`
                       : 'Sin área de homologación seleccionada'}
                   </div>
                 </div>
@@ -239,74 +251,171 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-4 space-y-5">
               {/* Datos del terreno */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div>
                 <TextField label="Título del terreno" value={t.titulo} onChange={(v) => updateTerreno(t.id, { titulo: v })} />
-                <TextField label="Estado de ocupación" value={t.estadoOcupacion} onChange={(v) => updateTerreno(t.id, { estadoOcupacion: v })} />
               </div>
 
               {/* TABLA COMPARATIVA DE ÁREAS */}
+              {(() => {
+                const docs = (avaluo.documentoLegal?.documentos ?? []).filter((d) => d.areaM2 || d.areaVr2);
+                return (
               <Card className="p-3 bg-muted/20">
                 <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">Tabla comparativa de áreas</div>
-                  <div className="flex items-center gap-2">
-                    {(avaluo.documentoLegal?.documentos ?? []).filter((d) => d.areaM2 || d.areaVr2).length > 0 && (
-                      <Select value="" onValueChange={(docId) => {
-                        const doc = avaluo.documentoLegal.documentos.find((d) => d.id === docId);
-                        if (!doc) return;
-                        const origenMap: Record<string, AreaItem['origen']> = {
-                          escritura: 'escritura', contrato: 'contrato',
-                          plano_topografico: 'plano', razon_inscripcion: 'escritura',
-                          personalizado: 'personalizado',
-                        };
-                        const nueva: AreaItem = {
-                          ...emptyAreaItem(origenMap[doc.tipo] ?? 'personalizado'),
-                          origenLabel: doc.tipo === 'personalizado' ? (doc.titulo || 'DOCUMENTO LEGAL') : '',
-                          valor1: doc.areaM2 || 0,
-                          valor2: doc.areaVr2 || (doc.areaM2 ? +convertArea(doc.areaM2, 'm²', 'vr²').toFixed(4) : 0),
-                          observaciones: `Importado de: ${doc.titulo || doc.nombre || doc.tipo}`,
-                        };
-                        patchAvaluo(avaluo.id, (a) => ({
-                          ...a,
-                          terrenos: a.terrenos.map((tr) => tr.id !== t.id ? tr : { ...tr, areas: [...tr.areas, nueva] }),
-                        }));
-                      }}>
-                        <SelectTrigger className="h-8 text-xs w-auto min-w-[14rem]">
-                          <SelectValue placeholder="Importar de doc. legal…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {avaluo.documentoLegal.documentos
-                            .filter((d) => d.areaM2 || d.areaVr2)
-                            .map((d) => (
-                              <SelectItem key={d.id} value={d.id}>
-                                {(d.titulo || d.nombre || d.tipo).toUpperCase()} — {fmtNum(d.areaM2)} m²
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => addArea(t.id)}>
-                      <Plus className="h-3 w-3 mr-1" />Añadir área
-                    </Button>
-                  </div>
+                  <Button size="sm" variant="outline" onClick={() => addArea(t.id)}>
+                    <Plus className="h-3 w-3 mr-1" />Añadir área
+                  </Button>
                 </div>
-...
+
+                {/* Encabezado de columnas */}
+                <div className="grid grid-cols-12 gap-2 text-[10px] uppercase tracking-wider text-muted-foreground px-1 mb-1">
+                  <div className="col-span-3">Origen</div>
+                  <div className="col-span-2">Valor 1</div>
+                  <div className="col-span-2">Unidad 1</div>
+                  <div className="col-span-2">Valor 2 (conv.)</div>
+                  <div className="col-span-2">Unidad 2</div>
+                  <div className="col-span-1 text-center">Hom.</div>
+                </div>
+
+                <div className="space-y-3">
+                  {areas.map((ar) => {
+                    const isDoc = ar.origen === 'doc_legal';
+                    const isNueva = ar.origen === 'nueva' || ar.origen === 'personalizado';
+                    const selectValue = isDoc && ar.docLegalId ? ar.docLegalId : (isNueva ? '__nueva__' : '__nueva__');
+                    return (
+                    <div key={ar.id} className="border border-border rounded p-2 bg-background space-y-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        {/* Origen */}
+                        <div className="col-span-3 space-y-1">
+                          <Select
+                            value={selectValue}
+                            onValueChange={(v) => {
+                              if (v === '__nueva__') {
+                                patchArea(t.id, ar.id, { origen: 'nueva', docLegalId: undefined, origenLabel: ar.origenLabel || '' });
+                              } else {
+                                const doc = docs.find((d) => d.id === v);
+                                if (!doc) return;
+                                const m2 = doc.areaM2 || (doc.areaVr2 ? +convertArea(doc.areaVr2, 'vr²', 'm²').toFixed(4) : 0);
+                                const vr2 = doc.areaVr2 || (doc.areaM2 ? +convertArea(doc.areaM2, 'm²', 'vr²').toFixed(4) : 0);
+                                patchArea(t.id, ar.id, {
+                                  origen: 'doc_legal',
+                                  docLegalId: doc.id,
+                                  origenLabel: '',
+                                  unidad1: 'm²', valor1: m2,
+                                  unidad2: 'vr²', valor2: vr2,
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Origen…" /></SelectTrigger>
+                            <SelectContent>
+                              {docs.length > 0 && (
+                                <>
+                                  <div className="px-2 py-1 text-[10px] uppercase text-muted-foreground">Documentos del Cap. II</div>
+                                  {docs.map((d) => (
+                                    <SelectItem key={d.id} value={d.id}>
+                                      {(d.titulo || d.nombre || d.tipo).toUpperCase()}
+                                    </SelectItem>
+                                  ))}
+                                </>
+                              )}
+                              <SelectItem value="__nueva__">✎ Nueva área (manual)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {(ar.origen === 'nueva' || ar.origen === 'personalizado') && (
+                            <Input className="h-7 text-xs" placeholder="Nombre del área"
+                              value={ar.origenLabel || ''}
+                              onChange={(e) => patchArea(t.id, ar.id, { origenLabel: e.target.value })} />
+                          )}
+                        </div>
+
+                        {/* Valor 1 */}
+                        <div className="col-span-2">
+                          <Input type="number" className="h-8 text-xs" value={ar.valor1 || ''}
+                            onChange={(e) => {
+                              const v1 = Number(e.target.value) || 0;
+                              const v2 = +convertArea(v1, ar.unidad1, ar.unidad2).toFixed(4);
+                              patchArea(t.id, ar.id, { valor1: v1, valor2: v2 });
+                            }} />
+                        </div>
+                        {/* Unidad 1 */}
+                        <div className="col-span-2">
+                          <Select value={ar.unidad1}
+                            onValueChange={(u1) => {
+                              const v2 = +convertArea(ar.valor1, u1, ar.unidad2).toFixed(4);
+                              patchArea(t.id, ar.id, { unidad1: u1, valor2: v2 });
+                            }}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {UNIDADES_AREA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {/* Valor 2 (auto, editable) */}
+                        <div className="col-span-2">
+                          <Input type="number" className="h-8 text-xs" value={ar.valor2 || ''}
+                            onChange={(e) => {
+                              const v2 = Number(e.target.value) || 0;
+                              const v1 = +convertArea(v2, ar.unidad2, ar.unidad1).toFixed(4);
+                              patchArea(t.id, ar.id, { valor2: v2, valor1: v1 });
+                            }} />
+                        </div>
+                        {/* Unidad 2 */}
+                        <div className="col-span-2">
+                          <Select value={ar.unidad2}
+                            onValueChange={(u2) => {
+                              const v2 = +convertArea(ar.valor1, ar.unidad1, u2).toFixed(4);
+                              patchArea(t.id, ar.id, { unidad2: u2, valor2: v2 });
+                            }}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {UNIDADES_AREA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {/* Homologación + eliminar */}
+                        <div className="col-span-1 flex items-center justify-center gap-1">
+                          <Checkbox checked={ar.usarHomologacion}
+                            onCheckedChange={() => setHomologacion(t.id, ar.id)}
+                            title="Usar para homologación y reposición" />
+                          <button onClick={() => removeArea(t.id, ar.id)} className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Conversión informativa */}
+                      <div className="text-[11px] text-muted-foreground px-1">
+                        {fmtNum(ar.valor1, 4)} {ar.unidad1} = {fmtNum(convertArea(ar.valor1, ar.unidad1, 'm²'), 4)} m² · {fmtNum(convertArea(ar.valor1, ar.unidad1, 'vr²'), 4)} vr²
+                        {ar.usarHomologacion && <span className="ml-2 font-semibold text-primary">★ HOMOLOGACIÓN / REPOSICIÓN</span>}
+                      </div>
+
+                      {/* Comparativo vs base de homologación */}
+                      {renderToleranciaRow(lev, ar)}
+
+                      <Input className="h-7 text-xs" placeholder="Observaciones (opcional)"
+                        value={ar.observaciones || ''}
+                        onChange={(e) => patchArea(t.id, ar.id, { observaciones: e.target.value })} />
+                    </div>
+                    );
+                  })}
+                </div>
+
                 <div className="mt-3">
                   <TextField label="Ubicación exacta" value={t.ubicacionExacta} onChange={(v) => updateTerreno(t.id, { ubicacionExacta: v })} />
                 </div>
                 <div className="mt-2">
-                  <TextArea label="Observaciones de área" value={t.observacionesArea} onChange={(v) => updateTerreno(t.id, { observacionesArea: v })} rows={2} />
+                  <TextArea label="Observaciones generales de áreas" value={t.observacionesArea} onChange={(v) => updateTerreno(t.id, { observacionesArea: v })} rows={2} />
                 </div>
               </Card>
+                );
+              })()}
 
-              {/* Uso actual del lote (después de áreas) */}
-              <div>
-                <TextField label="Uso actual del terreno" value={t.usoTipo} onChange={(v) => updateTerreno(t.id, { usoTipo: v })} />
-              </div>
 
               {/* Morfología — sin obras complementarias */}
               <div className="grid md:grid-cols-2 gap-3">
                 <StringSelectWithCustom label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
-                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
+                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMA_OPTS} />
               </div>
 
               {/* Linderos con medidas múltiples por fuente */}
@@ -368,12 +477,54 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </Card>
 
+              {/* Características panorámicas (multi-check con personalizables) */}
+              <MultiSelectWithCustom
+                label="Características panorámicas"
+                values={(t.caracteristicasPanoramicas || '').split('|').filter(Boolean)}
+                onChange={(v) => updateTerreno(t.id, { caracteristicasPanoramicas: v.join('|') })}
+                options={CAT_PANORAMICAS}
+                placeholder="Añadir característica personalizada y presionar Enter"
+              />
+
               {/* Notas */}
-              <div className="grid md:grid-cols-3 gap-3">
+              <div className="grid md:grid-cols-2 gap-3">
                 <TextArea label="Servidumbres" value={t.servidumbres} onChange={(v) => updateTerreno(t.id, { servidumbres: v })} rows={2} />
-                <TextArea label="Características panorámicas" value={t.caracteristicasPanoramicas} onChange={(v) => updateTerreno(t.id, { caracteristicasPanoramicas: v })} rows={2} />
                 <TextArea label="Consideraciones adicionales" value={t.consideracionesAdicionales} onChange={(v) => updateTerreno(t.id, { consideracionesAdicionales: v })} rows={2} />
               </div>
+
+              {/* USO ACTUAL / ESTADO DE OCUPACIÓN / OBRAS COMPLEMENTARIAS (al final) */}
+              <Card className="p-3 bg-muted/20 space-y-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Uso actual y estado de ocupación</div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <StringSelectWithCustom label="Tipo de uso" value={t.usoTipo}
+                    onChange={(v) => updateTerreno(t.id, { usoTipo: v })} options={CAT_USO_LOTE} />
+                  <StringSelectWithCustom label="Estado de ocupación" value={t.estadoOcupacion}
+                    onChange={(v) => updateTerreno(t.id, { estadoOcupacion: v })} options={CAT_ESTADO_OCUPACION_LOTE} />
+                </div>
+                <div className="border border-border rounded p-3 bg-background space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">¿Tiene obras complementarias?</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{t.tieneObrasComplementarias ? 'Sí' : 'No'}</span>
+                      <Switch checked={!!t.tieneObrasComplementarias}
+                        onCheckedChange={(v) => updateTerreno(t.id, { tieneObrasComplementarias: v })} />
+                    </div>
+                  </div>
+                  {t.tieneObrasComplementarias && (
+                    <>
+                      <TextArea
+                        label="Obras complementarias (referencia)"
+                        value={t.obrasComplementarias}
+                        onChange={(v) => updateTerreno(t.id, { obrasComplementarias: v })}
+                        rows={2}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        El detalle constructivo de estas obras se describe en el <strong>Capítulo V — Descripción de Infraestructuras</strong>.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </Card>
             </AccordionContent>
           </AccordionItem>
           );
