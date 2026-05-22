@@ -296,6 +296,32 @@ export interface DeduccionesRealizacion {
 
 // -------------------- METODOLOGÍAS --------------------
 
+export interface FactorComparable {
+  key: string;
+  label: string;
+  value: number;
+  active: boolean;
+}
+
+export interface Comparable {
+  id: ID;
+  nombre: string;
+  ubicacion: string;
+  area: number;
+  precio: number;
+  fotos: string[];
+  factores: FactorComparable[];
+}
+
+export const defaultFactores = (): FactorComparable[] => [
+  { key: 'ubicacion',  label: 'Ubicación',  value: 1.00, active: true },
+  { key: 'area',       label: 'Área',       value: 1.00, active: true },
+  { key: 'topografia', label: 'Topografía', value: 1.00, active: true },
+  { key: 'acceso',     label: 'Acceso',     value: 1.00, active: true },
+  { key: 'servicios',  label: 'Servicios',  value: 1.00, active: true },
+  { key: 'uso',        label: 'Uso',        value: 1.00, active: true },
+];
+
 export interface Metodologias {
   enfoqueMercado: boolean;
   enfoqueCosto: boolean;
@@ -303,15 +329,20 @@ export interface Metodologias {
   // sujetos
   sujetoInmueble: FichaSujetoInmueble;
   sujetoTerreno: FichaSujetoTerreno;
-  // comparables
+  // comparables (INMOVAL)
   comparablesInmueble: ComparableInmueble[];
   comparablesTerreno: ComparableTerreno[];
   // valor mercado / realización
   deducciones: DeduccionesRealizacion;
-  // conciliación: enfoque dominante
   enfoqueConclusion: 'mercado' | 'costo';
   notasMercadoInmueble: string;
   notasMercadoTerreno: string;
+  // ---- alias / legados (UI prototipo) ----
+  comparativo?: boolean;
+  reposicion?: boolean;
+  mercadoTerreno?: boolean;
+  mercadoMejoras?: boolean;
+  comparables?: Comparable[];
 }
 
 // -------------------- FOTOS --------------------
@@ -319,7 +350,7 @@ export interface Metodologias {
 export type FotoCategoria =
   | 'fachada' | 'interior' | 'lindero_norte' | 'lindero_sur'
   | 'lindero_este' | 'lindero_oeste' | 'infraestructuras'
-  | 'comparables_inmueble' | 'comparables_terreno'
+  | 'comparables_inmueble' | 'comparables_terreno' | 'comparables'
   | 'planos' | 'macrolocalizacion' | 'microlocalizacion' | 'legales';
 
 export interface Foto { id: ID; src: string; descripcion: string; }
