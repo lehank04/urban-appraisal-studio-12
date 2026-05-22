@@ -239,9 +239,8 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-4 space-y-5">
               {/* Datos del terreno */}
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <TextField label="Título del terreno" value={t.titulo} onChange={(v) => updateTerreno(t.id, { titulo: v })} />
-                <TextField label="Uso / Tipo" value={t.usoTipo} onChange={(v) => updateTerreno(t.id, { usoTipo: v })} />
                 <TextField label="Estado de ocupación" value={t.estadoOcupacion} onChange={(v) => updateTerreno(t.id, { estadoOcupacion: v })} />
               </div>
 
@@ -299,47 +298,78 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </Card>
 
-              {/* Morfología */}
-              <div className="grid md:grid-cols-3 gap-3">
-                <StringSelectWithCustom label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
-                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
-                <TextField label="Obras complementarias" value={t.obrasComplementarias} onChange={(v) => updateTerreno(t.id, { obrasComplementarias: v })} />
+              {/* Uso actual del lote (después de áreas) */}
+              <div>
+                <TextField label="Uso actual del terreno" value={t.usoTipo} onChange={(v) => updateTerreno(t.id, { usoTipo: v })} />
               </div>
 
-              {/* Linderos */}
+              {/* Morfología — sin obras complementarias */}
+              <div className="grid md:grid-cols-2 gap-3">
+                <StringSelectWithCustom label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
+                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
+              </div>
+
+              {/* Linderos con medidas múltiples por fuente */}
               <Card className="p-3 bg-muted/20">
                 <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Linderos (Norte / Sur / Este / Oeste)</div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {t.linderos.map((l, idx) => (
-                    <div key={l.orientacion} className="grid grid-cols-12 gap-2 items-start border border-border rounded p-2">
-                      <div className="col-span-1 text-xs font-semibold pt-2">{l.orientacion}</div>
-                      <div className="col-span-3">
-                        <Input placeholder="Colindante (levantamiento)" value={l.levantamientoColindante}
-                          onChange={(e) => updateLindero(t.id, idx, { levantamientoColindante: e.target.value })} className="h-8 text-xs" />
+                    <div key={l.orientacion} className="border border-border rounded p-3 bg-background space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-semibold">{l.orientacion}</div>
+                        <Button size="sm" variant="outline" onClick={() => addLinderoMedida(t.id, idx)}>
+                          <Plus className="h-3 w-3 mr-1" />Añadir medida
+                        </Button>
                       </div>
-                      <div className="col-span-2">
-                        <Input type="number" placeholder="Medida lev." value={l.levantamientoMedida || ''}
-                          onChange={(e) => updateLindero(t.id, idx, { levantamientoMedida: Number(e.target.value) || 0 })} className="h-8 text-xs" />
+                      <div className="grid grid-cols-12 gap-2 text-[10px] uppercase tracking-wider text-muted-foreground px-1">
+                        <div className="col-span-3">Fuente</div>
+                        <div className="col-span-5">Colindante</div>
+                        <div className="col-span-3">Medida (m)</div>
+                        <div className="col-span-1"></div>
                       </div>
-                      <div className="col-span-3">
-                        <Input placeholder="Colindante (escritura)" value={l.escrituraColindante}
-                          onChange={(e) => updateLindero(t.id, idx, { escrituraColindante: e.target.value })} className="h-8 text-xs" />
+                      <div className="space-y-1.5">
+                        {(l.medidas ?? []).map((m) => (
+                          <div key={m.id} className="grid grid-cols-12 gap-2 items-center">
+                            <div className="col-span-3 space-y-1">
+                              <Select value={m.fuente} onValueChange={(v) => patchLinderoMedida(t.id, idx, m.id, { fuente: v as LinderoFuente })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="levantamiento">LEVANTAMIENTO</SelectItem>
+                                  <SelectItem value="escritura">ESCRITURA</SelectItem>
+                                  <SelectItem value="plano">PLANO</SelectItem>
+                                  <SelectItem value="personalizado">PERSONALIZADO</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {m.fuente === 'personalizado' && (
+                                <Input className="h-7 text-xs" placeholder="Etiqueta" value={m.fuenteLabel || ''}
+                                  onChange={(e) => patchLinderoMedida(t.id, idx, m.id, { fuenteLabel: e.target.value })} />
+                              )}
+                            </div>
+                            <div className="col-span-5">
+                              <Input className="h-8 text-xs" placeholder="Colindante" value={m.colindante}
+                                onChange={(e) => patchLinderoMedida(t.id, idx, m.id, { colindante: e.target.value })} />
+                            </div>
+                            <div className="col-span-3">
+                              <Input type="number" className="h-8 text-xs" value={m.medida || ''}
+                                onChange={(e) => patchLinderoMedida(t.id, idx, m.id, { medida: Number(e.target.value) || 0 })} />
+                            </div>
+                            <div className="col-span-1 flex justify-center">
+                              <button onClick={() => removeLinderoMedida(t.id, idx, m.id)} className="text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="col-span-2">
-                        <Input type="number" placeholder="Medida esc." value={l.escrituraMedida || ''}
-                          onChange={(e) => updateLindero(t.id, idx, { escrituraMedida: Number(e.target.value) || 0 })} className="h-8 text-xs" />
-                      </div>
-                      <div className="col-span-12">
-                        <Input placeholder="Delimitante físico (muro, cerco, calle...)" value={l.delimitanteFisico}
-                          onChange={(e) => updateLindero(t.id, idx, { delimitanteFisico: e.target.value })} className="h-8 text-xs" />
-                      </div>
+                      <Input placeholder="Delimitante físico (muro, cerco, calle...)" value={l.delimitanteFisico}
+                        onChange={(e) => updateLindero(t.id, idx, { delimitanteFisico: e.target.value })} className="h-8 text-xs" />
                     </div>
                   ))}
                 </div>
               </Card>
 
               {/* Notas */}
-              <div className="grid md:grid-cols-2 gap-3">
+              <div className="grid md:grid-cols-3 gap-3">
                 <TextArea label="Servidumbres" value={t.servidumbres} onChange={(v) => updateTerreno(t.id, { servidumbres: v })} rows={2} />
                 <TextArea label="Características panorámicas" value={t.caracteristicasPanoramicas} onChange={(v) => updateTerreno(t.id, { caracteristicasPanoramicas: v })} rows={2} />
                 <TextArea label="Consideraciones adicionales" value={t.consideracionesAdicionales} onChange={(v) => updateTerreno(t.id, { consideracionesAdicionales: v })} rows={2} />
