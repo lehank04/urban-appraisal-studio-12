@@ -277,6 +277,9 @@ export interface Infraestructura {
   unidadObraExterior?: string;
   cantidadObraExterior?: number;
   descripcionObraExterior?: string;
+  // memoria de reposición (nuevo modelo)
+  costoReposicionM2?: number;     // US$/m² VRN
+  depAjustadaPct?: number;        // % depreciación ajustado (override del cálculo Ross-Heidecke)
   // ---- alias / legados (UI prototipo) ----
   unidadMedida?: string;
   area?: number;

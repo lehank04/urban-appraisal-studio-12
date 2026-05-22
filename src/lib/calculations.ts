@@ -20,6 +20,8 @@ import {
   TABLA_EQUIPAMIENTO, TABLA_TOPOGRAFIA, TABLA_POSICION,
   COEF_AMBIENTES, rangoPorDias, factorQ, findOpcion,
   FACTOR_CONVERSION_M2_VR2,
+  ETAPAS_DIRECTOS, ETAPAS_INDIRECTOS, RATIO_INDIRECTOS, RATIO_IVA, RATIO_IBI,
+  EtapaPonderacion,
 } from './catalogos';
 
 // -------------------- FORMATEO --------------------
@@ -219,7 +221,68 @@ export const rossHeidecke = (edad: number, vidaUtil: number, fe: number) => {
   return Math.max(0, Math.min(1, D));
 };
 
-// -------------------- COSTOS DE INFRAESTRUCTURA --------------------
+/** % de depreciación ajustado: redondeo HACIA ARRIBA al entero más cercano */
+export const depAjustado = (depPct: number) => Math.min(1, Math.ceil(depPct * 100) / 100);
+
+// -------------------- MEMORIA DE REPOSICIÓN POR ETAPAS --------------------
+
+export interface FilaEtapa {
+  id: string;
+  grupo: 'directos' | 'indirectos' | 'impuestos';
+  nombre: string;
+  descripcion: string;
+  unidad: string;
+  pct: number;       // % de incidencia dentro de su grupo (o sobre directos para indirectos)
+  total: number;     // US$
+}
+
+export interface MemoriaReposicion {
+  filas: FilaEtapa[];
+  totalDirectos: number;
+  totalIndirectos: number;
+  totalImpuestos: number;
+  vrn: number;
+  costoM2: number;
+  area: number;
+}
+
+/**
+ * Dado el costo de reposición por m² (VRN/m²) y el área, distribuye
+ * automáticamente entre etapas usando la ponderación estándar.
+ *   D + I + T = VRN ; I = 0.15 D ; T = (D+I)*(IVA+IBI)
+ *   ⇒ D = VRN / (1 + 0.15 + 1.15*0.16)
+ */
+export const memoriaReposicion = (costoM2: number, area: number): MemoriaReposicion => {
+  const vrn = (costoM2 || 0) * (area || 0);
+  const k = 1 + RATIO_INDIRECTOS + (1 + RATIO_INDIRECTOS) * (RATIO_IVA + RATIO_IBI);
+  const D = vrn / k;
+  const I = D * RATIO_INDIRECTOS;
+  const baseImp = D + I;
+  const iva = baseImp * RATIO_IVA;
+  const ibi = baseImp * RATIO_IBI;
+
+  const filas: FilaEtapa[] = [
+    ...ETAPAS_DIRECTOS.map<FilaEtapa>((e) => ({
+      id: e.id, grupo: 'directos', nombre: e.nombre, descripcion: e.descripcion,
+      unidad: e.unidad, pct: e.pct, total: D * e.pct,
+    })),
+    ...ETAPAS_INDIRECTOS.map<FilaEtapa>((e) => ({
+      id: e.id, grupo: 'indirectos', nombre: e.nombre, descripcion: e.descripcion,
+      unidad: e.unidad, pct: e.pct, total: I * e.pct,
+    })),
+    { id: 'iva', grupo: 'impuestos', nombre: 'IVA (15%)', descripcion: 'Impuesto al Valor Agregado',
+      unidad: 'GLB', pct: RATIO_IVA, total: iva },
+    { id: 'ibi', grupo: 'impuestos', nombre: 'IBI (1%)', descripcion: 'Impuesto Municipal',
+      unidad: 'GLB', pct: RATIO_IBI, total: ibi },
+  ];
+
+  return {
+    filas, totalDirectos: D, totalIndirectos: I, totalImpuestos: iva + ibi,
+    vrn, costoM2, area,
+  };
+};
+
+// -------------------- COSTOS DE INFRAESTRUCTURA (legacy) --------------------
 
 export const totalEtapa = (e: CostoEtapa) => e.cantidad * e.costoUnitario;
 
@@ -228,7 +291,11 @@ export const totalesCostos = (infra: Infraestructura) => {
   const directos = costos.filter((c) => c.grupo === 'directos').reduce((a, c) => a + totalEtapa(c), 0);
   const indirectos = costos.filter((c) => c.grupo === 'indirectos').reduce((a, c) => a + totalEtapa(c), 0);
   const impuestos = costos.filter((c) => c.grupo === 'impuestos').reduce((a, c) => a + totalEtapa(c), 0);
-  const vrn = directos + indirectos + impuestos;
+  const legacyVrn = directos + indirectos + impuestos;
+  // Si la infra usa el nuevo modelo (costoReposicionM2), reemplazamos.
+  const vrn = (infra.costoReposicionM2 ?? 0) > 0
+    ? (infra.costoReposicionM2 as number) * (infra.areaTotalM2 ?? 0)
+    : legacyVrn;
   const costoUnitarioM2 = (infra.areaTotalM2 ?? 0) > 0 ? vrn / (infra.areaTotalM2 as number) : 0;
   return { directos, indirectos, impuestos, vrn, costoUnitarioM2 };
 };
@@ -236,8 +303,11 @@ export const totalesCostos = (infra: Infraestructura) => {
 
 export const valorNetoInfra = (infra: Infraestructura) => {
   const { vrn } = totalesCostos(infra);
-  const dep = rossHeidecke(infra.edadAnios, infra.vidaUtilAnios, infra.estadoFE);
-  return { vrn, depPct: dep, depAcumulada: vrn * dep, vno: vrn * (1 - dep) };
+  const depCalc = rossHeidecke(infra.edadAnios, infra.vidaUtilAnios, infra.estadoFE);
+  const dep = infra.depAjustadaPct !== undefined && infra.depAjustadaPct !== null
+    ? infra.depAjustadaPct
+    : depAjustado(depCalc);
+  return { vrn, depCalc, depPct: dep, depAcumulada: vrn * dep, vno: vrn * (1 - dep) };
 };
 
 // -------------------- CONSOLIDADO POR AVALÚO --------------------
