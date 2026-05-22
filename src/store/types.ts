@@ -180,7 +180,9 @@ export interface Terreno {
   ubicacionExacta: string;
   coordenadas: string;               // lat, lng
   personaEntrevistada: string;
-  // áreas
+  // áreas (nueva tabla comparativa)
+  areas: AreaItem[];
+  // áreas legadas (compat)
   areaEscrituraM2: number;
   areaEscrituraVr2: number;
   areaCatastralM2: number;
