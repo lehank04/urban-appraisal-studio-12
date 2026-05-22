@@ -145,6 +145,24 @@ export interface Entorno {
 
 // -------------------- TERRENO --------------------
 
+export interface AreaItem {
+  id: string;
+  origen: 'escritura' | 'plano' | 'levantamiento' | 'contrato' | 'personalizado';
+  origenLabel?: string;             // editable si origen = 'personalizado'
+  unidad1: string;                  // ej. 'm²'
+  valor1: number;
+  unidad2: string;                  // ej. 'vr²'
+  valor2: number;
+  usarHomologacion: boolean;        // marca el área usada en homologación
+  observaciones?: string;
+}
+
+export interface DescripcionGeneralTerrenos {
+  direccion: string;
+  coordenadas: string;
+  personaEntrevistada: string;
+}
+
 export interface Lindero {
   orientacion: 'NORTE' | 'SUR' | 'ESTE' | 'OESTE';
   levantamientoColindante: string;
@@ -162,7 +180,9 @@ export interface Terreno {
   ubicacionExacta: string;
   coordenadas: string;               // lat, lng
   personaEntrevistada: string;
-  // áreas
+  // áreas (nueva tabla comparativa)
+  areas: AreaItem[];
+  // áreas legadas (compat)
   areaEscrituraM2: number;
   areaEscrituraVr2: number;
   areaCatastralM2: number;
@@ -408,6 +428,7 @@ export interface Avaluo {
   info: InfoGeneral;
   documentoLegal: DocumentoLegal;
   entorno: Entorno;
+  descripcionGeneralTerrenos: DescripcionGeneralTerrenos;
   terrenos: Terreno[];
   metodologias: Metodologias;
   fotos: Fotografias;
@@ -452,9 +473,26 @@ export const emptyLinderos = (): Lindero[] => (['NORTE','SUR','ESTE','OESTE'] as
   delimitanteFisico: '',
 }));
 
+export const emptyDescripcionGeneralTerrenos = (): DescripcionGeneralTerrenos => ({
+  direccion: '', coordenadas: '', personaEntrevistada: '',
+});
+
+export const emptyAreaItem = (origen: AreaItem['origen'] = 'levantamiento'): AreaItem => ({
+  id: crypto.randomUUID(),
+  origen,
+  origenLabel: '',
+  unidad1: 'm²',
+  valor1: 0,
+  unidad2: 'vr²',
+  valor2: 0,
+  usarHomologacion: origen === 'levantamiento',
+  observaciones: '',
+});
+
 export const emptyTerreno = (n = 1): Terreno => ({
   id: crypto.randomUUID(),
   titulo: `Terreno ${n}`, ubicacionExacta: '', coordenadas: '', personaEntrevistada: '',
+  areas: [emptyAreaItem('levantamiento')],
   areaEscrituraM2: 0, areaEscrituraVr2: 0,
   areaCatastralM2: 0, areaCatastralVr2: 0,
   areaLevantamientoM2: 0, areaLevantamientoVr2: 0,

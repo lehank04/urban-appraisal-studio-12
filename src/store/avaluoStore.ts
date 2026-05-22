@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   Avaluo, Cliente, Perito, ID,
-  emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno,
+  emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno, emptyDescripcionGeneralTerrenos,
 } from './types';
 
 interface State {
@@ -71,6 +71,7 @@ export const useStore = create<State>()(
           info: emptyInfo(),
           documentoLegal: emptyDocLegal(),
           entorno: emptyEntorno(),
+          descripcionGeneralTerrenos: emptyDescripcionGeneralTerrenos(),
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),
