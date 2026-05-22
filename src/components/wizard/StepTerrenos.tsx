@@ -1,5 +1,5 @@
 import { useStore } from '@/store/avaluoStore';
-import { Avaluo, emptyTerreno, emptyAreaItem, Terreno, Lindero, AreaItem } from '@/store/types';
+import { Avaluo, emptyTerreno, emptyAreaItem, emptyLinderoMedida, Terreno, Lindero, AreaItem, LinderoMedida, LinderoFuente } from '@/store/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
