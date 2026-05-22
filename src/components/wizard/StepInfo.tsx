@@ -175,7 +175,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fechas</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Fecha de inspección (dd/mm/aa)">
+          <Field label="Fecha de inspección (aammdd)">
             <Input
               type="date"
               value={i.fechaInspeccion}
