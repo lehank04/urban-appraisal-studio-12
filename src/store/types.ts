@@ -418,6 +418,7 @@ export const emptyInfo = (): InfoGeneral => ({
 });
 
 export const emptyDocLegal = (): DocumentoLegal => ({
+  documentos: [],
   numeroEscritura: '', fechaEscritura: '', notario: '',
   areaTerrenoEscritura: 0, areaTerrenoEscrituraVr2: 0,
   numeroCatastral: '', numeroRegistral: '', tomo: '', folio: '', asiento: '',
