@@ -248,6 +248,8 @@ export interface FilaConsolidadoInfra {
   depPct: number;
   depAcumulada: number;
   vno: number;
+  costo: number;
+  depreciado: number;
 }
 
 export const consolidados = (av: Avaluo) => {
