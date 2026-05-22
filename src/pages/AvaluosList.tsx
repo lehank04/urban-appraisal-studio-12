@@ -42,12 +42,13 @@ export default function AvaluosList() {
               const c = consolidados(a);
               return (
                 <tr key={a.id} className="hover:bg-muted/20">
-                  <td className="p-3 mono text-xs">{a.info.codigoExpediente || a.id.slice(0, 8)}</td>
+                  <td className="p-3 mono text-xs">{a.info.numeroExpediente || a.id.slice(0, 8)}</td>
                   <td className="p-3">{a.info.propietario || '—'}</td>
                   <td className="p-3">{cli?.nombre || '—'}</td>
                   <td className="p-3">{per?.nombre || '—'}</td>
                   <td className="p-3"><Badge variant="outline">{a.estado}</Badge></td>
-                  <td className="p-3 text-right font-medium">{fmtMoney(c.total, a.info.moneda)}</td>
+                  <td className="p-3 text-right font-medium">{fmtMoney(c.totalReposicionNeto, a.info.moneda)}</td>
+
                   <td className="p-3 text-right">
                     <div className="flex gap-1 justify-end">
                       <Button size="icon" variant="ghost" asChild><Link to={`/avaluos/${a.id}/preview`}><Eye className="h-4 w-4" /></Link></Button>
