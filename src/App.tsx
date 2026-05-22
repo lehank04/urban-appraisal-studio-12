@@ -3,8 +3,14 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import AppLayout from "./components/layout/AppLayout";
+import Dashboard from "./pages/Dashboard";
+import AvaluosList from "./pages/AvaluosList";
+import AvaluoWizard from "./pages/AvaluoWizard";
+import AvaluoPreview from "./pages/AvaluoPreview";
+import ClientesPage from "./pages/ClientesPage";
+import PeritosPage from "./pages/PeritosPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -15,8 +21,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/avaluos" element={<AvaluosList />} />
+            <Route path="/avaluos/nuevo" element={<AvaluoWizard />} />
+            <Route path="/avaluos/:id" element={<AvaluoWizard />} />
+            <Route path="/clientes" element={<ClientesPage />} />
+            <Route path="/peritos" element={<PeritosPage />} />
+          </Route>
+          <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
