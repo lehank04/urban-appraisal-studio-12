@@ -473,9 +473,26 @@ export const emptyLinderos = (): Lindero[] => (['NORTE','SUR','ESTE','OESTE'] as
   delimitanteFisico: '',
 }));
 
+export const emptyDescripcionGeneralTerrenos = (): DescripcionGeneralTerrenos => ({
+  direccion: '', coordenadas: '', personaEntrevistada: '',
+});
+
+export const emptyAreaItem = (origen: AreaItem['origen'] = 'levantamiento'): AreaItem => ({
+  id: crypto.randomUUID(),
+  origen,
+  origenLabel: '',
+  unidad1: 'm²',
+  valor1: 0,
+  unidad2: 'vr²',
+  valor2: 0,
+  usarHomologacion: origen === 'levantamiento',
+  observaciones: '',
+});
+
 export const emptyTerreno = (n = 1): Terreno => ({
   id: crypto.randomUUID(),
   titulo: `Terreno ${n}`, ubicacionExacta: '', coordenadas: '', personaEntrevistada: '',
+  areas: [emptyAreaItem('levantamiento')],
   areaEscrituraM2: 0, areaEscrituraVr2: 0,
   areaCatastralM2: 0, areaCatastralVr2: 0,
   areaLevantamientoM2: 0, areaLevantamientoVr2: 0,
