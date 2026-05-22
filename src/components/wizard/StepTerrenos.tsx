@@ -280,6 +280,18 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                 <div className="space-y-3">
                   {areas.map((ar) => {
                     const isDoc = ar.origen === 'doc_legal';
+                    const linkedDoc = isDoc && ar.docLegalId ? docs.find((d) => d.id === ar.docLegalId) : undefined;
+
+                    // Si está vinculado a un documento, los valores y unidades se derivan en vivo del doc.
+                    const displayU1 = isDoc ? 'm²' : ar.unidad1;
+                    const displayU2 = isDoc ? 'vr²' : ar.unidad2;
+                    const displayV1 = isDoc
+                      ? (linkedDoc?.areaM2 || (linkedDoc?.areaVr2 ? +convertArea(linkedDoc.areaVr2, 'vr²', 'm²').toFixed(4) : 0))
+                      : ar.valor1;
+                    const displayV2 = isDoc
+                      ? (linkedDoc?.areaVr2 || (linkedDoc?.areaM2 ? +convertArea(linkedDoc.areaM2, 'm²', 'vr²').toFixed(4) : 0))
+                      : ar.valor2;
+
                     const isNueva = ar.origen === 'nueva' || ar.origen === 'personalizado';
                     const selectValue = isDoc && ar.docLegalId ? ar.docLegalId : (isNueva ? '__nueva__' : '__nueva__');
                     return (
@@ -322,16 +334,20 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                               <SelectItem value="__nueva__">✎ Nueva área (manual)</SelectItem>
                             </SelectContent>
                           </Select>
-                          {(ar.origen === 'nueva' || ar.origen === 'personalizado') && (
+                          {isNueva && (
                             <Input className="h-7 text-xs" placeholder="Nombre del área"
                               value={ar.origenLabel || ''}
                               onChange={(e) => patchArea(t.id, ar.id, { origenLabel: e.target.value })} />
+                          )}
+                          {isDoc && (
+                            <div className="text-[10px] text-muted-foreground px-1">Vinculado a Cap. II — automático</div>
                           )}
                         </div>
 
                         {/* Valor 1 */}
                         <div className="col-span-2">
-                          <Input type="number" className="h-8 text-xs" value={ar.valor1 || ''}
+                          <Input type="number" className="h-8 text-xs" value={displayV1 || ''}
+                            disabled={isDoc}
                             onChange={(e) => {
                               const v1 = Number(e.target.value) || 0;
                               const v2 = +convertArea(v1, ar.unidad1, ar.unidad2).toFixed(4);
@@ -340,7 +356,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                         </div>
                         {/* Unidad 1 */}
                         <div className="col-span-2">
-                          <Select value={ar.unidad1}
+                          <Select value={displayU1} disabled={isDoc}
                             onValueChange={(u1) => {
                               const v2 = +convertArea(ar.valor1, u1, ar.unidad2).toFixed(4);
                               patchArea(t.id, ar.id, { unidad1: u1, valor2: v2 });
@@ -351,9 +367,10 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                             </SelectContent>
                           </Select>
                         </div>
-                        {/* Valor 2 (auto, editable) */}
+                        {/* Valor 2 */}
                         <div className="col-span-2">
-                          <Input type="number" className="h-8 text-xs" value={ar.valor2 || ''}
+                          <Input type="number" className="h-8 text-xs" value={displayV2 || ''}
+                            disabled={isDoc}
                             onChange={(e) => {
                               const v2 = Number(e.target.value) || 0;
                               const v1 = +convertArea(v2, ar.unidad2, ar.unidad1).toFixed(4);
@@ -362,7 +379,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                         </div>
                         {/* Unidad 2 */}
                         <div className="col-span-2">
-                          <Select value={ar.unidad2}
+                          <Select value={displayU2} disabled={isDoc}
                             onValueChange={(u2) => {
                               const v2 = +convertArea(ar.valor1, ar.unidad1, u2).toFixed(4);
                               patchArea(t.id, ar.id, { unidad2: u2, valor2: v2 });
@@ -383,6 +400,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
                           </button>
                         </div>
                       </div>
+
 
                       {/* Conversión informativa */}
                       <div className="text-[11px] text-muted-foreground px-1">
