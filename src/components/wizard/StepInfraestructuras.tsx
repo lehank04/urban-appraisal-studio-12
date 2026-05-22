@@ -114,78 +114,96 @@ function InfraEditor({ infra, onChange, onRemove }: {
         </div>
       </AccordionTrigger>
       <AccordionContent className="pt-2 pb-4 space-y-5">
-        {/* Datos generales */}
-        <div className="grid md:grid-cols-4 gap-3">
-          <Field label="Tipo">
-            <Select value={infra.tipo} onValueChange={(v) => onChange({ tipo: v as Infraestructura['tipo'] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{TIPOS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-          <TextField label="Nombre" value={infra.nombre} onChange={(v) => onChange({ nombre: v })} />
-          <NumberField label="Área total (m²)" value={infra.areaTotalM2} onChange={(v) => onChange({ areaTotalM2: v })} />
-          <NumberField label="Niveles" value={infra.niveles} onChange={(v) => onChange({ niveles: v })} />
-        </div>
-        <div className="grid md:grid-cols-4 gap-3">
-          <NumberField label="Año de construcción" value={infra.anioConstruccion} onChange={(v) => onChange({ anioConstruccion: v })} />
-        </div>
-
-
-        {/* Descripciones constructivas */}
-        <Card className="p-3 bg-card">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Descripción constructiva</div>
-            <Button size="sm" variant="outline" onClick={() => setDesc([...infra.descripciones, { elemento: '', descripcion: '' }])}>
-              <Plus className="h-3 w-3 mr-1" />Elemento
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {infra.descripciones.map((d, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                <div className="col-span-3">
-                  <Select value={d.elemento} onValueChange={(v) => setDesc(infra.descripciones.map((x, ix) => ix === i ? { ...x, elemento: v } : x))}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Elemento..." /></SelectTrigger>
-                    <SelectContent>{ELEMENTOS_CONSTRUCTIVOS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <Input className="col-span-8 h-8 text-xs" placeholder="Descripción técnica" value={d.descripcion}
-                  onChange={(e) => setDesc(infra.descripciones.map((x, ix) => ix === i ? { ...x, descripcion: e.target.value } : x))} />
-                <button className="col-span-1 text-muted-foreground hover:text-destructive" onClick={() => setDesc(infra.descripciones.filter((_, ix) => ix !== i))}>
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-            {infra.descripciones.length === 0 && <div className="text-xs text-muted-foreground">Sin descripciones</div>}
-          </div>
-        </Card>
-
-        {/* Ambientes */}
-        <Card className="p-3 bg-card">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Ambientes</div>
-            <Button size="sm" variant="outline" onClick={() => setAmb([...infra.ambientes, { ambiente: '', cantidad: 1 }])}>
-              <Plus className="h-3 w-3 mr-1" />Ambiente
-            </Button>
-          </div>
-          <div className="grid md:grid-cols-2 gap-2">
-            {infra.ambientes.map((a, i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <Select value={a.ambiente} onValueChange={(v) => setAmb(infra.ambientes.map((x, ix) => ix === i ? { ...x, ambiente: v } : x))}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ambiente..." /></SelectTrigger>
-                  <SelectContent>{AMBIENTES_CATALOGO.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+        {infra.tipo === 'obra_exterior' ? (
+          <>
+            <div className="grid md:grid-cols-4 gap-3">
+              <Field label="Tipo">
+                <Select value={infra.tipo} onValueChange={(v) => onChange({ tipo: v as Infraestructura['tipo'] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TIPOS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                 </Select>
-                <Input type="number" className="w-20 h-8 text-xs" value={a.cantidad || ''}
-                  onChange={(e) => setAmb(infra.ambientes.map((x, ix) => ix === i ? { ...x, cantidad: Number(e.target.value) || 0 } : x))} />
-                <button className="text-muted-foreground hover:text-destructive" onClick={() => setAmb(infra.ambientes.filter((_, ix) => ix !== i))}>
-                  <Trash2 className="h-4 w-4" />
-                </button>
+              </Field>
+              <TextField label="Nombre" value={infra.nombre} onChange={(v) => onChange({ nombre: v })} />
+              <NumberField label="Área (m²)" value={infra.areaTotalM2} onChange={(v) => onChange({ areaTotalM2: v })} />
+              <NumberField label="Año de construcción" value={infra.anioConstruccion} onChange={(v) => onChange({ anioConstruccion: v })} />
+            </div>
+            <TextArea label="Descripción" value={infra.observaciones} onChange={(v) => onChange({ observaciones: v })} rows={3} />
+          </>
+        ) : (
+          <>
+            {/* Datos generales */}
+            <div className="grid md:grid-cols-4 gap-3">
+              <Field label="Tipo">
+                <Select value={infra.tipo} onValueChange={(v) => onChange({ tipo: v as Infraestructura['tipo'] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TIPOS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <TextField label="Nombre" value={infra.nombre} onChange={(v) => onChange({ nombre: v })} />
+              <NumberField label="Área total (m²)" value={infra.areaTotalM2} onChange={(v) => onChange({ areaTotalM2: v })} />
+              <NumberField label="Niveles" value={infra.niveles} onChange={(v) => onChange({ niveles: v })} />
+            </div>
+            <div className="grid md:grid-cols-4 gap-3">
+              <NumberField label="Año de construcción" value={infra.anioConstruccion} onChange={(v) => onChange({ anioConstruccion: v })} />
+            </div>
+
+            {/* Descripciones constructivas */}
+            <Card className="p-3 bg-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Descripción constructiva</div>
+                <Button size="sm" variant="outline" onClick={() => setDesc([...infra.descripciones, { elemento: '', descripcion: '' }])}>
+                  <Plus className="h-3 w-3 mr-1" />Elemento
+                </Button>
               </div>
-            ))}
-          </div>
-        </Card>
+              <div className="space-y-2">
+                {infra.descripciones.map((d, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                    <div className="col-span-3">
+                      <Select value={d.elemento} onValueChange={(v) => setDesc(infra.descripciones.map((x, ix) => ix === i ? { ...x, elemento: v } : x))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Elemento..." /></SelectTrigger>
+                        <SelectContent>{ELEMENTOS_CONSTRUCTIVOS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <Input className="col-span-8 h-8 text-xs" placeholder="Descripción técnica" value={d.descripcion}
+                      onChange={(e) => setDesc(infra.descripciones.map((x, ix) => ix === i ? { ...x, descripcion: e.target.value } : x))} />
+                    <button className="col-span-1 text-muted-foreground hover:text-destructive" onClick={() => setDesc(infra.descripciones.filter((_, ix) => ix !== i))}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                {infra.descripciones.length === 0 && <div className="text-xs text-muted-foreground">Sin descripciones</div>}
+              </div>
+            </Card>
 
+            {/* Ambientes */}
+            <Card className="p-3 bg-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Ambientes</div>
+                <Button size="sm" variant="outline" onClick={() => setAmb([...infra.ambientes, { ambiente: '', cantidad: 1 }])}>
+                  <Plus className="h-3 w-3 mr-1" />Ambiente
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-2 gap-2">
+                {infra.ambientes.map((a, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <Select value={a.ambiente} onValueChange={(v) => setAmb(infra.ambientes.map((x, ix) => ix === i ? { ...x, ambiente: v } : x))}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ambiente..." /></SelectTrigger>
+                      <SelectContent>{AMBIENTES_CATALOGO.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input type="number" className="w-20 h-8 text-xs" value={a.cantidad || ''}
+                      onChange={(e) => setAmb(infra.ambientes.map((x, ix) => ix === i ? { ...x, cantidad: Number(e.target.value) || 0 } : x))} />
+                    <button className="text-muted-foreground hover:text-destructive" onClick={() => setAmb(infra.ambientes.filter((_, ix) => ix !== i))}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
 
-        <TextArea label="Observaciones" value={infra.observaciones} onChange={(v) => onChange({ observaciones: v })} rows={2} />
+            <TextArea label="Observaciones" value={infra.observaciones} onChange={(v) => onChange({ observaciones: v })} rows={2} />
+          </>
+        )}
+
       </AccordionContent>
     </AccordionItem>
   );
