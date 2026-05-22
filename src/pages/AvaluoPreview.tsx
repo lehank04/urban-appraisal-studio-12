@@ -8,7 +8,7 @@ import {
   totalesCostos, valorRealizacion, deduccionesDetalle,
   fmtMoney, fmtNum, fmtPct,
 } from '@/lib/calculations';
-import { findOpcion, TABLA_UBICACION, TABLA_ZONA, TABLA_VIA } from '@/lib/catalogos';
+
 
 function Page({ children, num, total, plantilla, title }: any) {
   return (
