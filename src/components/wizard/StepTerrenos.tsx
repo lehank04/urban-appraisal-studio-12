@@ -204,95 +204,52 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
 
               {/* TABLA COMPARATIVA DE ÁREAS */}
               <Card className="p-3 bg-muted/20">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">Tabla comparativa de áreas</div>
-                  <Button size="sm" variant="outline" onClick={() => addArea(t.id)}>
-                    <Plus className="h-3 w-3 mr-1" />Añadir área
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {(avaluo.documentoLegal?.documentos ?? []).filter((d) => d.areaM2 || d.areaVr2).length > 0 && (
+                      <Select value="" onValueChange={(docId) => {
+                        const doc = avaluo.documentoLegal.documentos.find((d) => d.id === docId);
+                        if (!doc) return;
+                        const origenMap: Record<string, AreaItem['origen']> = {
+                          escritura: 'escritura', contrato: 'contrato',
+                          plano_topografico: 'plano', razon_inscripcion: 'escritura',
+                          personalizado: 'personalizado',
+                        };
+                        const nueva: AreaItem = {
+                          ...emptyAreaItem(origenMap[doc.tipo] ?? 'personalizado'),
+                          origenLabel: doc.tipo === 'personalizado' ? (doc.titulo || 'DOCUMENTO LEGAL') : '',
+                          valor1: doc.areaM2 || 0,
+                          valor2: doc.areaVr2 || (doc.areaM2 ? +convertArea(doc.areaM2, 'm²', 'vr²').toFixed(4) : 0),
+                          observaciones: `Importado de: ${doc.titulo || doc.nombre || doc.tipo}`,
+                        };
+                        patchAvaluo(avaluo.id, (a) => ({
+                          ...a,
+                          terrenos: a.terrenos.map((tr) => tr.id !== t.id ? tr : { ...tr, areas: [...tr.areas, nueva] }),
+                        }));
+                      }}>
+                        <SelectTrigger className="h-8 text-xs w-auto min-w-[14rem]">
+                          <SelectValue placeholder="Importar de doc. legal…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {avaluo.documentoLegal.documentos
+                            .filter((d) => d.areaM2 || d.areaVr2)
+                            .map((d) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {(d.titulo || d.nombre || d.tipo).toUpperCase()} — {fmtNum(d.areaM2)} m²
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => addArea(t.id)}>
+                      <Plus className="h-3 w-3 mr-1" />Añadir área
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-12 gap-2 text-[10px] uppercase tracking-wider text-muted-foreground px-1 mb-1">
-                  <div className="col-span-3">Origen</div>
-                  <div className="col-span-2">Valor 1</div>
-                  <div className="col-span-2">Unidad 1</div>
-                  <div className="col-span-2">Valor 2</div>
-                  <div className="col-span-2">Unidad 2</div>
-                  <div className="col-span-1 text-center">Hom.</div>
-                </div>
-
-                <div className="space-y-2">
-                  {areas.map((ar) => (
-                    <div key={ar.id} className="space-y-1.5">
-                      <div className="grid grid-cols-12 gap-2 items-center border border-border rounded p-2 bg-background">
-                        <div className="col-span-3 space-y-1">
-                          <Select value={ar.origen} onValueChange={(v) => patchArea(t.id, ar.id, { origen: v as AreaItem['origen'] })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {ORIGENES_AREA.map((o) => <SelectItem key={o} value={o}>{o.toUpperCase()}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          {ar.origen === 'personalizado' && (
-                            <Input className="h-7 text-xs" placeholder="Etiqueta (ej. AVALÚO ANTERIOR)"
-                              value={ar.origenLabel || ''} onChange={(e) => patchArea(t.id, ar.id, { origenLabel: e.target.value })} />
-                          )}
-                        </div>
-                        <div className="col-span-2">
-                          <Input type="number" className="h-8 text-xs" value={ar.valor1 || ''}
-                            onChange={(e) => {
-                              const v = Number(e.target.value) || 0;
-                              const v2 = +convertArea(v, ar.unidad1, ar.unidad2).toFixed(4);
-                              patchArea(t.id, ar.id, { valor1: v, valor2: v2 });
-                            }} />
-                        </div>
-                        <div className="col-span-2">
-                          <Select value={ar.unidad1} onValueChange={(u) => {
-                            const v2 = +convertArea(ar.valor1, u, ar.unidad2).toFixed(4);
-                            patchArea(t.id, ar.id, { unidad1: u, valor2: v2 });
-                          }}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {UNIDADES_AREA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="col-span-2">
-                          <Input type="number" className="h-8 text-xs" value={ar.valor2 || ''}
-                            onChange={(e) => {
-                              const v = Number(e.target.value) || 0;
-                              const v1 = +convertArea(v, ar.unidad2, ar.unidad1).toFixed(4);
-                              patchArea(t.id, ar.id, { valor2: v, valor1: v1 });
-                            }} />
-                        </div>
-                        <div className="col-span-2">
-                          <Select value={ar.unidad2} onValueChange={(u) => {
-                            const v1 = +convertArea(ar.valor2, u, ar.unidad1).toFixed(4);
-                            patchArea(t.id, ar.id, { unidad2: u, valor1: v1 });
-                          }}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {UNIDADES_AREA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="col-span-1 flex items-center justify-center gap-1">
-                          <Checkbox
-                            checked={ar.usarHomologacion}
-                            onCheckedChange={(v) => { if (v) setHomologacion(t.id, ar.id); else patchArea(t.id, ar.id, { usarHomologacion: false }); }}
-                          />
-                          <button onClick={() => removeArea(t.id, ar.id)} className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                      {/* Diferencia vs área de levantamiento/homologación */}
-                      {renderToleranciaRow(lev, ar)}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 grid md:grid-cols-2 gap-3">
+...
+                <div className="mt-3">
                   <TextField label="Ubicación exacta" value={t.ubicacionExacta} onChange={(v) => updateTerreno(t.id, { ubicacionExacta: v })} />
-                  <NumberField label="Valor unitario US$/vr²" value={t.valorUnitarioVr2} onChange={(v) => updateTerreno(t.id, { valorUnitarioVr2: v })} />
                 </div>
                 <div className="mt-2">
                   <TextArea label="Observaciones de área" value={t.observacionesArea} onChange={(v) => updateTerreno(t.id, { observacionesArea: v })} rows={2} />
