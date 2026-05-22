@@ -20,11 +20,11 @@ const sufijoProposito = (p: string) => {
   return m ? m[1] : (p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX');
 };
 
-// yyyy-mm-dd → aa/mm/dd
-const fmtAaMmDd = (iso: string) => {
+// yyyy-mm-dd → dd/mm/aa (formato natural: día / mes / año corto).
+const fmtFecha = (iso: string) => {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
-  return `${y?.slice(-2) ?? ''}/${m ?? ''}/${d ?? ''}`;
+  return `${d ?? ''}/${m ?? ''}/${y?.slice(-2) ?? ''}`;
 };
 
 // Limpieza para usar el nombre del cliente en el código (sin espacios, sin acentos).
@@ -35,17 +35,17 @@ const slugCliente = (n: string) =>
     .toUpperCase()
     .slice(0, 20) || 'CLIENTE';
 
-// Fecha actual aa/mm/dd como fallback.
-const hoyAaMmDd = () => {
+// Fecha actual dd/mm/aa como fallback.
+const hoyFecha = () => {
   const d = new Date();
   const yy = String(d.getFullYear()).slice(-2);
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  return `${yy}/${mm}/${dd}`;
+  return `${dd}/${mm}/${yy}`;
 };
 
 const generarExpediente = (tipo: string, proposito: string, fechaIso: string, clienteNombre: string) => {
-  const fecha = fechaIso ? fmtAaMmDd(fechaIso) : hoyAaMmDd();
+  const fecha = fechaIso ? fmtFecha(fechaIso) : hoyFecha();
   return `${codigoTipo(tipo)}-${sufijoProposito(proposito)}-${fecha}-${slugCliente(clienteNombre)}`;
 };
 
@@ -76,12 +76,14 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cliente?.id]);
 
-  // Prefill valuador desde el perito firmante
+  // Sincronizar SIEMPRE valuador y NIPEV desde el perito firmante (no editable aquí).
   useEffect(() => {
-    if (perito && !i.valuadorNombre) set('valuadorNombre', perito.nombre);
-    if (perito && !i.valuadorNipev) set('valuadorNipev', perito.registroSIBOIF || perito.registro || '');
+    if (!perito) return;
+    const nipev = perito.registroSIBOIF || perito.registro || '';
+    if (i.valuadorNombre !== perito.nombre) set('valuadorNombre', perito.nombre);
+    if (i.valuadorNipev !== nipev) set('valuadorNipev', nipev);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perito?.id]);
+  }, [perito?.id, perito?.nombre, perito?.registroSIBOIF, perito?.registro]);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -155,18 +157,16 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
             placeholder="Nombre del propietario registral"
           />
           <div className="grid grid-cols-2 gap-3">
-            <TextField
-              label={`Valuador ${perito ? '(perito firmante)' : ''}`}
-              value={i.valuadorNombre}
-              onChange={(v) => set('valuadorNombre', v)}
-              placeholder="Nombre del perito"
-            />
-            <TextField
-              label="NIPEV / Licencia"
-              value={i.valuadorNipev}
-              onChange={(v) => set('valuadorNipev', v)}
-              placeholder="RNA-1234"
-            />
+            <Field label="Valuador (perito firmante)">
+              <Input value={i.valuadorNombre} readOnly disabled className="bg-muted/40" placeholder="— sin perito asignado —" />
+            </Field>
+            <Field label="NIPEV / Licencia">
+              <Input value={i.valuadorNipev} readOnly disabled className="bg-muted/40 font-mono" placeholder="—" />
+            </Field>
+            <p className="col-span-2 text-xs text-muted-foreground">
+              Se toma automáticamente del perito firmante asignado. Para cambiarlo, edita el registro en
+              <span className="font-medium"> Peritos</span> o cambia el perito en el paso inicial.
+            </p>
           </div>
         </div>
       </section>
@@ -175,14 +175,14 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fechas</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="Fecha de inspección (aa/mm/dd)">
+          <Field label="Fecha de inspección (dd/mm/aa)">
             <Input
               type="date"
               value={i.fechaInspeccion}
               onChange={(e) => set('fechaInspeccion', e.target.value)}
             />
             {i.fechaInspeccion && (
-              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtAaMmDd(i.fechaInspeccion)}</div>
+              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtFecha(i.fechaInspeccion)}</div>
             )}
           </Field>
           <Field label="Fecha de emisión (portada · carta · resumen)">
@@ -192,7 +192,7 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
               onChange={(e) => set('fechaAvaluo', e.target.value)}
             />
             {i.fechaAvaluo && (
-              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtAaMmDd(i.fechaAvaluo)}</div>
+              <div className="text-xs text-muted-foreground mt-1 font-mono">{fmtFecha(i.fechaAvaluo)}</div>
             )}
           </Field>
         </div>

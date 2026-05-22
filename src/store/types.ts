@@ -23,13 +23,14 @@ export type PlantillaId = 'inmoval' | 'adalberto' | 'adicional';
 export interface Perito {
   id: ID;
   nombre: string;
-  cedula?: string;
+  cedula?: string;          // Cédula o RUC
   registroSIBOIF?: string;  // NIPEV
   /** alias legado */
   registro?: string;
   cargo?: string;
   email?: string;
   telefono?: string;
+  direccion?: string;
   plantilla: PlantillaId;
   empresa?: string;
   ciudad?: string;
