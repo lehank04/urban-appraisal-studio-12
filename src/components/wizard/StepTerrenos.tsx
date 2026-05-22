@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { TextField, NumberField, TextArea, Field } from '@/components/forms/Fields';
-import { StringSelect } from '@/components/forms/CatSelect';
+import { StringSelectWithCustom } from '@/components/forms/CatSelect';
 import { Plus, Trash2 } from 'lucide-react';
 import { fmtNum, m2ToVr2 } from '@/lib/calculations';
 import { FORMAS_TERRENO } from '@/lib/catalogos';
@@ -134,8 +134,8 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
 
               {/* Morfología */}
               <div className="grid md:grid-cols-3 gap-3">
-                <StringSelect label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
-                <StringSelect label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
+                <StringSelectWithCustom label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
+                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
                 <TextField label="Obras complementarias" value={t.obrasComplementarias} onChange={(v) => updateTerreno(t.id, { obrasComplementarias: v })} />
               </div>
 

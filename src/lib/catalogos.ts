@@ -157,23 +157,176 @@ export const ROSS_HEIDECKE: EstadoConservacionRH[] = [
 
 export const factorQ = (fe: number) => ROSS_HEIDECKE.find((r) => r.fe === fe)?.q ?? 1;
 
-// -------------- ENTORNO: catálogos --------------------------
-export const CAT_CLASIFICACION_ZONA = [
-  'Urbano consolidado', 'Urbano en desarrollo', 'De transición', 'Rural', 'Suburbano',
+// ============================================================
+// CATÁLOGOS OFICIALES INMOVAL (checklist de inspección)
+// Todas las listas admiten valor personalizado vía StringSelectWithCustom
+// ============================================================
+
+// Q7 — Documentación legal recibida
+export const CAT_DOCUMENTACION_LEGAL = [
+  'Escritura de propiedad',
+  'Plano catastral',
+  'Constancia municipal',
+  'Compra-venta',
+  'Otro',
 ];
+
+// Q9 — Clasificación de la zona
+export const CAT_CLASIFICACION_ZONA = [
+  'Residencial: uso exclusivo para vivienda (unifamiliar o multifamiliar).',
+  'Comercial: destinada al intercambio de bienes y servicios.',
+  'Industrial: transformación, manufactura, almacenamiento y logística.',
+  'Mixto: coexistencia de usos compatibles (comercio + vivienda/oficinas).',
+  'Institucional (equipamiento): servicios públicos o privados a la comunidad.',
+  'Rural: fuera del perímetro urbano, actividades primarias.',
+  'De transición: rural con alta potencialidad de cambio a urbano.',
+  'De protección ecológica: uso restringido por importancia ambiental.',
+];
+
+// Q10 — Tipo de construcciones predominantes
+export const CAT_CONSTRUCCIONES_PREDOMINANTES = [
+  'Viviendas unifamiliares (interés social, estándar o de lujo)',
+  'Edificios de apartamentos o condominios',
+  'Módulos o locales comerciales',
+  'Edificios de oficinas',
+  'Naves industriales o bodegas',
+  'Centros comerciales',
+  'Hoteles o restaurantes',
+  'Edificaciones de uso mixto (comercio y vivienda)',
+  'Institucionales (colegios, hospitales, gobierno)',
+  'Quintas o casas de hacienda',
+];
+
+// Q11 — Índice de saturación de la zona
 export const CAT_INDICE_SATURACION = [
   'Baja (en desarrollo): 0% - 30% construido',
   'Media (en consolidación): 31% - 70% construido',
-  'Alta (consolidada): 71% - 100% construido',
+  'Alta (consolidada): 71% - 90% construido',
+  'Total (saturada): 91% - 100% construido',
 ];
+
+// Q12 — Densidad poblacional
 export const CAT_DENSIDAD = [
-  'Alta: lotes <300 m² (residencial popular)',
-  'Media: lotes 300-600 m² (residencial estándar)',
-  'Escasa: lotes >600 m² (residencial exclusivo / periurbano)',
+  'Densa (vivienda popular / interés social): alta concentración, viviendas "pared con pared".',
+  'Semidensa (urbanizaciones modernas): alta ocupación con traza urbana ordenada.',
+  'Media / Normal (residencial estándar): jardines, patios y espacio entre viviendas.',
+  'Escasa (residencial exclusivo / periurbano): baja densidad, casas dispersas.',
+  'Flotante (zonas comerciales / oficinas): alta densidad diurna, vacía de noche.',
+  'Nula (baldíos / áreas protegidas): sin población residente.',
 ];
-export const CAT_FLUJO_VEHICULAR = ['Nulo', 'Bajo', 'Medio', 'Alto'];
-export const CAT_ESTADO_VIAL = ['Bueno', 'Regular', 'Malo', 'No aplica'];
-export const CAT_IMPORTANCIA_VIA = ['Vía primaria (arterial)', 'Vía secundaria (colectora)', 'Vía local (residencial)'];
+
+// Q13-Q14 — Accesibilidad: tipo de rodamiento
+export const CAT_RODAMIENTO = [
+  'Calle de tierra: sin revestimiento, dependiente del clima.',
+  'Calle adoquinada: bloques prefabricados de concreto.',
+  'Calle asfalto: superficie flexible con agregados pétreos y ligante asfáltico.',
+  'Concreto hidráulico: rígido, máxima durabilidad.',
+  'Macadán (material selecto): no pavimentada, mejorada con piedra y grava compactada.',
+];
+
+// Q15-Q16 — Accesibilidad: importancia de la vía
+export const CAT_IMPORTANCIA_VIA = [
+  'Vía primaria (arterial): conecta ciudades o zonas amplias de alto tráfico.',
+  'Vía colectora (secundaria): distribuye tráfico desde vías primarias a barrios.',
+  'Vía local (residencial): acceso directo a viviendas dentro de un barrio.',
+  'Vía peatonal (andén): exclusiva para tránsito de peatones.',
+];
+
+// Q17-Q18 — Accesibilidad: estado de la vía
+export const CAT_ESTADO_VIAL = [
+  'Bueno: óptimas condiciones, sin baches ni grietas significativas.',
+  'Regular: transitable con desgaste, grietas menores o pequeños baches.',
+  'Malo: deterioro evidente, baches numerosos y falta de mantenimiento.',
+  'No aplica',
+];
+
+// Q19-Q20 — Accesibilidad: flujo vehicular
+export const CAT_FLUJO_VEHICULAR = [
+  'Alto: tráfico constante y denso (vías primarias / arteriales).',
+  'Moderado: tráfico frecuente con pausas (vías colectoras / secundarias).',
+  'Bajo: tráfico esporádico (vías locales / residenciales).',
+  'Nulo: tráfico casi inexistente (calles sin salida / entradas privadas).',
+];
+
+// Q21 — Servicios básicos disponibles
+export const CAT_SERVICIOS_BASICOS = [
+  'Agua potable',
+  'Aguas residuales',
+  'Energía eléctrica',
+  'Telecomunicaciones',
+  'Vialidad',
+  'Alumbrado público',
+];
+
+// Q22 — Equipamiento urbano
+export const CAT_EQUIPAMIENTO_URBANO = [
+  'Escuelas',
+  'Hospitales',
+  'Centro de salud',
+  'Centros de recreación',
+  'Centros de abasto',
+  'Transporte público',
+];
+
+// Q23 — Riesgos ambientales
+export const CAT_RIESGOS_AMBIENTALES = [
+  'Contaminación acústica (ruido): niveles constantes o excesivos cercanos.',
+  'Contaminación visual: cableado aéreo, vallas invasivas, edificaciones abandonadas.',
+  'Contaminación atmosférica (olores/emisiones): humo, polvo, plantas de tratamiento, vertederos.',
+  'Riesgos para la salud o seguridad: alta tensión, antenas, zonas inundables, laderas inestables.',
+];
+
+// Q25 — Topografía
+export const CAT_TOPOGRAFIA = [
+  'Plana: sin inclinación significativa, óptima para construcción.',
+  'Irregular: ondulaciones y desniveles visibles, requiere nivelación.',
+  'Quebrada: pendientes fuertes, requiere obras de ingeniería significativas.',
+];
+
+// Q26 — Forma del terreno
+export const CAT_FORMA_TERRENO = [
+  'Regular: forma similar a un polígono geométrico definido (cuadrado, rectángulo).',
+  'Irregular: sin semejanza a forma geométrica definida, linderos y ángulos desiguales.',
+];
+
+// Q27 — Características panorámicas
+export const CAT_PANORAMICAS = [
+  'Vista a lagos o lagunas',
+  'Vista a montañas o volcanes',
+  'Vista al mar',
+  'Paisaje urbano (perfil de ciudad desde zonas altas)',
+  'Colindancia con áreas verdes (parques, reservas, arboledas)',
+];
+
+// Q28 — Posición en la manzana
+export const CAT_POSICION_MANZANA = [
+  'Esquinero: intersección de dos calles, dos frentes — máximo potencial.',
+  'De calle a calle: atraviesa la manzana, frente a dos calles paralelas.',
+  'Medianero: entre dos lotes, un único frente — condición base.',
+  'Lote interior: sin frente directo a la vía pública.',
+];
+
+// Q30, Q32, Q34, Q36 — Delimitantes de linderos
+export const CAT_DELIMITANTES = [
+  'Muro de mampostería (bloque): bloques de concreto unidos por mortero.',
+  'Muro de mampostería (cantera): piedra cantera labrada, estética colonial.',
+  'Muro de losetas prefabricadas: postes y láminas de concreto prefabricado.',
+  'Cerco de malla ciclón: postes metálicos y malla de alambre tejido.',
+  'Cerco de alambre de púas: postes y varias hileras de alambre de púas.',
+  'Cerco eléctrico: postes aisladores y líneas de alto voltaje.',
+  'Delimitante vecino: estructura construida por la propiedad colindante.',
+  'Mojones: hitos de concreto o piedra en los vértices; no impiden el paso.',
+  'No existe delimitante físico: división puramente registral o topográfica.',
+];
+
+// Q40-Q41 — Estado de conservación (infra principal / obras complementarias)
+export const CAT_ESTADO_CONSERVACION = [
+  'Nuevo: recién terminada o sin uso, sin deterioro ni desgaste.',
+  'Bueno: mantenimiento preventivo regular, desgaste mínimo por uso normal.',
+  'Reparación leve / sencilla: deterioros visibles, reparaciones menores no estructurales.',
+  'Reparación importante: deterioro generalizado que afecta funcionalidad.',
+  'En desecho: estado ruinoso o no habitable, daños estructurales severos.',
+];
 
 // -------------- DESCRIPCIONES CONSTRUCTIVAS (catálogo) --------
 export const ELEMENTOS_CONSTRUCTIVOS = [
