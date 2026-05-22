@@ -37,16 +37,15 @@ export function StepInfo({ avaluo }: { avaluo: Avaluo }) {
   const set = <K extends keyof typeof i>(k: K, v: (typeof i)[K]) =>
     patchAvaluo(avaluo.id, (a) => ({ ...a, info: { ...a.info, [k]: v } }));
 
-  // Auto-generar número de expediente cuando esté vacío o cuando cambie el tipo de inmueble.
+  // Auto-generar número de expediente al elegir/cambiar el propósito del avalúo.
   useEffect(() => {
-    if (!i.tipoInmueble) return;
-    const auto = generarExpediente(i.tipoInmueble, avaluo.id);
-    // Solo auto-rellenar si está vacío o si sigue el patrón generado (para reaccionar al cambio de tipo)
-    if (!i.numeroExpediente || /^INM-[A-Z]{1,4}-\d{4}-[A-Z0-9]{4}$/.test(i.numeroExpediente)) {
+    if (!i.proposito) return;
+    const auto = generarExpediente(i.proposito, avaluo.id);
+    if (!i.numeroExpediente || /^INM-[A-Z]{2,4}-\d{4}-[A-Z0-9]{4}$/.test(i.numeroExpediente)) {
       if (i.numeroExpediente !== auto) set('numeroExpediente', auto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i.tipoInmueble]);
+  }, [i.proposito]);
 
   // Prefill solicitante / cliente desde el registro si están vacíos
   useEffect(() => {
