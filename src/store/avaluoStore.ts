@@ -69,6 +69,8 @@ export const useStore = create<State>()(
           createdAt: now, updatedAt: now,
           estado: 'borrador',
           info: emptyInfo(),
+          documentoLegal: emptyDocLegal(),
+          entorno: emptyEntorno(),
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),
