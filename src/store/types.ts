@@ -485,6 +485,6 @@ export const emptyFotos = (): Fotografias => ({
   fachada: [], interior: [],
   lindero_norte: [], lindero_sur: [], lindero_este: [], lindero_oeste: [],
   infraestructuras: [],
-  comparables_inmueble: [], comparables_terreno: [],
+  comparables_inmueble: [], comparables_terreno: [], comparables: [],
   planos: [], macrolocalizacion: [], microlocalizacion: [], legales: [],
 });
