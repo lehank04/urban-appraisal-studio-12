@@ -3,7 +3,7 @@ import { Avaluo, emptyTerreno, emptyAreaItem, Terreno, Lindero, AreaItem } from 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { TextField, NumberField, TextArea, Field } from '@/components/forms/Fields';
+import { TextField, TextArea, Field } from '@/components/forms/Fields';
 import { StringSelectWithCustom } from '@/components/forms/CatSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
