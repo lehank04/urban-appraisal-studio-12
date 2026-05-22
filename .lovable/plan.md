@@ -1,53 +1,94 @@
-# Sistema de Avalúos INMOVAL — Prototipo Dinámico
+# Plan: Reescritura fiel del Wizard y Preview al formato INMOVAL
 
-Voy a transformar el prototipo en un ensamblador técnico-documental con sidebar profesional, tema oscuro elegante y un wizard de creación de avalúo por pasos.
+## Objetivo
+Reescribir los 8 pasos del wizard y la página de preview para que reflejen **exactamente** la estructura capitular del formato INMOVAL del PDF de referencia (Ing. Liliet López — Resolución CD-SIBOIF-868-1-DIC10-2014). Hoy la UI usa la capa de compatibilidad legada; esto la elimina y trabaja contra el esquema nuevo (`src/store/types.ts`) sin alias.
 
-## Arquitectura
+## Estructura capitular a replicar (según PDF)
 
-- **Estado global** con Zustand (`src/store/avaluoStore.ts`) — persistencia en localStorage. Modelo: `Cliente`, `Perito/Plantilla`, `InfoGeneral`, `Terreno[]` (con `Infraestructura[]`), `Metodologias`, `Comparables[]`, `Fotos{categoria}`.
-- **Layout** con `SidebarProvider` shadcn: navegación por avalúos, peritos, clientes, configuración.
-- **Diseño**: tema oscuro empresarial (slate/zinc + acento azul técnico), tipografía Inter + JetBrains Mono para códigos. Tokens semánticos en `index.css`.
-
-## Rutas
-
+```text
+PORTADA           Datos del perito, código de expediente, finalidad, solicitante.
+CAP. I            Información General
+                  - Solicitante, propietario, ubicación, tipo de inmueble,
+                    finalidad, fecha de inspección, fecha de avalúo.
+CAP. II           Documentación Legal
+                  - Escritura (no., notario, tomo, folio), inscripción registral,
+                    catastro, gravámenes, observaciones SIBOIF.
+CAP. III          Entorno Urbano
+                  - Uso de suelo, zonificación, nivel socioeconómico, vías de
+                    acceso, transporte, servicios públicos (agua, luz, drenaje,
+                    teléfono, internet, recolección), riesgos y observaciones.
+CAP. IV           Descripción del Terreno
+                  - 1..n terrenos. Por terreno:
+                    · Áreas: escritura / catastral / levantamiento (m² y vr²)
+                    · 4 linderos (N/S/E/O) con descripción + medida
+                    · Topografía, forma, frente, fondo, esquina, servidumbres
+                    · Croquis / plano (foto opcional)
+CAP. V            Descripción Constructiva
+                  - 1..n infraestructuras por terreno. Por infraestructura:
+                    · Tipo (principal / accesoria), uso, niveles, área m²
+                    · Sistema constructivo (cimientos, estructura, paredes,
+                      techos, entrepisos, pisos, cielos, puertas, ventanas,
+                      acabados, instalaciones, ambientes)
+                    · Edad, VUE, Estado FE (Ross-Heidecke)
+                    · Memoria de costos por etapas (directos / indirectos /
+                      impuestos) → VRN, depreciación, VNO
+CAP. VI           Metodología y Avalúo
+                  Sección A — Enfoque de Costos (terrenos + VNO infras)
+                  Sección B — Enfoque de Mercado (Homologación)
+                    · Ficha sujeto (terreno y/o inmueble construido)
+                    · 3 comparables con factores: ubicación, zonificación,
+                      acceso, servicios, topografía, área (Ac/As)^0.10,
+                      negociación, edad/conservación
+                    · Tabla de homologación → V/m² promedio → Valor mercado
+                  Sección C — Valor de Realización
+                    · Deducciones: IR, IBI, corretaje, legales, comercialización
+                  Sección D — Conclusión y Valores Finales
+CAP. VII          Anexos Fotográficos
+                  - Categorías: fachada, interiores, terreno, linderos,
+                    entorno, documentación, comparables.
+CIERRE            Firma del perito, sello, fecha, declaración jurada.
 ```
-/                          Dashboard (lista de avalúos + KPIs)
-/avaluos                   Listado
-/avaluos/nuevo             Wizard 8 pasos
-/avaluos/:id               Editor (mismos pasos, ya creado)
-/avaluos/:id/preview       Vista previa documental paginada
-/peritos                   CRUD peritos / plantillas
-/clientes                  CRUD clientes
-```
 
-## Wizard (8 pasos con stepper lateral)
+## Cambios por archivo
 
-1. **Cliente** — buscador + crear nuevo (modal).
-2. **Perito / Plantilla** — cards seleccionables: INMOVAL, Adalberto, Adicional. Define plantilla.
-3. **Información general** — formulario con todos los campos listados.
-4. **Terrenos dinámicos** — selector de cantidad + acordeón por terreno con todos los campos (selects con opciones precargadas + "personalizado").
-5. **Infraestructuras** — dentro de cada terreno, botón `+ Nueva Infraestructura`, tipo/nombre/desc/unidad/área/estado/vida útil/edad/obs. Auto-calcula reposición y depreciación (línea recta: `valor = costo * (1 - edad/vidaUtil)`).
-6. **Metodologías** — switches por método. Comparativo: tabla de comparables con factores activables, recálculo automático (precio ajustado = precio * Π factores activos). Si método desactivado → texto justificativo.
-7. **Fotografías** — tabs por categoría, drag&drop (HTML5), reordenar, descripción, eliminar. Imágenes en base64 en store.
-8. **Vista previa** — documento paginado A4 simulado (`max-w-[210mm]` con sombras), ensambla portada + capítulos + tablas consolidadas. Botón imprimir.
+### Wizard steps (reescritura completa, sin usar campos legados)
 
-## Componentes reutilizables
+| Paso | Archivo | Contenido |
+|---|---|---|
+| 1 | `StepPerito.tsx` | Selector de perito firmante → fija plantilla INMOVAL. (ya existe, ajuste menor) |
+| 2 | `StepCliente.tsx` | Solicitante + propietario + datos de contacto. |
+| 3 | `StepInfo.tsx` | **CAP. I**: código expediente, finalidad, tipo avalúo, fechas, ubicación completa (depto/municipio/barrio/dirección/coordenadas). |
+| 4 | *nuevo* `StepLegal.tsx` | **CAP. II**: escritura, registro, catastro, gravámenes. |
+| 5 | *nuevo* `StepEntorno.tsx` | **CAP. III**: uso de suelo, zonificación, servicios, riesgos. |
+| 6 | `StepTerrenos.tsx` | **CAP. IV**: 1..n terrenos con 4 linderos, áreas triples, topografía. |
+| 7 | `StepInfraestructuras.tsx` | **CAP. V**: por terreno, infras con descripción constructiva + memoria de costos por etapas. |
+| 8 | `StepMetodologias.tsx` | **CAP. VI**: tabs Costos / Mercado-Terreno / Mercado-Construido / Realización. Usa `homologacionTerreno`, `homologacionInmueble`, `valorRealizacion`. |
+| 9 | `StepFotos.tsx` | **CAP. VII**: categorías oficiales (fachada, interiores, terreno, linderos, entorno, documentación, comparables). |
+| 10 | `StepPreview.tsx` | Documento renderizado con portada + Cap I..VII + cierre. |
 
-- `DynamicField` (select con opción "Personalizado" → input)
-- `RepeatableSection` (terrenos, infraestructuras, comparables)
-- `CollapsiblePanel`, `DataTable`, `PhotoDropzone`, `StepperSidebar`, `DocumentPage`
-- `ConsolidadoTerrenos`, `ConsolidadoInfra`, `ConsolidadoValores` (derivados del store)
+`StepperSidebar.tsx` y `AvaluoWizard.tsx`: actualizar lista de pasos (de 8 a 10).
 
-## Plantillas
+### Preview (`src/pages/AvaluoPreview.tsx` + `StepPreview.tsx`)
+Componer páginas tipo A4 con cabeceras del perito, paginación, secciones numeradas en romano y tablas con los cálculos:
+- Tabla resumen valores (terreno + VNO infras + valor mercado + valor realización).
+- Tabla de homologación con factores por columna.
+- Memoria de costos por etapas.
+- Croquis/fotos al final.
 
-`src/templates/inmoval.ts` define: portada (campos, layout), orden de capítulos, textos base, footer/header, anexos. Otros peritos extienden o sobreescriben.
+### Limpieza de tipos
+Quitar de `src/store/types.ts` los bloques `// ---- alias / legados (UI prototipo) ----` una vez que la UI nueva no los usa. Actualizar factories `empty*` consecuentemente.
 
-## Detalles técnicos
+### Cálculos
+`src/lib/calculations.ts` ya contiene todo lo necesario (Ross-Heidecke, homologación, realización). Sólo retirar helpers legados (`depreciacion`, `valorTerreno`, `valorComparable`, `promedioUnitarioComparables`) cuando dejen de tener referencias.
 
-- Cálculos en `src/lib/calculations.ts`: depreciación, factor comparativo, totales.
-- Opciones precargadas (forma, topografía, servicios, etc.) en `src/lib/catalogos.ts`.
-- Sin backend: todo client-side con Zustand + persist. Fácil de migrar a Lovable Cloud después.
+## Orden de ejecución
+1. Actualizar `AvaluoWizard.tsx` + `StepperSidebar.tsx` con los 10 pasos.
+2. Reescribir pasos 3→9 contra el esquema nuevo.
+3. Reescribir `StepPreview.tsx` / `AvaluoPreview.tsx` con la maquetación INMOVAL.
+4. Eliminar alias legados de `types.ts` y helpers legados de `calculations.ts`.
+5. Verificar build y abrir un avalúo de prueba en el preview.
 
-## Entrega
-
-Prototipo funcional navegable end-to-end: crear avalúo → completar 8 pasos → ver documento ensamblado con consolidados.
+## Fuera de alcance
+- Autenticación, sincronización en la nube, IA, multiempresa, firma digital.
+- Plantillas distintas a INMOVAL (quedan como `PlantillaId` para futuro).
+- Exportación a PDF real (el preview será HTML imprimible).
