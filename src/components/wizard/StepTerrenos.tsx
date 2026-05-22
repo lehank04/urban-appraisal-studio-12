@@ -24,17 +24,30 @@ const labelOrigen = (a: AreaItem) =>
 export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
   const { patchAvaluo } = useStore();
 
-  // Migración defensiva: garantizar `areas` y `descripcionGeneralTerrenos`
+  // Migración defensiva: garantizar `areas`, `descripcionGeneralTerrenos` y `linderos.medidas`
   useEffect(() => {
     patchAvaluo(avaluo.id, (a) => {
       const dgt = a.descripcionGeneralTerrenos ?? { direccion: '', coordenadas: '', personaEntrevistada: '' };
       const terrenos = a.terrenos.map((t) => {
-        if (t.areas && t.areas.length) return t;
-        const seed: AreaItem[] = [];
-        if (t.areaLevantamientoM2) seed.push({ ...emptyAreaItem('levantamiento'), valor1: t.areaLevantamientoM2, valor2: t.areaLevantamientoVr2, usarHomologacion: true });
-        if (t.areaEscrituraM2) seed.push({ ...emptyAreaItem('escritura'), valor1: t.areaEscrituraM2, valor2: t.areaEscrituraVr2 });
-        if (t.areaCatastralM2) seed.push({ ...emptyAreaItem('plano'), origenLabel: 'CATASTRAL', valor1: t.areaCatastralM2, valor2: t.areaCatastralVr2 });
-        return { ...t, areas: seed.length ? seed : [emptyAreaItem('levantamiento')] };
+        // áreas
+        let areas = t.areas;
+        if (!areas || !areas.length) {
+          const seed: AreaItem[] = [];
+          if (t.areaLevantamientoM2) seed.push({ ...emptyAreaItem('levantamiento'), valor1: t.areaLevantamientoM2, valor2: t.areaLevantamientoVr2, usarHomologacion: true });
+          if (t.areaEscrituraM2) seed.push({ ...emptyAreaItem('escritura'), valor1: t.areaEscrituraM2, valor2: t.areaEscrituraVr2 });
+          if (t.areaCatastralM2) seed.push({ ...emptyAreaItem('plano'), origenLabel: 'CATASTRAL', valor1: t.areaCatastralM2, valor2: t.areaCatastralVr2 });
+          areas = seed.length ? seed : [emptyAreaItem('levantamiento')];
+        }
+        // linderos
+        const linderos = t.linderos.map((l) => {
+          if (l.medidas && l.medidas.length) return l;
+          const m: LinderoMedida[] = [];
+          if (l.levantamientoColindante || l.levantamientoMedida) m.push({ ...emptyLinderoMedida('levantamiento'), colindante: l.levantamientoColindante, medida: l.levantamientoMedida });
+          if (l.escrituraColindante || l.escrituraMedida) m.push({ ...emptyLinderoMedida('escritura'), colindante: l.escrituraColindante, medida: l.escrituraMedida });
+          if (l.planoColindante || l.planoMedida) m.push({ ...emptyLinderoMedida('plano'), colindante: l.planoColindante, medida: l.planoMedida });
+          return { ...l, medidas: m.length ? m : [emptyLinderoMedida('levantamiento')] };
+        });
+        return { ...t, areas, linderos };
       });
       return { ...a, descripcionGeneralTerrenos: dgt, terrenos };
     });
