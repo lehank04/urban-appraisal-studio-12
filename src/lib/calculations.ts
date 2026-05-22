@@ -255,18 +255,19 @@ export interface FilaConsolidadoInfra {
 }
 
 export const consolidados = (av: Avaluo) => {
-  const terrenos = av.terrenos.map((t) => {
-    const areaVr2 = t.areaLevantamientoVr2 || t.areaCatastralVr2 || t.areaEscrituraVr2;
+  const terrenosArr = av.terrenos ?? [];
+  const terrenos = terrenosArr.map((t) => {
+    const areaVr2 = t.areaLevantamientoVr2 || t.areaCatastralVr2 || t.areaEscrituraVr2 || 0;
     const area = t.area ?? areaVr2;
-    const valorUnit = t.valorUnitario ?? t.valorUnitarioVr2;
+    const valorUnit = t.valorUnitario ?? t.valorUnitarioVr2 ?? 0;
     const valorTotal = area * valorUnit;
     return { id: t.id, titulo: t.titulo, area, areaVr2, valorUnitario: valorUnit, valorTotal };
   });
   const totalTerrenos = terrenos.reduce((a, t) => a + t.valorTotal, 0);
 
   const infras: FilaConsolidadoInfra[] = [];
-  av.terrenos.forEach((t) => {
-    t.infraestructuras.forEach((i) => {
+  terrenosArr.forEach((t) => {
+    (t.infraestructuras ?? []).forEach((i) => {
       const v = valorNetoInfra(i);
       const d = depreciacion(i);
       infras.push({
@@ -275,6 +276,7 @@ export const consolidados = (av: Avaluo) => {
       });
     });
   });
+
   const totalVRN = infras.reduce((a, i) => a + i.vrn, 0);
   const totalDepreciacion = infras.reduce((a, i) => a + i.depAcumulada, 0);
   const totalVNO = infras.reduce((a, i) => a + i.vno, 0);
