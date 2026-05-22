@@ -20,8 +20,8 @@ import {
 } from '@/lib/catalogos';
 import { useEffect } from 'react';
 
-const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA', ...CAT_TOPOGRAFIA];
-const FORMA_OPTS = [...FORMAS_TERRENO, ...CAT_FORMA_TERRENO];
+const TOPOGRAFIA_OPTS = ['PLANA', 'IRREGULAR', 'QUEBRADA'];
+const FORMA_OPTS = ['REGULAR', 'IRREGULAR', 'TRAPEZOIDAL', 'RECTANGULAR', 'TRIANGULAR'];
 
 const labelArea = (a: AreaItem, docs: { id: string; titulo?: string; nombre?: string; tipo?: string }[]) => {
   if (a.origen === 'doc_legal' && a.docLegalId) {
