@@ -126,32 +126,10 @@ function InfraEditor({ infra, onChange, onRemove }: {
           <NumberField label="Área total (m²)" value={infra.areaTotalM2} onChange={(v) => onChange({ areaTotalM2: v })} />
           <NumberField label="Niveles" value={infra.niveles} onChange={(v) => onChange({ niveles: v })} />
         </div>
+        <div className="grid md:grid-cols-4 gap-3">
+          <NumberField label="Año de construcción" value={infra.anioConstruccion} onChange={(v) => onChange({ anioConstruccion: v })} />
+        </div>
 
-        {/* Ross-Heidecke */}
-        <Card className="p-3 bg-card">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Vida útil y estado (Ross-Heidecke)</div>
-          <div className="grid md:grid-cols-4 gap-3">
-            <NumberField label="V.U.E (años)" value={infra.vidaUtilAnios} onChange={(v) => onChange({ vidaUtilAnios: v })} />
-            <NumberField label="Edad (años)" value={infra.edadAnios} onChange={(v) => onChange({ edadAnios: v })} />
-            <NumberField label="Año de construcción" value={infra.anioConstruccion} onChange={(v) => onChange({ anioConstruccion: v })} />
-            <Field label="Estado FE">
-              <Select value={String(infra.estadoFE)} onValueChange={(v) => onChange({ estadoFE: Number(v) })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ROSS_HEIDECKE.map((r) => (
-                    <SelectItem key={r.fe} value={String(r.fe)}>{r.fe} · {r.label} (Q={r.q})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-          <div className="grid md:grid-cols-4 gap-3 mt-3 text-xs">
-            <div className="p-2 rounded bg-muted/40"><div className="text-muted-foreground">% depreciación</div><div className="font-mono text-base">{fmtPct(vno.depPct)}</div></div>
-            <div className="p-2 rounded bg-muted/40"><div className="text-muted-foreground">VRN</div><div className="font-mono text-base">{fmtMoney(vno.vrn)}</div></div>
-            <div className="p-2 rounded bg-muted/40"><div className="text-muted-foreground">Depreciación acum.</div><div className="font-mono text-base">{fmtMoney(vno.depAcumulada)}</div></div>
-            <div className="p-2 rounded bg-primary/10 border border-primary/30"><div className="text-muted-foreground">VNO</div><div className="font-mono text-base text-primary font-semibold">{fmtMoney(vno.vno)}</div></div>
-          </div>
-        </Card>
 
         {/* Descripciones constructivas */}
         <Card className="p-3 bg-card">
