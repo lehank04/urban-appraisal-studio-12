@@ -20,11 +20,11 @@ const sufijoProposito = (p: string) => {
   return m ? m[1] : (p.replace(/[^A-Za-zÁÉÍÓÚÑ]/g, '').slice(0, 2).toUpperCase() || 'XX');
 };
 
-// yyyy-mm-dd → dd/mm/aa (formato natural: día / mes / año corto).
+// yyyy-mm-dd → aammdd (sin separadores, para el código del expediente).
 const fmtFecha = (iso: string) => {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
-  return `${d ?? ''}/${m ?? ''}/${y?.slice(-2) ?? ''}`;
+  return `${y?.slice(-2) ?? ''}${m ?? ''}${d ?? ''}`;
 };
 
 // Limpieza para usar el nombre del cliente en el código (sin espacios, sin acentos).
