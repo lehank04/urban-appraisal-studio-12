@@ -413,7 +413,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
 
                       {/* Conversión informativa */}
                       <div className="text-[11px] text-muted-foreground px-1">
-                        {fmtNum(ar.valor1, 4)} {ar.unidad1} = {fmtNum(convertArea(ar.valor1, ar.unidad1, 'm²'), 4)} m² · {fmtNum(convertArea(ar.valor1, ar.unidad1, 'vr²'), 4)} vr²
+                        {fmtNum(displayV1, 4)} {displayU1} = {fmtNum(convertArea(displayV1, displayU1, 'm²'), 4)} m² · {fmtNum(convertArea(displayV1, displayU1, 'vr²'), 4)} vr²
                         {ar.usarHomologacion && <span className="ml-2 font-semibold text-primary">★ HOMOLOGACIÓN / REPOSICIÓN</span>}
                       </div>
 
