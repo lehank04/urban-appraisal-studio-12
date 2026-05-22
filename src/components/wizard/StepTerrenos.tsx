@@ -143,7 +143,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
     patchAvaluo(avaluo.id, (a) => ({
       ...a,
       terrenos: a.terrenos.map((t) => t.id !== terrenoId ? t : {
-        ...t, areas: [...t.areas, emptyAreaItem('escritura')],
+        ...t, areas: [...t.areas, emptyAreaItem('nueva')],
       }),
     }));
   };
@@ -415,7 +415,7 @@ export function StepTerrenos({ avaluo }: { avaluo: Avaluo }) {
               {/* Morfología — sin obras complementarias */}
               <div className="grid md:grid-cols-2 gap-3">
                 <StringSelectWithCustom label="Topografía" value={t.topografia} onChange={(v) => updateTerreno(t.id, { topografia: v })} options={TOPOGRAFIA_OPTS} />
-                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMAS_TERRENO} />
+                <StringSelectWithCustom label="Forma" value={t.forma} onChange={(v) => updateTerreno(t.id, { forma: v })} options={FORMA_OPTS} />
               </div>
 
               {/* Linderos con medidas múltiples por fuente */}
