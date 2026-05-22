@@ -251,11 +251,12 @@ export interface FilaConsolidadoInfra {
 }
 
 export const consolidados = (av: Avaluo) => {
-  // terreno (valor de mercado del terreno × área cada terreno)
   const terrenos = av.terrenos.map((t) => {
     const areaVr2 = t.areaLevantamientoVr2 || t.areaCatastralVr2 || t.areaEscrituraVr2;
-    const valorTotal = areaVr2 * t.valorUnitarioVr2;
-    return { id: t.id, titulo: t.titulo, areaVr2, valorUnitario: t.valorUnitarioVr2, valorTotal };
+    const area = t.area ?? areaVr2;
+    const valorUnit = t.valorUnitario ?? t.valorUnitarioVr2;
+    const valorTotal = area * valorUnit;
+    return { id: t.id, titulo: t.titulo, area, areaVr2, valorUnitario: valorUnit, valorTotal };
   });
   const totalTerrenos = terrenos.reduce((a, t) => a + t.valorTotal, 0);
 
@@ -263,12 +264,18 @@ export const consolidados = (av: Avaluo) => {
   av.terrenos.forEach((t) => {
     t.infraestructuras.forEach((i) => {
       const v = valorNetoInfra(i);
-      infras.push({ terrenoId: t.id, terreno: t.titulo, infra: i, ...v });
+      const d = depreciacion(i);
+      infras.push({
+        terrenoId: t.id, terreno: t.titulo, infra: i,
+        ...v, costo: d.costo, depreciado: d.depreciado,
+      });
     });
   });
   const totalVRN = infras.reduce((a, i) => a + i.vrn, 0);
   const totalDepreciacion = infras.reduce((a, i) => a + i.depAcumulada, 0);
   const totalVNO = infras.reduce((a, i) => a + i.vno, 0);
+  const totalInfras = infras.reduce((a, i) => a + i.depreciado, 0);
+  const total = totalTerrenos + totalInfras;
 
   return {
     terrenos, totalTerrenos,
@@ -276,8 +283,41 @@ export const consolidados = (av: Avaluo) => {
     totalVRN, totalDepreciacion, totalVNO,
     totalReposicionNuevo: totalTerrenos + totalVRN,
     totalReposicionNeto: totalTerrenos + totalVNO,
+    totalInfras, total,
   };
 };
 
 // helper para mostrar % entero (e.g. 21%)
 export const pctEntero = (p: number) => `${Math.round(p * 100)}%`;
+
+// -------------------- COMPATIBILIDAD UI PROTOTIPO --------------------
+
+import { Comparable } from '@/store/types';
+
+/** Depreciación legada: usa los alias `costoUnitario`, `area`, `vidaUtil`, `edad` */
+export const depreciacion = (i: Infraestructura) => {
+  const costo = (i.costoUnitario ?? 0) * (i.area ?? i.areaTotalM2 ?? 0);
+  const vu = i.vidaUtil ?? i.vidaUtilAnios ?? 0;
+  const ed = i.edad ?? i.edadAnios ?? 0;
+  const factor = vu > 0 ? Math.min(ed / vu, 1) : 0;
+  const depreciado = costo * (1 - factor);
+  return { costo, factor, depreciado };
+};
+
+export const valorTerreno = (t: { area?: number; valorUnitario?: number; areaLevantamientoVr2?: number; valorUnitarioVr2?: number }) => {
+  const area = t.area ?? t.areaLevantamientoVr2 ?? 0;
+  const vu = t.valorUnitario ?? t.valorUnitarioVr2 ?? 0;
+  return area * vu;
+};
+
+export const valorComparable = (c: Comparable) => {
+  const factor = c.factores.filter((f) => f.active).reduce((a, f) => a * (f.value || 1), 1);
+  const ajustado = c.precio * factor;
+  const unitario = c.area > 0 ? ajustado / c.area : 0;
+  return { factor, ajustado, unitario };
+};
+
+export const promedioUnitarioComparables = (comps: Comparable[]) => {
+  const vs = comps.map((c) => valorComparable(c).unitario).filter((v) => v > 0);
+  return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
+};
