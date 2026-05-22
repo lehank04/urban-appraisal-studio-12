@@ -186,10 +186,11 @@ export default function AvaluoPreview() {
               ))}
             </tbody>
           </table>
-          {(e.serviciosPublicos || e.equipamientoUrbano) && (
+          {((e.serviciosPublicos?.length || 0) > 0 || (e.equipamientoUrbano?.length || 0) > 0 || (e.contaminacion?.length || 0) > 0) && (
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div><b>Servicios públicos:</b><div className="text-zinc-700">{e.serviciosPublicos || '—'}</div></div>
-              <div><b>Equipamiento urbano:</b><div className="text-zinc-700">{e.equipamientoUrbano || '—'}</div></div>
+              <div><b>Servicios públicos:</b><div className="text-zinc-700">{(e.serviciosPublicos || []).join(', ') || '—'}</div></div>
+              <div><b>Equipamiento urbano:</b><div className="text-zinc-700">{(e.equipamientoUrbano || []).map((it) => `${it.nombre} (${it.distanciaKm} km)`).join('; ') || '—'}</div></div>
+              <div className="col-span-2"><b>Riesgos / contaminación:</b><div className="text-zinc-700">{(e.contaminacion || []).join('; ') || '—'}</div></div>
             </div>
           )}
         </Page>
