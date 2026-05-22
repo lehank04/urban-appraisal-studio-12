@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   Avaluo, Cliente, Perito, ID,
-  emptyInfo, emptyFotos, emptyMetodologias,
+  emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno,
 } from './types';
 
 interface State {
@@ -69,6 +69,8 @@ export const useStore = create<State>()(
           createdAt: now, updatedAt: now,
           estado: 'borrador',
           info: emptyInfo(),
+          documentoLegal: emptyDocLegal(),
+          entorno: emptyEntorno(),
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),

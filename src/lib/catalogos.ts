@@ -220,3 +220,25 @@ export const FACTOR_CONVERSION_M2_VR2 = 1.418415;
 // helper para obtener opción
 export const findOpcion = (tabla: TablaFactor, key: string) =>
   tabla.opciones.find((o) => o.key === key) || tabla.opciones[0];
+
+// -------------- CATÁLOGOS LEGADOS (UI prototipo) --------------
+export const CATALOGOS = {
+  tipoAvaluo: ['Comercial', 'Reposición', 'Hipotecario', 'Catastral', 'Judicial', 'Seguro'],
+  finalidad: ['Garantía hipotecaria', 'Compra-venta', 'Referencia de valor', 'Seguro', 'Contable', 'Sucesión'],
+  moneda: ['US$', 'C$', 'L', '$', '€'],
+  unidadMedida: ['m²', 'ml', 'und', 'glb', 'm³'],
+  estadoConservacion: ['Nuevo', 'Muy bueno', 'Bueno', 'Regular', 'Malo', 'Ruinoso'],
+  forma: FORMAS_TERRENO,
+  topografia: ['Plana', 'Irregular', 'Quebrada', 'Pendiente leve', 'Pendiente fuerte'],
+  tipoAcceso: ['Concreto', 'Asfalto', 'Adoquinada', 'Macadán', 'Tierra'],
+  serviciosPublicos: ['Óptimo', 'Estándar', 'Básico', 'Inexistente'],
+  zonificacion: ['Residencial', 'Comercial', 'Mixto', 'Industrial', 'Transición', 'Institucional', 'Rural', 'Protección'],
+  usoActual: ['Vivienda', 'Comercio', 'Bodega', 'Mixto', 'Sin uso', 'Industrial'],
+  usoPotencial: ['Vivienda', 'Comercio', 'Bodega', 'Mixto', 'Industrial', 'Desarrollo'],
+  entorno: ['Urbano consolidado', 'Urbano en desarrollo', 'Transición', 'Suburbano', 'Rural'],
+  tipoInfra: [
+    { value: 'principal',     label: 'Principal' },
+    { value: 'complementaria',label: 'Complementaria' },
+    { value: 'obra_exterior', label: 'Obra exterior' },
+  ],
+};
