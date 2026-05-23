@@ -422,6 +422,30 @@ export interface Metodologias {
   comparables?: Comparable[];
 }
 
+// -------------------- MEMORIAS POR TERRENO --------------------
+
+export interface AplicarMemorias {
+  mercadoInmueble: boolean;
+  realizacion: boolean;
+  mercadoTerreno: boolean;
+  reposicion: boolean;
+  ross: boolean;
+  consolidado: boolean;
+  conclusion: boolean;
+}
+
+export interface MemoriaTerreno {
+  aplicar: AplicarMemorias;
+  sujetoInmueble: FichaSujetoInmueble;
+  sujetoTerreno: FichaSujetoTerreno;
+  comparablesInmueble: ComparableInmueble[];
+  comparablesTerreno: ComparableTerreno[];
+  deducciones: DeduccionesRealizacion;
+  enfoqueConclusion: 'mercado' | 'costo';
+  notasMercadoInmueble: string;
+  notasMercadoTerreno: string;
+}
+
 // -------------------- FOTOS --------------------
 
 export type FotoCategoria =
@@ -448,6 +472,8 @@ export interface Avaluo {
   descripcionGeneralTerrenos: DescripcionGeneralTerrenos;
   terrenos: Terreno[];
   metodologias: Metodologias;
+  /** Memorias de cálculo (Cap VI) por terreno — clave: terreno.id */
+  metodologiasPorTerreno?: Record<ID, MemoriaTerreno>;
   fotos: Fotografias;
 }
 
@@ -577,6 +603,22 @@ export const emptyComparableTerreno = (): ComparableTerreno => ({
 
 export const emptyMetodologias = (): Metodologias => ({
   enfoqueMercado: true, enfoqueCosto: true, enfoqueIngresos: false,
+  sujetoInmueble: emptySujetoInmueble(),
+  sujetoTerreno: emptySujetoTerreno(),
+  comparablesInmueble: [],
+  comparablesTerreno: [],
+  deducciones: { ir: 2, ibi: 1, corretaje: 4, legales: 1, comercializacion: 2 },
+  enfoqueConclusion: 'mercado',
+  notasMercadoInmueble: '', notasMercadoTerreno: '',
+});
+
+export const emptyAplicarMemorias = (): AplicarMemorias => ({
+  mercadoInmueble: true, realizacion: true, mercadoTerreno: true,
+  reposicion: true, ross: true, consolidado: true, conclusion: true,
+});
+
+export const emptyMemoriaTerreno = (): MemoriaTerreno => ({
+  aplicar: emptyAplicarMemorias(),
   sujetoInmueble: emptySujetoInmueble(),
   sujetoTerreno: emptySujetoTerreno(),
   comparablesInmueble: [],

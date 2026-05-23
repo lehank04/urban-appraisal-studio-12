@@ -1,11 +1,14 @@
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '@/store/avaluoStore';
 import {
   Avaluo, ComparableInmueble, ComparableTerreno, FichaSujetoInmueble, FichaSujetoTerreno,
   emptyComparableInmueble, emptyComparableTerreno, DeduccionesRealizacion, Infraestructura,
+  MemoriaTerreno, AplicarMemorias, emptyMemoriaTerreno,
 } from '@/store/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { TextField, NumberField, TextArea, Field } from '@/components/forms/Fields';
 import { KeySelect } from '@/components/forms/CatSelect';
 import { Input } from '@/components/ui/input';
@@ -23,14 +26,78 @@ import {
 } from '@/lib/calculations';
 import { Plus, Trash2 } from 'lucide-react';
 
+// Toggle visual reutilizable para cada memoria
+function ApplyToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border bg-muted/20 mb-3">
+      <div className="text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground ml-2">
+          {checked ? 'Esta memoria se aplica a este terreno.' : 'Esta memoria NO se aplicará a este terreno.'}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Aplicar</span>
+        <Switch checked={checked} onCheckedChange={onChange} />
+      </div>
+    </div>
+  );
+}
+
 export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
   const { patchAvaluo } = useStore();
-  const m = avaluo.metodologias;
-  const setM = (patch: Partial<typeof m>) =>
-    patchAvaluo(avaluo.id, (a) => ({ ...a, metodologias: { ...a.metodologias, ...patch } }));
-  const setSujetoT = (p: Partial<FichaSujetoTerreno>) => setM({ sujetoTerreno: { ...m.sujetoTerreno, ...p } });
-  const setSujetoI = (p: Partial<FichaSujetoInmueble>) => setM({ sujetoInmueble: { ...m.sujetoInmueble, ...p } });
-  const setDed = (p: Partial<DeduccionesRealizacion>) => setM({ deducciones: { ...m.deducciones, ...p } });
+
+  // ---- Selección de terreno ----
+  const terrenos = avaluo.terrenos ?? [];
+  const [currentTerrenoId, setCurrentTerrenoId] = useState<string>(terrenos[0]?.id ?? '');
+  useEffect(() => {
+    if (!terrenos.find((t) => t.id === currentTerrenoId)) {
+      setCurrentTerrenoId(terrenos[0]?.id ?? '');
+    }
+  }, [terrenos, currentTerrenoId]);
+  const currentTerreno = terrenos.find((t) => t.id === currentTerrenoId);
+
+  // ---- Resolver MemoriaTerreno actual (con hidratación desde avaluo.metodologias legado) ----
+  const mt: MemoriaTerreno = useMemo(() => {
+    const stored = avaluo.metodologiasPorTerreno?.[currentTerrenoId];
+    if (stored) return stored;
+    // Hidratar primer terreno desde la metodología legada para no perder datos
+    const legacy = avaluo.metodologias;
+    const isFirst = terrenos[0]?.id === currentTerrenoId;
+    const base = emptyMemoriaTerreno();
+    if (isFirst && legacy) {
+      return {
+        ...base,
+        sujetoInmueble: legacy.sujetoInmueble ?? base.sujetoInmueble,
+        sujetoTerreno: legacy.sujetoTerreno ?? base.sujetoTerreno,
+        comparablesInmueble: legacy.comparablesInmueble ?? [],
+        comparablesTerreno: legacy.comparablesTerreno ?? [],
+        deducciones: legacy.deducciones ?? base.deducciones,
+        enfoqueConclusion: legacy.enfoqueConclusion ?? 'mercado',
+        notasMercadoInmueble: legacy.notasMercadoInmueble ?? '',
+        notasMercadoTerreno: legacy.notasMercadoTerreno ?? '',
+      };
+    }
+    return base;
+  }, [avaluo.metodologiasPorTerreno, avaluo.metodologias, currentTerrenoId, terrenos]);
+
+  const setMT = (patch: Partial<MemoriaTerreno>) =>
+    patchAvaluo(avaluo.id, (a) => ({
+      ...a,
+      metodologiasPorTerreno: {
+        ...(a.metodologiasPorTerreno ?? {}),
+        [currentTerrenoId]: { ...mt, ...patch },
+      },
+      // Mantener compat con preview legado: si es el primer terreno, espejar a metodologias
+      ...(terrenos[0]?.id === currentTerrenoId
+        ? { metodologias: { ...a.metodologias, ...patch } as any }
+        : {}),
+    }));
+
+  const setAplicar = (p: Partial<AplicarMemorias>) => setMT({ aplicar: { ...mt.aplicar, ...p } });
+  const setSujetoT = (p: Partial<FichaSujetoTerreno>) => setMT({ sujetoTerreno: { ...mt.sujetoTerreno, ...p } });
+  const setSujetoI = (p: Partial<FichaSujetoInmueble>) => setMT({ sujetoInmueble: { ...mt.sujetoInmueble, ...p } });
+  const setDed = (p: Partial<DeduccionesRealizacion>) => setMT({ deducciones: { ...mt.deducciones, ...p } });
 
   const updateInfra = (terrenoId: string, infraId: string, patch: Partial<Infraestructura>) =>
     patchAvaluo(avaluo.id, (a) => ({
@@ -42,70 +109,115 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
     }));
 
   const cons = consolidados(avaluo);
-  const homT = homologacionTerreno(m.sujetoTerreno, m.comparablesTerreno);
-  const homI = homologacionInmueble(m.sujetoInmueble, m.comparablesInmueble);
+  const homT = homologacionTerreno(mt.sujetoTerreno, mt.comparablesTerreno);
+  const homI = homologacionInmueble(mt.sujetoInmueble, mt.comparablesInmueble);
   const valorMercado = (homT.valorMercadoTerreno || 0) + (homI.valorMercado || 0);
-  const valorReal = valorRealizacion(valorMercado || cons.totalReposicionNeto, m.deducciones);
+  const valorReal = valorRealizacion(valorMercado || cons.totalReposicionNeto, mt.deducciones);
 
-  // Recolectar infraestructuras con su terreno
-  const infrasAll = avaluo.terrenos.flatMap((t) =>
-    (t.infraestructuras ?? []).map((i) => ({ terrenoId: t.id, terrenoTitulo: t.titulo, infra: i }))
-  );
+  // Infraestructuras SOLO del terreno actual
+  const infrasAll = (currentTerreno?.infraestructuras ?? []).map((i) => ({
+    terrenoId: currentTerreno!.id, terrenoTitulo: currentTerreno!.titulo, infra: i,
+  }));
   const infrasPrincipales  = infrasAll.filter((x) => x.infra.tipo === 'principal');
   const infrasComplement   = infrasAll.filter((x) => x.infra.tipo === 'complementaria');
   const infrasExteriores   = infrasAll.filter((x) => x.infra.tipo === 'obra_exterior');
+
+  const ap = mt.aplicar;
+
+  if (terrenos.length === 0) {
+    return (
+      <Card className="p-6 text-center text-sm text-muted-foreground">
+        Agregue al menos un terreno en Capítulo III para construir las memorias de cálculo.
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
       <header>
         <div className="text-xs uppercase tracking-widest text-primary">Capítulo VI · INMOVAL</div>
         <h2 className="text-xl font-semibold">Memorias de cálculo</h2>
-        <p className="text-sm text-muted-foreground">Mercado, realización, reposición, depreciación y consolidación de valores.</p>
+        <p className="text-sm text-muted-foreground">Un juego de memorias (1–7) por cada terreno. Active solo las que apliquen.</p>
       </header>
+
+      {/* Selector de terreno */}
+      <Card className="p-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Terreno</div>
+          <div className="flex flex-wrap gap-2">
+            {terrenos.map((t) => (
+              <Button key={t.id} size="sm"
+                variant={t.id === currentTerrenoId ? 'default' : 'outline'}
+                onClick={() => setCurrentTerrenoId(t.id)}>
+                {t.titulo || 'Terreno'}
+              </Button>
+            ))}
+          </div>
+          <div className="ml-auto text-xs text-muted-foreground">
+            Memorias activas:{' '}
+            <span className="mono">
+              {[
+                ap.mercadoInmueble && '1',
+                ap.realizacion && '2',
+                ap.mercadoTerreno && '3',
+                ap.reposicion && '4',
+                ap.ross && '5',
+                ap.consolidado && '6',
+                ap.conclusion && '7',
+              ].filter(Boolean).join(' · ') || 'ninguna'}
+            </span>
+          </div>
+        </div>
+      </Card>
 
       <Tabs defaultValue="inmueble">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="inmueble">1 · Mercado construido</TabsTrigger>
-          <TabsTrigger value="realizacion">2 · Realización</TabsTrigger>
-          <TabsTrigger value="terreno">3 · Mercado terreno</TabsTrigger>
-          <TabsTrigger value="reposicion">4 · Reposición</TabsTrigger>
-          <TabsTrigger value="ross">5 · Ross-Heidecke</TabsTrigger>
-          <TabsTrigger value="consolidado">6 · Consolidado</TabsTrigger>
-          <TabsTrigger value="conclusion">7 · Conclusión</TabsTrigger>
+          <TabsTrigger value="inmueble">1 · Mercado construido {ap.mercadoInmueble ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="realizacion">2 · Realización {ap.realizacion ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="terreno">3 · Mercado terreno {ap.mercadoTerreno ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="reposicion">4 · Reposición {ap.reposicion ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="ross">5 · Ross-Heidecke {ap.ross ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="consolidado">6 · Consolidado {ap.consolidado ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="conclusion">7 · Conclusión {ap.conclusion ? '' : '○'}</TabsTrigger>
         </TabsList>
+
 
         {/* 1. MERCADO INMUEBLE CONSTRUIDO */}
         <TabsContent value="inmueble" className="mt-4 space-y-4">
+          <ApplyToggle label="1 · Mercado del inmueble construido"
+            checked={ap.mercadoInmueble} onChange={(v) => setAplicar({ mercadoInmueble: v })} />
+          {!ap.mercadoInmueble && <div className="text-xs text-muted-foreground p-3 bg-muted/20 rounded">Memoria desactivada — los campos siguen disponibles pero esta memoria no formará parte del avalúo de este terreno.</div>}
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Ficha sujeto · Inmueble construido</div>
             <div className="grid md:grid-cols-3 gap-3">
-              <TextField label="Dirección" value={m.sujetoInmueble.direccion} onChange={(v) => setSujetoI({ direccion: v })} />
-              <NumberField label="Área construcción (m²)" value={m.sujetoInmueble.areaConstruccionM2} onChange={(v) => setSujetoI({ areaConstruccionM2: v })} />
-              <NumberField label="Área terreno (m²)" value={m.sujetoInmueble.areaTerrenoM2} onChange={(v) => setSujetoI({ areaTerrenoM2: v })} />
-              <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={m.sujetoInmueble.ubicacionKey} onChange={(v) => setSujetoI({ ubicacionKey: v })} />
-              <KeySelect label="Zona" tabla={TABLA_ZONA} value={m.sujetoInmueble.zonaKey} onChange={(v) => setSujetoI({ zonaKey: v })} />
-              <KeySelect label="Vía de acceso" tabla={TABLA_VIA} value={m.sujetoInmueble.viaAccesoKey} onChange={(v) => setSujetoI({ viaAccesoKey: v })} />
-              <NumberField label="Dormitorios" value={m.sujetoInmueble.dormitorios} onChange={(v) => setSujetoI({ dormitorios: v })} />
-              <NumberField label="Baños completos" value={m.sujetoInmueble.banosCompletos} onChange={(v) => setSujetoI({ banosCompletos: v })} />
-              <NumberField label="Baño medio" value={m.sujetoInmueble.banoMedio} onChange={(v) => setSujetoI({ banoMedio: v })} />
-              <NumberField label="Cuarto/baño servicio" value={m.sujetoInmueble.cuartoBanoServicio} onChange={(v) => setSujetoI({ cuartoBanoServicio: v })} />
+              <TextField label="Dirección" value={mt.sujetoInmueble.direccion} onChange={(v) => setSujetoI({ direccion: v })} />
+              <NumberField label="Área construcción (m²)" value={mt.sujetoInmueble.areaConstruccionM2} onChange={(v) => setSujetoI({ areaConstruccionM2: v })} />
+              <NumberField label="Área terreno (m²)" value={mt.sujetoInmueble.areaTerrenoM2} onChange={(v) => setSujetoI({ areaTerrenoM2: v })} />
+              <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={mt.sujetoInmueble.ubicacionKey} onChange={(v) => setSujetoI({ ubicacionKey: v })} />
+              <KeySelect label="Zona" tabla={TABLA_ZONA} value={mt.sujetoInmueble.zonaKey} onChange={(v) => setSujetoI({ zonaKey: v })} />
+              <KeySelect label="Vía de acceso" tabla={TABLA_VIA} value={mt.sujetoInmueble.viaAccesoKey} onChange={(v) => setSujetoI({ viaAccesoKey: v })} />
+              <NumberField label="Dormitorios" value={mt.sujetoInmueble.dormitorios} onChange={(v) => setSujetoI({ dormitorios: v })} />
+              <NumberField label="Baños completos" value={mt.sujetoInmueble.banosCompletos} onChange={(v) => setSujetoI({ banosCompletos: v })} />
+              <NumberField label="Baño medio" value={mt.sujetoInmueble.banoMedio} onChange={(v) => setSujetoI({ banoMedio: v })} />
+              <NumberField label="Cuarto/baño servicio" value={mt.sujetoInmueble.cuartoBanoServicio} onChange={(v) => setSujetoI({ cuartoBanoServicio: v })} />
             </div>
           </Card>
 
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-semibold">Comparables de inmueble construido ({m.comparablesInmueble.length})</div>
-              <Button size="sm" onClick={() => setM({ comparablesInmueble: [...m.comparablesInmueble, emptyComparableInmueble()] })}>
+              <div className="font-semibold">Comparables de inmueble construido ({mt.comparablesInmueble.length})</div>
+              <Button size="sm" onClick={() => setMT({ comparablesInmueble: [...mt.comparablesInmueble, emptyComparableInmueble()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
               </Button>
             </div>
             <div className="space-y-3">
-              {m.comparablesInmueble.map((c, idx) => (
+              {mt.comparablesInmueble.map((c, idx) => (
                 <CompInmuebleRow key={c.id} comp={c} idx={idx}
-                  onChange={(p) => setM({ comparablesInmueble: m.comparablesInmueble.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
-                  onRemove={() => setM({ comparablesInmueble: m.comparablesInmueble.filter((x) => x.id !== c.id) })} />
+                  onChange={(p) => setMT({ comparablesInmueble: mt.comparablesInmueble.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
+                  onRemove={() => setMT({ comparablesInmueble: mt.comparablesInmueble.filter((x) => x.id !== c.id) })} />
               ))}
-              {m.comparablesInmueble.length === 0 && <div className="text-xs text-muted-foreground text-center py-4">Sin comparables</div>}
+              {mt.comparablesInmueble.length === 0 && <div className="text-xs text-muted-foreground text-center py-4">Sin comparables</div>}
             </div>
 
             {homI.filas.length > 0 && (
@@ -143,20 +255,23 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </div>
             )}
-            <TextArea label="Notas del enfoque de mercado (inmueble)" value={m.notasMercadoInmueble} onChange={(v) => setM({ notasMercadoInmueble: v })} rows={2} />
+            <TextArea label="Notas del enfoque de mercado (inmueble)" value={mt.notasMercadoInmueble} onChange={(v) => setMT({ notasMercadoInmueble: v })} rows={2} />
           </Card>
         </TabsContent>
 
         {/* 2. REALIZACIÓN */}
         <TabsContent value="realizacion" className="mt-4">
+          <ApplyToggle label="2 · Valor de realización"
+            checked={ap.realizacion} onChange={(v) => setAplicar({ realizacion: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Deducciones del valor de realización</div>
             <div className="grid md:grid-cols-5 gap-3">
-              <NumberField label="IR (%)" value={m.deducciones.ir} onChange={(v) => setDed({ ir: v })} />
-              <NumberField label="IBI (%)" value={m.deducciones.ibi} onChange={(v) => setDed({ ibi: v })} />
-              <NumberField label="Corretaje (%)" value={m.deducciones.corretaje} onChange={(v) => setDed({ corretaje: v })} />
-              <NumberField label="Legales (%)" value={m.deducciones.legales} onChange={(v) => setDed({ legales: v })} />
-              <NumberField label="Comercialización (%)" value={m.deducciones.comercializacion} onChange={(v) => setDed({ comercializacion: v })} />
+              <NumberField label="IR (%)" value={mt.deducciones.ir} onChange={(v) => setDed({ ir: v })} />
+              <NumberField label="IBI (%)" value={mt.deducciones.ibi} onChange={(v) => setDed({ ibi: v })} />
+              <NumberField label="Corretaje (%)" value={mt.deducciones.corretaje} onChange={(v) => setDed({ corretaje: v })} />
+              <NumberField label="Legales (%)" value={mt.deducciones.legales} onChange={(v) => setDed({ legales: v })} />
+              <NumberField label="Comercialización (%)" value={mt.deducciones.comercializacion} onChange={(v) => setDed({ comercializacion: v })} />
             </div>
             <div className="mt-4">
               <table className="w-full text-sm">
@@ -164,13 +279,13 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                   <tr><th className="text-left py-2">Concepto</th><th className="text-right">%</th><th className="text-right">Valor</th></tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {deduccionesDetalle(valorMercado || cons.totalReposicionNeto, m.deducciones).map((d) => (
+                  {deduccionesDetalle(valorMercado || cons.totalReposicionNeto, mt.deducciones).map((d) => (
                     <tr key={d.concepto}><td className="py-2">{d.concepto}</td><td className="text-right mono">{d.pct}%</td><td className="text-right mono">{fmtMoney(d.valor)}</td></tr>
                   ))}
                 </tbody>
               </table>
               <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
-                <div className="p-2 rounded bg-muted/30"><div className="text-xs text-muted-foreground">Total deducciones</div><div className="mono">{fmtPct(totalDeducciones(m.deducciones))}</div></div>
+                <div className="p-2 rounded bg-muted/30"><div className="text-xs text-muted-foreground">Total deducciones</div><div className="mono">{fmtPct(totalDeducciones(mt.deducciones))}</div></div>
                 <div className="p-2 rounded bg-muted/30"><div className="text-xs text-muted-foreground">Base (V. mercado)</div><div className="mono">{fmtMoney(valorMercado || cons.totalReposicionNeto)}</div></div>
                 <div className="p-2 rounded bg-primary/10 border border-primary/30"><div className="text-xs text-muted-foreground">Valor de realización</div><div className="mono font-bold text-primary">{fmtMoney(valorReal)}</div></div>
               </div>
@@ -180,35 +295,38 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 3. MERCADO TERRENO */}
         <TabsContent value="terreno" className="mt-4 space-y-4">
+          <ApplyToggle label="3 · Mercado del terreno"
+            checked={ap.mercadoTerreno} onChange={(v) => setAplicar({ mercadoTerreno: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Ficha sujeto · Terreno</div>
             <div className="grid md:grid-cols-3 gap-3">
-              <TextField label="Dirección" value={m.sujetoTerreno.direccion} onChange={(v) => setSujetoT({ direccion: v })} />
-              <NumberField label="Área vr²" value={m.sujetoTerreno.areaTerrenoVr2} onChange={(v) => setSujetoT({ areaTerrenoVr2: v })} />
-              <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={m.sujetoTerreno.ubicacionKey} onChange={(v) => setSujetoT({ ubicacionKey: v })} />
-              <KeySelect label="Zona" tabla={TABLA_ZONA} value={m.sujetoTerreno.zonaKey} onChange={(v) => setSujetoT({ zonaKey: v })} />
-              <KeySelect label="Vía de acceso" tabla={TABLA_VIA} value={m.sujetoTerreno.viaAccesoKey} onChange={(v) => setSujetoT({ viaAccesoKey: v })} />
-              <KeySelect label="Servicios" tabla={TABLA_SERVICIOS} value={m.sujetoTerreno.serviciosKey} onChange={(v) => setSujetoT({ serviciosKey: v })} />
-              <KeySelect label="Equipamiento" tabla={TABLA_EQUIPAMIENTO} value={m.sujetoTerreno.equipamientoKey} onChange={(v) => setSujetoT({ equipamientoKey: v })} />
-              <KeySelect label="Topografía" tabla={TABLA_TOPOGRAFIA} value={m.sujetoTerreno.topografiaKey} onChange={(v) => setSujetoT({ topografiaKey: v })} />
-              <KeySelect label="Posición en manzana" tabla={TABLA_POSICION} value={m.sujetoTerreno.posicionManzanaKey} onChange={(v) => setSujetoT({ posicionManzanaKey: v })} />
+              <TextField label="Dirección" value={mt.sujetoTerreno.direccion} onChange={(v) => setSujetoT({ direccion: v })} />
+              <NumberField label="Área vr²" value={mt.sujetoTerreno.areaTerrenoVr2} onChange={(v) => setSujetoT({ areaTerrenoVr2: v })} />
+              <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={mt.sujetoTerreno.ubicacionKey} onChange={(v) => setSujetoT({ ubicacionKey: v })} />
+              <KeySelect label="Zona" tabla={TABLA_ZONA} value={mt.sujetoTerreno.zonaKey} onChange={(v) => setSujetoT({ zonaKey: v })} />
+              <KeySelect label="Vía de acceso" tabla={TABLA_VIA} value={mt.sujetoTerreno.viaAccesoKey} onChange={(v) => setSujetoT({ viaAccesoKey: v })} />
+              <KeySelect label="Servicios" tabla={TABLA_SERVICIOS} value={mt.sujetoTerreno.serviciosKey} onChange={(v) => setSujetoT({ serviciosKey: v })} />
+              <KeySelect label="Equipamiento" tabla={TABLA_EQUIPAMIENTO} value={mt.sujetoTerreno.equipamientoKey} onChange={(v) => setSujetoT({ equipamientoKey: v })} />
+              <KeySelect label="Topografía" tabla={TABLA_TOPOGRAFIA} value={mt.sujetoTerreno.topografiaKey} onChange={(v) => setSujetoT({ topografiaKey: v })} />
+              <KeySelect label="Posición en manzana" tabla={TABLA_POSICION} value={mt.sujetoTerreno.posicionManzanaKey} onChange={(v) => setSujetoT({ posicionManzanaKey: v })} />
             </div>
           </Card>
 
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-semibold">Comparables de terreno ({m.comparablesTerreno.length})</div>
-              <Button size="sm" onClick={() => setM({ comparablesTerreno: [...m.comparablesTerreno, emptyComparableTerreno()] })}>
+              <div className="font-semibold">Comparables de terreno ({mt.comparablesTerreno.length})</div>
+              <Button size="sm" onClick={() => setMT({ comparablesTerreno: [...mt.comparablesTerreno, emptyComparableTerreno()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
               </Button>
             </div>
             <div className="space-y-3">
-              {m.comparablesTerreno.map((c, idx) => (
+              {mt.comparablesTerreno.map((c, idx) => (
                 <CompTerrenoRow key={c.id} comp={c} idx={idx}
-                  onChange={(p) => setM({ comparablesTerreno: m.comparablesTerreno.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
-                  onRemove={() => setM({ comparablesTerreno: m.comparablesTerreno.filter((x) => x.id !== c.id) })} />
+                  onChange={(p) => setMT({ comparablesTerreno: mt.comparablesTerreno.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
+                  onRemove={() => setMT({ comparablesTerreno: mt.comparablesTerreno.filter((x) => x.id !== c.id) })} />
               ))}
-              {m.comparablesTerreno.length === 0 && <div className="text-xs text-muted-foreground text-center py-4">Sin comparables</div>}
+              {mt.comparablesTerreno.length === 0 && <div className="text-xs text-muted-foreground text-center py-4">Sin comparables</div>}
             </div>
 
             {homT.filas.length > 0 && (
@@ -247,12 +365,15 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </div>
             )}
-            <TextArea label="Notas del enfoque de mercado (terreno)" value={m.notasMercadoTerreno} onChange={(v) => setM({ notasMercadoTerreno: v })} rows={2} />
+            <TextArea label="Notas del enfoque de mercado (terreno)" value={mt.notasMercadoTerreno} onChange={(v) => setMT({ notasMercadoTerreno: v })} rows={2} />
           </Card>
         </TabsContent>
 
         {/* 4. REPOSICIÓN */}
         <TabsContent value="reposicion" className="mt-4 space-y-4">
+          <ApplyToggle label="4 · Reposición (etapas y obras exteriores)"
+            checked={ap.reposicion} onChange={(v) => setAplicar({ reposicion: v })} />
+
           {(infrasPrincipales.length === 0 && infrasComplement.length === 0 && infrasExteriores.length === 0) && (
             <Card className="p-6 text-center text-sm text-muted-foreground">
               Agregue infraestructuras en Capítulo V para generar las memorias de reposición.
@@ -272,6 +393,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 5. ROSS-HEIDECKE */}
         <TabsContent value="ross" className="mt-4">
+          <ApplyToggle label="5 · Depreciación Ross-Heidecke"
+            checked={ap.ross} onChange={(v) => setAplicar({ ross: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-1">Memoria de cálculo de la depreciación · Ross-Heidecke</div>
             <div className="text-xs text-muted-foreground mb-3">
@@ -339,6 +463,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 6. CONSOLIDADO DE VALORES (enfoque de costos) */}
         <TabsContent value="consolidado" className="mt-4 space-y-4">
+          <ApplyToggle label="6 · Consolidado de valores (enfoque de costos)"
+            checked={ap.consolidado} onChange={(v) => setAplicar({ consolidado: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Consolidado de valores · Infraestructuras</div>
             <ConsolidadoBloque titulo="Obras principales" filas={infrasPrincipales} />
@@ -360,7 +487,7 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
               <tbody>
                 <tr className="border-b border-border">
                   <td className="py-2">Terreno (área homologación)</td>
-                  <td className="text-right mono">{fmtNum(m.sujetoTerreno.areaTerrenoVr2)}</td>
+                  <td className="text-right mono">{fmtNum(mt.sujetoTerreno.areaTerrenoVr2)}</td>
                   <td className="text-right mono">{fmtMoney(homT.valorVr2Promedio)}</td>
                   <td className="text-right mono font-medium">{fmtMoney(homT.valorMercadoTerreno)}</td>
                 </tr>
@@ -379,6 +506,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 7. CONCLUSIÓN */}
         <TabsContent value="conclusion" className="mt-4 space-y-4">
+          <ApplyToggle label="7 · Conclusión y conciliación"
+            checked={ap.conclusion} onChange={(v) => setAplicar({ conclusion: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Resumen y conciliación de valores</div>
             <div className="grid md:grid-cols-3 gap-3 text-sm">
@@ -390,8 +520,8 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
             <div className="mt-4">
               <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Enfoque concluido</div>
               <div className="flex gap-2">
-                <Button variant={m.enfoqueConclusion === 'mercado' ? 'default' : 'outline'} onClick={() => setM({ enfoqueConclusion: 'mercado' })}>Conclusión por Mercado</Button>
-                <Button variant={m.enfoqueConclusion === 'costo' ? 'default' : 'outline'} onClick={() => setM({ enfoqueConclusion: 'costo' })}>Conclusión por Reposición</Button>
+                <Button variant={mt.enfoqueConclusion === 'mercado' ? 'default' : 'outline'} onClick={() => setMT({ enfoqueConclusion: 'mercado' })}>Conclusión por Mercado</Button>
+                <Button variant={mt.enfoqueConclusion === 'costo' ? 'default' : 'outline'} onClick={() => setMT({ enfoqueConclusion: 'costo' })}>Conclusión por Reposición</Button>
               </div>
             </div>
 
@@ -399,20 +529,20 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
               <Field label="Nota / justificación del enfoque concluido">
                 <textarea
                   className="w-full min-h-[120px] rounded border border-border bg-background px-3 py-2 text-sm"
-                  value={m.enfoqueConclusion === 'mercado' ? m.notasMercadoInmueble : m.notasMercadoTerreno}
-                  onChange={(e) => m.enfoqueConclusion === 'mercado'
-                    ? setM({ notasMercadoInmueble: e.target.value })
-                    : setM({ notasMercadoTerreno: e.target.value })}
-                  placeholder={m.enfoqueConclusion === 'mercado'
+                  value={mt.enfoqueConclusion === 'mercado' ? mt.notasMercadoInmueble : mt.notasMercadoTerreno}
+                  onChange={(e) => mt.enfoqueConclusion === 'mercado'
+                    ? setMT({ notasMercadoInmueble: e.target.value })
+                    : setMT({ notasMercadoTerreno: e.target.value })}
+                  placeholder={mt.enfoqueConclusion === 'mercado'
                     ? 'Tras analizar los resultados, se otorga el mayor peso al valor obtenido por el enfoque de mercado…'
                     : 'Dada la escasez de comparables directos y/o la naturaleza única de la propiedad valuada, se otorga el mayor peso al enfoque de costo (valor de reposición)…'}
                 />
               </Field>
               <div className="flex gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => setM({ notasMercadoInmueble: 'Tras analizar los resultados, se otorga el mayor peso al valor obtenido por el enfoque de mercado, ya que refleja de manera más directa el comportamiento actual de la oferta y la demanda para propiedades similares en la zona. El valor de reposición se considera un sólido soporte técnico, pero es el mercado quien dicta la transacción final.' })}>
+                <Button variant="outline" size="sm" onClick={() => setMT({ notasMercadoInmueble: 'Tras analizar los resultados, se otorga el mayor peso al valor obtenido por el enfoque de mercado, ya que refleja de manera más directa el comportamiento actual de la oferta y la demanda para propiedades similares en la zona. El valor de reposición se considera un sólido soporte técnico, pero es el mercado quien dicta la transacción final.' })}>
                   Usar nota A (mercado)
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setM({ notasMercadoTerreno: 'Dada la escasez de comparables directos y/o la naturaleza única de la propiedad valuada, se otorga el mayor peso al enfoque de costo (valor de reposición). Se considera que este valor representa de forma más fiel y objetiva el valor de los activos físicos que componen el inmueble, ante la ausencia de evidencia suficiente de mercado.' })}>
+                <Button variant="outline" size="sm" onClick={() => setMT({ notasMercadoTerreno: 'Dada la escasez de comparables directos y/o la naturaleza única de la propiedad valuada, se otorga el mayor peso al enfoque de costo (valor de reposición). Se considera que este valor representa de forma más fiel y objetiva el valor de los activos físicos que componen el inmueble, ante la ausencia de evidencia suficiente de mercado.' })}>
                   Usar nota B (reposición)
                 </Button>
               </div>
@@ -421,7 +551,7 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
             <Card className="p-4 mt-4 bg-primary/10 border-primary/30">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Valor comercial concluido</div>
               <div className="text-3xl font-bold mono text-primary mt-1">
-                {fmtMoney(m.enfoqueConclusion === 'mercado'
+                {fmtMoney(mt.enfoqueConclusion === 'mercado'
                   ? (valorMercado || cons.totalVNO + homT.valorMercadoTerreno)
                   : (cons.totalVNO + homT.valorMercadoTerreno))}
               </div>
