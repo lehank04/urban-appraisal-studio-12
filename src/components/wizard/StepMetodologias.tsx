@@ -184,6 +184,10 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 1. MERCADO INMUEBLE CONSTRUIDO */}
         <TabsContent value="inmueble" className="mt-4 space-y-4">
+          <ApplyToggle label="1 · Mercado del inmueble construido"
+            checked={ap.mercadoInmueble} onChange={(v) => setAplicar({ mercadoInmueble: v })} />
+          {!ap.mercadoInmueble && <div className="text-xs text-muted-foreground p-3 bg-muted/20 rounded">Memoria desactivada — los campos siguen disponibles pero esta memoria no formará parte del avalúo de este terreno.</div>}
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Ficha sujeto · Inmueble construido</div>
             <div className="grid md:grid-cols-3 gap-3">
