@@ -3,23 +3,38 @@ import { useStore } from '@/store/avaluoStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { PLANTILLAS } from '@/templates/plantillas';
+import { emptyFormatoExport } from '@/store/types';
 import {
   consolidados, homologacionInmueble, homologacionTerreno,
   totalesCostos, valorRealizacion, deduccionesDetalle,
   fmtMoney, fmtNum, fmtPct,
 } from '@/lib/calculations';
 
+function renderToken(tpl: string, ctx: Record<string, string | number>) {
+  return (tpl || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => String(ctx[k] ?? ''));
+}
 
-function Page({ children, num, total, plantilla, title }: any) {
+function Page({ children, num, total, plantilla, title, formato, ctx }: any) {
+  const fontClass = formato.fuente === 'roboto-mono' ? 'pdf-roboto'
+    : formato.fuente === 'serif' ? 'font-serif' : '';
+  const roundedClass = formato.bordesRedondeados ? 'pdf-rounded' : '';
+  const headerL = renderToken(formato.headerIzq, { ...ctx, capitulo: title || '' });
+  const headerR = renderToken(formato.headerDer, { ...ctx, capitulo: title || '' });
+  const footerL = renderToken(formato.footerIzq, { ...ctx, pagina: num, totalPaginas: total });
+  const footerR = renderToken(formato.footerDer, { ...ctx, pagina: num, totalPaginas: total });
   return (
-    <div className="doc-page mb-6 relative bg-white text-zinc-900 mx-auto" style={{ width: '210mm', minHeight: '297mm', padding: '20mm', boxShadow: '0 4px 14px rgba(0,0,0,.08)' }}>
-      <div className="flex justify-between text-[10px] uppercase tracking-widest text-zinc-500 border-b border-zinc-200 pb-2 mb-4">
-        <span>{plantilla.empresa}</span><span>{title || 'Avalúo INMOVAL'}</span>
-      </div>
+    <div className={`doc-page ${fontClass} ${roundedClass} mb-6 relative bg-white text-zinc-900 mx-auto`} style={{ width: '210mm', minHeight: '297mm', padding: '20mm', boxShadow: '0 4px 14px rgba(0,0,0,.08)' }}>
+      {formato.mostrarHeader && (
+        <div className="flex justify-between text-[10px] uppercase tracking-widest text-zinc-500 border-b border-zinc-200 pb-2 mb-4">
+          <span>{headerL}</span><span>{headerR}</span>
+        </div>
+      )}
       <div>{children}</div>
-      <div className="absolute bottom-6 left-0 right-0 px-[20mm] flex justify-between text-[10px] text-zinc-400 border-t border-zinc-200 pt-2">
-        <span>{plantilla.normativa}</span><span>Página {num} de {total}</span>
-      </div>
+      {formato.mostrarFooter && (
+        <div className="absolute bottom-6 left-0 right-0 px-[20mm] flex justify-between text-[9px] text-zinc-500 border-t border-zinc-200 pt-2 whitespace-pre-line">
+          <span>{footerL}</span><span>{footerR}</span>
+        </div>
+      )}
     </div>
   );
 }
