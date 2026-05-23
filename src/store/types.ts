@@ -472,6 +472,8 @@ export interface Avaluo {
   descripcionGeneralTerrenos: DescripcionGeneralTerrenos;
   terrenos: Terreno[];
   metodologias: Metodologias;
+  /** Memorias de cálculo (Cap VI) por terreno — clave: terreno.id */
+  metodologiasPorTerreno?: Record<ID, MemoriaTerreno>;
   fotos: Fotografias;
 }
 
