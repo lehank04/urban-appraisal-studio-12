@@ -463,6 +463,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 6. CONSOLIDADO DE VALORES (enfoque de costos) */}
         <TabsContent value="consolidado" className="mt-4 space-y-4">
+          <ApplyToggle label="6 · Consolidado de valores (enfoque de costos)"
+            checked={ap.consolidado} onChange={(v) => setAplicar({ consolidado: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Consolidado de valores · Infraestructuras</div>
             <ConsolidadoBloque titulo="Obras principales" filas={infrasPrincipales} />
