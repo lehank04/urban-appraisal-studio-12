@@ -208,7 +208,7 @@ export default function AvaluoPreview() {
 
 
         {/* ÍNDICE */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Contenido">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Contenido" formato={formato} ctx={ctx}>
           <h2 className="text-2xl font-bold mb-6">Contenido</h2>
           <ol className="space-y-1.5 text-sm">
             {plantilla.capitulos.map((cap) => (
@@ -226,7 +226,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* CAP I — INFORMACIÓN GENERAL */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. I · Información general">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. I · Información general" formato={formato} ctx={ctx}>
           <H roman="I" title="Información general" />
           <table className="w-full text-sm border-collapse">
             <tbody>
@@ -246,7 +246,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* CAP II — DOC LEGAL */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. II · Documentación legal">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. II · Documentación legal" formato={formato} ctx={ctx}>
           <H roman="II" title="Documentación legal presentada" />
           <table className="w-full text-sm border-collapse">
             <tbody>
@@ -263,7 +263,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* CAP III — ENTORNO */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. III · Entorno urbano">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. III · Entorno urbano" formato={formato} ctx={ctx}>
           <H roman="III" title="Análisis del entorno" />
           <table className="w-full text-sm border-collapse mb-4">
             <tbody>
@@ -301,7 +301,7 @@ export default function AvaluoPreview() {
 
         {/* CAP IV — TERRENOS (uno por página) */}
         {avaluo.terrenos.map((t, idx) => (
-          <Page key={t.id} num={nextP()} total={totalPages} plantilla={plantilla} title={`Cap. IV · ${t.titulo}`}>
+          <Page key={t.id} num={nextP()} total={totalPages} plantilla={plantilla} title={`Cap. IV · ${t.titulo}`} formato={formato} ctx={ctx}>
             <H roman="IV" title={`Descripción del terreno — ${t.titulo}`} />
             <table className="w-full text-sm border-collapse mb-4">
               <tbody>
@@ -373,7 +373,7 @@ export default function AvaluoPreview() {
         ))}
 
         {/* CAP V — DESCRIPCIÓN CONSTRUCTIVA + MEMORIAS DE COSTOS */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. V · Descripción constructiva">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. V · Descripción constructiva" formato={formato} ctx={ctx}>
           <H roman="V" title="Descripción de la infraestructura física" />
           {c.infras.length === 0 && <div className="text-sm text-zinc-500">Sin infraestructuras registradas.</div>}
           {c.infras.map((row) => {
@@ -426,7 +426,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* CAP VI — METODOLOGÍA */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. VI · Metodología y avalúo">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. VI · Metodología y avalúo" formato={formato} ctx={ctx}>
           <H roman="VI" title="Análisis de valoración" />
 
           <h3 className="font-bold mb-2">VI.1 Enfoque de costos</h3>
@@ -515,7 +515,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* RESUMEN + FIRMA */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Resumen de valores y certificación">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Resumen de valores y certificación" formato={formato} ctx={ctx}>
           <H roman="VII" title="Resumen de valores" />
           <table className="w-full text-sm border border-zinc-300 mb-6">
             <tbody>
@@ -548,7 +548,7 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* ANEXO FOTOGRÁFICO */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Anexo fotográfico">
+        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Anexo fotográfico" formato={formato} ctx={ctx}>
           <H roman="VIII" title="Anexo fotográfico" />
           {Object.entries(avaluo.fotos).map(([cat, fotos]) => {
             if (!fotos || fotos.length === 0) return null;
