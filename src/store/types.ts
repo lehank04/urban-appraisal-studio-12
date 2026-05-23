@@ -436,6 +436,8 @@ export interface AplicarMemorias {
 
 export interface MemoriaTerreno {
   aplicar: AplicarMemorias;
+  /** IDs de infraestructuras principales del terreno usadas para componer el sujeto inmueble construido */
+  infraestructurasPrincipalesIds?: ID[];
   sujetoInmueble: FichaSujetoInmueble;
   sujetoTerreno: FichaSujetoTerreno;
   comparablesInmueble: ComparableInmueble[];
@@ -619,6 +621,7 @@ export const emptyAplicarMemorias = (): AplicarMemorias => ({
 
 export const emptyMemoriaTerreno = (): MemoriaTerreno => ({
   aplicar: emptyAplicarMemorias(),
+  infraestructurasPrincipalesIds: undefined,
   sujetoInmueble: emptySujetoInmueble(),
   sujetoTerreno: emptySujetoTerreno(),
   comparablesInmueble: [],
