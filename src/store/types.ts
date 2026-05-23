@@ -459,6 +459,42 @@ export type FotoCategoria =
 export interface Foto { id: ID; src: string; descripcion: string; }
 export type Fotografias = Record<FotoCategoria, Foto[]>;
 
+// -------------------- FORMATO DE EXPORTACIÓN (PDF) --------------------
+
+export interface FormatoExport {
+  /** Imagen de la portada (data URL o ruta) */
+  portadaImagen?: string;
+  mostrarPortadaImagen: boolean;
+  /** Plantillas con tokens: {{empresa}} {{capitulo}} {{perito}} {{email}} {{telefono}} {{pagina}} {{totalPaginas}} {{expediente}} {{cliente}} {{normativa}} */
+  headerIzq: string;
+  headerDer: string;
+  footerIzq: string;
+  footerDer: string;
+  mostrarHeader: boolean;
+  mostrarFooter: boolean;
+  fuente: 'roboto-mono' | 'inter' | 'serif';
+  bordesRedondeados: boolean;
+  incluirCartaPresentacion: boolean;
+  incluirMetodologia: boolean;
+  /** Override de textos (vacío = autogenerado) */
+  textoCartaPresentacion?: string;
+  textoMetodologia?: string;
+}
+
+export const emptyFormatoExport = (): FormatoExport => ({
+  mostrarPortadaImagen: true,
+  headerIzq: '{{capitulo}}',
+  headerDer: '{{empresa}}',
+  footerIzq: 'PERITO VALUADOR {{perito}}\n{{email}} / {{telefono}}',
+  footerDer: 'PÁG. {{pagina}}',
+  mostrarHeader: true,
+  mostrarFooter: true,
+  fuente: 'roboto-mono',
+  bordesRedondeados: true,
+  incluirCartaPresentacion: true,
+  incluirMetodologia: true,
+});
+
 // -------------------- AVALÚO --------------------
 
 export interface Avaluo {
@@ -477,6 +513,7 @@ export interface Avaluo {
   /** Memorias de cálculo (Cap VI) por terreno — clave: terreno.id */
   metodologiasPorTerreno?: Record<ID, MemoriaTerreno>;
   fotos: Fotografias;
+  formato?: FormatoExport;
 }
 
 // -------------------- FACTORIES --------------------

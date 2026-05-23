@@ -13,6 +13,7 @@ import { StepInfraestructuras } from '@/components/wizard/StepInfraestructuras';
 import { StepMetodologias } from '@/components/wizard/StepMetodologias';
 import { StepFotos } from '@/components/wizard/StepFotos';
 import { StepPreview } from '@/components/wizard/StepPreview';
+import { StepFormato } from '@/components/wizard/StepFormato';
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -42,7 +43,8 @@ export default function AvaluoWizard() {
     { id: 7, title: 'Cap. V — Infraestructuras',     subtitle: 'Memoria de costos · Ross-Heidecke' },
     { id: 8, title: 'Cap. VI — Metodología',         subtitle: 'Costo · Mercado · Realización' },
     { id: 9, title: 'Cap. VII — Anexo fotográfico',  subtitle: 'Registro visual' },
-    { id: 10,title: 'Vista previa',                  subtitle: 'Documento final' },
+    { id: 10,title: 'Formato del PDF',                subtitle: 'Portada · encabezado · pie · tipografía' },
+    { id: 11,title: 'Vista previa',                   subtitle: 'Documento final' },
   ];
 
   const render = () => {
@@ -56,7 +58,8 @@ export default function AvaluoWizard() {
       case 6: return <StepInfraestructuras avaluo={avaluo} />;
       case 7: return <StepMetodologias avaluo={avaluo} />;
       case 8: return <StepFotos avaluo={avaluo} />;
-      case 9: return <StepPreview avaluo={avaluo} />;
+      case 9: return <StepFormato avaluo={avaluo} />;
+      case 10: return <StepPreview avaluo={avaluo} />;
     }
   };
 

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import {
   Avaluo, Cliente, Perito, ID,
   emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno, emptyDescripcionGeneralTerrenos,
+  emptyFormatoExport,
 } from './types';
 
 interface State {
@@ -75,6 +76,7 @@ export const useStore = create<State>()(
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),
+          formato: emptyFormatoExport(),
         };
         set((s) => ({ avaluos: [av, ...s.avaluos] }));
         return av;
