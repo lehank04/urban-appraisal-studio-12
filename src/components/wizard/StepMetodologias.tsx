@@ -295,6 +295,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 3. MERCADO TERRENO */}
         <TabsContent value="terreno" className="mt-4 space-y-4">
+          <ApplyToggle label="3 · Mercado del terreno"
+            checked={ap.mercadoTerreno} onChange={(v) => setAplicar({ mercadoTerreno: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Ficha sujeto · Terreno</div>
             <div className="grid md:grid-cols-3 gap-3">
