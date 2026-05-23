@@ -13,6 +13,7 @@ import { StepInfraestructuras } from '@/components/wizard/StepInfraestructuras';
 import { StepMetodologias } from '@/components/wizard/StepMetodologias';
 import { StepFotos } from '@/components/wizard/StepFotos';
 import { StepPreview } from '@/components/wizard/StepPreview';
+import { StepFormato } from '@/components/wizard/StepFormato';
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
