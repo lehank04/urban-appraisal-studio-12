@@ -271,21 +271,65 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
             checked={ap.mercadoInmueble} onChange={(v) => setAplicar({ mercadoInmueble: v })} />
           {!ap.mercadoInmueble && <div className="text-xs text-muted-foreground p-3 bg-muted/20 rounded">Memoria desactivada — los campos siguen disponibles pero esta memoria no formará parte del avalúo de este terreno.</div>}
 
-          <Card className="p-4">
-            <div className="font-semibold mb-3">Ficha sujeto · Inmueble construido</div>
-            <div className="grid md:grid-cols-3 gap-3">
-              <TextField label="Dirección" value={mt.sujetoInmueble.direccion} onChange={(v) => setSujetoI({ direccion: v })} />
-              <NumberField label="Área construcción (m²)" value={mt.sujetoInmueble.areaConstruccionM2} onChange={(v) => setSujetoI({ areaConstruccionM2: v })} />
-              <NumberField label="Área terreno (m²)" value={mt.sujetoInmueble.areaTerrenoM2} onChange={(v) => setSujetoI({ areaTerrenoM2: v })} />
-              <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={mt.sujetoInmueble.ubicacionKey} onChange={(v) => setSujetoI({ ubicacionKey: v })} />
-              <KeySelect label="Zona" tabla={TABLA_ZONA} value={mt.sujetoInmueble.zonaKey} onChange={(v) => setSujetoI({ zonaKey: v })} />
-              <KeySelect label="Vía de acceso" tabla={TABLA_VIA} value={mt.sujetoInmueble.viaAccesoKey} onChange={(v) => setSujetoI({ viaAccesoKey: v })} />
-              <NumberField label="Dormitorios" value={mt.sujetoInmueble.dormitorios} onChange={(v) => setSujetoI({ dormitorios: v })} />
-              <NumberField label="Baños completos" value={mt.sujetoInmueble.banosCompletos} onChange={(v) => setSujetoI({ banosCompletos: v })} />
-              <NumberField label="Baño medio" value={mt.sujetoInmueble.banoMedio} onChange={(v) => setSujetoI({ banoMedio: v })} />
-              <NumberField label="Cuarto/baño servicio" value={mt.sujetoInmueble.cuartoBanoServicio} onChange={(v) => setSujetoI({ cuartoBanoServicio: v })} />
+          <Card className="p-4 space-y-4">
+            <div>
+              <div className="font-semibold mb-2">Infraestructuras principales del terreno</div>
+              <div className="text-xs text-muted-foreground mb-2">
+                Seleccione las infraestructuras principales que conforman el sujeto inmueble construido. El área de construcción, dormitorios y baños se calcularán automáticamente.
+              </div>
+              {infrasPrincipales.length === 0 ? (
+                <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
+                  Este terreno no tiene infraestructuras principales. Agréguelas en el Capítulo V.
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {infrasPrincipales.map(({ infra }) => (
+                    <label key={infra.id}
+                      className="flex items-center gap-2 p-2 rounded border border-border hover:bg-muted/30 cursor-pointer">
+                      <Checkbox checked={selectedIds.includes(infra.id)} onCheckedChange={() => toggleInfraSeleccion(infra.id)} />
+                      <div className="flex-1 text-sm">
+                        <div className="font-medium truncate">{infra.nombre || 'Sin nombre'}</div>
+                        <div className="text-xs text-muted-foreground">{fmtNum(infra.areaTotalM2 || 0)} m²</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="font-semibold mb-3">Ficha sujeto · Inmueble construido</div>
+              <div className="grid md:grid-cols-3 gap-3">
+                <Field label="Dirección (de Cap. II/III)">
+                  <Input value={derivedDireccion} readOnly className="bg-muted/30" />
+                </Field>
+                <Field label="Área construcción (m²) — auto">
+                  <Input value={fmtNum(derivedAreaConstruccion)} readOnly className="bg-muted/30 mono" />
+                </Field>
+                <Field label="Área terreno (m²) — homologación Cap IV">
+                  <Input value={fmtNum(derivedAreaTerrenoM2)} readOnly className="bg-muted/30 mono" />
+                </Field>
+                <KeySelect label="Ubicación" tabla={TABLA_UBICACION} value={mt.sujetoInmueble.ubicacionKey} onChange={(v) => setSujetoI({ ubicacionKey: v })} />
+                <KeySelect label="Zona" tabla={TABLA_ZONA} value={mt.sujetoInmueble.zonaKey} onChange={(v) => setSujetoI({ zonaKey: v })} />
+                <Field label="Vía de acceso (de Cap. III, inmediato)">
+                  <Input value={TABLA_VIA.opciones.find((o) => o.key === derivedViaKey)?.label ?? derivedViaKey} readOnly className="bg-muted/30" />
+                </Field>
+                <Field label="Dormitorios — auto">
+                  <Input value={derivedDormitorios} readOnly className="bg-muted/30 mono" />
+                </Field>
+                <Field label="Baños completos — auto">
+                  <Input value={derivedBanos} readOnly className="bg-muted/30 mono" />
+                </Field>
+                <Field label="Baño medio — auto">
+                  <Input value={derivedBanoMedio} readOnly className="bg-muted/30 mono" />
+                </Field>
+                <Field label="Cuarto/baño servicio — auto">
+                  <Input value={derivedCuartoBanoServicio} readOnly className="bg-muted/30 mono" />
+                </Field>
+              </div>
             </div>
           </Card>
+
 
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
