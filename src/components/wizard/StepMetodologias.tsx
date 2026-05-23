@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   TABLA_UBICACION, TABLA_ZONA, TABLA_VIA, TABLA_SERVICIOS,
   TABLA_EQUIPAMIENTO, TABLA_TOPOGRAFIA, TABLA_POSICION,
-  ROSS_HEIDECKE, factorQ,
+  ROSS_HEIDECKE, factorQ, FACTOR_CONVERSION_M2_VR2,
 } from '@/lib/catalogos';
 import {
   consolidados, homologacionInmueble, homologacionTerreno,
