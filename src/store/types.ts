@@ -422,6 +422,30 @@ export interface Metodologias {
   comparables?: Comparable[];
 }
 
+// -------------------- MEMORIAS POR TERRENO --------------------
+
+export interface AplicarMemorias {
+  mercadoInmueble: boolean;
+  realizacion: boolean;
+  mercadoTerreno: boolean;
+  reposicion: boolean;
+  ross: boolean;
+  consolidado: boolean;
+  conclusion: boolean;
+}
+
+export interface MemoriaTerreno {
+  aplicar: AplicarMemorias;
+  sujetoInmueble: FichaSujetoInmueble;
+  sujetoTerreno: FichaSujetoTerreno;
+  comparablesInmueble: ComparableInmueble[];
+  comparablesTerreno: ComparableTerreno[];
+  deducciones: DeduccionesRealizacion;
+  enfoqueConclusion: 'mercado' | 'costo';
+  notasMercadoInmueble: string;
+  notasMercadoTerreno: string;
+}
+
 // -------------------- FOTOS --------------------
 
 export type FotoCategoria =
