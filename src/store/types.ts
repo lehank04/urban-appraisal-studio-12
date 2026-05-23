@@ -612,6 +612,22 @@ export const emptyMetodologias = (): Metodologias => ({
   notasMercadoInmueble: '', notasMercadoTerreno: '',
 });
 
+export const emptyAplicarMemorias = (): AplicarMemorias => ({
+  mercadoInmueble: true, realizacion: true, mercadoTerreno: true,
+  reposicion: true, ross: true, consolidado: true, conclusion: true,
+});
+
+export const emptyMemoriaTerreno = (): MemoriaTerreno => ({
+  aplicar: emptyAplicarMemorias(),
+  sujetoInmueble: emptySujetoInmueble(),
+  sujetoTerreno: emptySujetoTerreno(),
+  comparablesInmueble: [],
+  comparablesTerreno: [],
+  deducciones: { ir: 2, ibi: 1, corretaje: 4, legales: 1, comercializacion: 2 },
+  enfoqueConclusion: 'mercado',
+  notasMercadoInmueble: '', notasMercadoTerreno: '',
+});
+
 export const emptyFotos = (): Fotografias => ({
   fachada: [], interior: [],
   lindero_norte: [], lindero_sur: [], lindero_este: [], lindero_oeste: [],
