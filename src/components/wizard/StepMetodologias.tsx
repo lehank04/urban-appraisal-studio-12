@@ -261,6 +261,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 2. REALIZACIÓN */}
         <TabsContent value="realizacion" className="mt-4">
+          <ApplyToggle label="2 · Valor de realización"
+            checked={ap.realizacion} onChange={(v) => setAplicar({ realizacion: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Deducciones del valor de realización</div>
             <div className="grid md:grid-cols-5 gap-3">
