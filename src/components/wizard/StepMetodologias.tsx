@@ -371,6 +371,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 4. REPOSICIÓN */}
         <TabsContent value="reposicion" className="mt-4 space-y-4">
+          <ApplyToggle label="4 · Reposición (etapas y obras exteriores)"
+            checked={ap.reposicion} onChange={(v) => setAplicar({ reposicion: v })} />
+
           {(infrasPrincipales.length === 0 && infrasComplement.length === 0 && infrasExteriores.length === 0) && (
             <Card className="p-6 text-center text-sm text-muted-foreground">
               Agregue infraestructuras en Capítulo V para generar las memorias de reposición.
