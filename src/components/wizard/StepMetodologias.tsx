@@ -506,6 +506,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 7. CONCLUSIÓN */}
         <TabsContent value="conclusion" className="mt-4 space-y-4">
+          <ApplyToggle label="7 · Conclusión y conciliación"
+            checked={ap.conclusion} onChange={(v) => setAplicar({ conclusion: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-3">Resumen y conciliación de valores</div>
             <div className="grid md:grid-cols-3 gap-3 text-sm">
