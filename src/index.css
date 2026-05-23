@@ -69,6 +69,14 @@
     padding: 20mm 18mm;
   }
   .doc-page h1, .doc-page h2, .doc-page h3 { @apply font-serif; }
+  .pdf-roboto, .pdf-roboto * { font-family: 'Roboto Mono', ui-monospace, monospace !important; }
+  .pdf-roboto h1, .pdf-roboto h2, .pdf-roboto h3, .pdf-roboto h4 { font-family: 'Roboto Mono', ui-monospace, monospace !important; font-weight: 700; }
+  .pdf-rounded table { border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; }
+  .pdf-rounded table, .pdf-rounded table th, .pdf-rounded table td { border-color: #d4d4d8 !important; }
+  .pdf-rounded thead th:first-child { border-top-left-radius: 10px; }
+  .pdf-rounded thead th:last-child { border-top-right-radius: 10px; }
+  .pdf-rounded tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+  .pdf-rounded tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
 }
 
 @media print {
