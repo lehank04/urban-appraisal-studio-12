@@ -124,6 +124,87 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
   const infrasComplement   = infrasAll.filter((x) => x.infra.tipo === 'complementaria');
   const infrasExteriores   = infrasAll.filter((x) => x.infra.tipo === 'obra_exterior');
 
+  // ---- Sujeto inmueble derivado (Cap II/III/IV) ----
+  const selectedIds: string[] = mt.infraestructurasPrincipalesIds
+    ?? infrasPrincipales.map((x) => x.infra.id); // por defecto: todas las principales
+  const selectedInfras = infrasPrincipales.filter((x) => selectedIds.includes(x.infra.id)).map((x) => x.infra);
+
+  const derivedDireccion =
+    currentTerreno?.ubicacionExacta?.trim()
+    || avaluo.descripcionGeneralTerrenos?.direccion
+    || avaluo.info?.direccionInmueble
+    || '';
+
+  const derivedAreaConstruccion = selectedInfras.reduce((s, i) => s + (i.areaTotalM2 || i.area || 0), 0);
+
+  // Área de terreno marcada como homologación (Cap IV) → m²
+  const homoArea = (currentTerreno?.areas ?? []).find((a) => a.usarHomologacion);
+  let derivedAreaTerrenoM2 = 0;
+  if (homoArea) {
+    if (homoArea.unidad1?.toLowerCase().includes('m')) derivedAreaTerrenoM2 = homoArea.valor1 || 0;
+    else if (homoArea.unidad2?.toLowerCase().includes('m')) derivedAreaTerrenoM2 = homoArea.valor2 || 0;
+    else if (homoArea.unidad1?.toLowerCase().includes('vr')) derivedAreaTerrenoM2 = (homoArea.valor1 || 0) / FACTOR_CONVERSION_M2_VR2;
+    else if (homoArea.unidad2?.toLowerCase().includes('vr')) derivedAreaTerrenoM2 = (homoArea.valor2 || 0) / FACTOR_CONVERSION_M2_VR2;
+  }
+  if (!derivedAreaTerrenoM2) {
+    const f = currentTerreno?.areaHomologacionFuente;
+    derivedAreaTerrenoM2 =
+      (f === 'escritura' ? currentTerreno?.areaEscrituraM2 :
+       f === 'catastral' ? currentTerreno?.areaCatastralM2 :
+                           currentTerreno?.areaLevantamientoM2) || 0;
+  }
+
+  // Vía de acceso desde Cap III (acceso inmediato) → key TABLA_VIA
+  const viaInmediato = (avaluo.entorno?.carpetaInmueble || '').toLowerCase();
+  const derivedViaKey =
+    viaInmediato.includes('tierra') ? 'TIERRA' :
+    viaInmediato.includes('adoquin') ? 'ADOQUINADA' :
+    viaInmediato.includes('asfalto') ? 'ASFALTO' :
+    viaInmediato.includes('concreto') ? 'CONCRETO' :
+    viaInmediato.includes('macad') || viaInmediato.includes('selecto') ? 'MACADAN' :
+    mt.sujetoInmueble.viaAccesoKey || 'ASFALTO';
+
+  // Sumar ambientes de las infraestructuras seleccionadas
+  const sumAmbiente = (match: (n: string) => boolean) =>
+    selectedInfras.reduce((s, i) => s + (i.ambientes ?? []).filter((a) => match((a.ambiente || '').toLowerCase())).reduce((x, a) => x + (a.cantidad || 0), 0), 0);
+  const derivedDormitorios = sumAmbiente((n) => n.includes('dormitorio') && !n.includes('servicio'));
+  const derivedBanos = sumAmbiente((n) => n.includes('baño completo') || n === 'baño' || n.startsWith('bano completo'));
+  const derivedBanoMedio = sumAmbiente((n) => n.includes('baño medio') || n.includes('bano medio') || n.includes('medio baño'));
+  const derivedCuartoBanoServicio = sumAmbiente((n) => n.includes('servicio'));
+
+  // Sync derivados → mt.sujetoInmueble (sin loops)
+  useEffect(() => {
+    const s = mt.sujetoInmueble;
+    const needs =
+      s.direccion !== derivedDireccion ||
+      s.areaConstruccionM2 !== derivedAreaConstruccion ||
+      s.areaTerrenoM2 !== derivedAreaTerrenoM2 ||
+      s.viaAccesoKey !== derivedViaKey ||
+      s.dormitorios !== derivedDormitorios ||
+      s.banosCompletos !== derivedBanos ||
+      s.banoMedio !== derivedBanoMedio ||
+      s.cuartoBanoServicio !== derivedCuartoBanoServicio;
+    if (needs) {
+      setSujetoI({
+        direccion: derivedDireccion,
+        areaConstruccionM2: derivedAreaConstruccion,
+        areaTerrenoM2: derivedAreaTerrenoM2,
+        viaAccesoKey: derivedViaKey,
+        dormitorios: derivedDormitorios,
+        banosCompletos: derivedBanos,
+        banoMedio: derivedBanoMedio,
+        cuartoBanoServicio: derivedCuartoBanoServicio,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTerrenoId, derivedDireccion, derivedAreaConstruccion, derivedAreaTerrenoM2,
+      derivedViaKey, derivedDormitorios, derivedBanos, derivedBanoMedio, derivedCuartoBanoServicio]);
+
+  const toggleInfraSeleccion = (id: string) => {
+    const next = selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id];
+    setMT({ infraestructurasPrincipalesIds: next });
+  };
+
   const ap = mt.aplicar;
 
   if (terrenos.length === 0) {
