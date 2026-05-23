@@ -393,6 +393,9 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
         {/* 5. ROSS-HEIDECKE */}
         <TabsContent value="ross" className="mt-4">
+          <ApplyToggle label="5 · Depreciación Ross-Heidecke"
+            checked={ap.ross} onChange={(v) => setAplicar({ ross: v })} />
+
           <Card className="p-4">
             <div className="font-semibold mb-1">Memoria de cálculo de la depreciación · Ross-Heidecke</div>
             <div className="text-xs text-muted-foreground mb-3">
