@@ -1,11 +1,14 @@
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '@/store/avaluoStore';
 import {
   Avaluo, ComparableInmueble, ComparableTerreno, FichaSujetoInmueble, FichaSujetoTerreno,
   emptyComparableInmueble, emptyComparableTerreno, DeduccionesRealizacion, Infraestructura,
+  MemoriaTerreno, AplicarMemorias, emptyMemoriaTerreno,
 } from '@/store/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { TextField, NumberField, TextArea, Field } from '@/components/forms/Fields';
 import { KeySelect } from '@/components/forms/CatSelect';
 import { Input } from '@/components/ui/input';
@@ -23,14 +26,78 @@ import {
 } from '@/lib/calculations';
 import { Plus, Trash2 } from 'lucide-react';
 
+// Toggle visual reutilizable para cada memoria
+function ApplyToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border bg-muted/20 mb-3">
+      <div className="text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground ml-2">
+          {checked ? 'Esta memoria se aplica a este terreno.' : 'Esta memoria NO se aplicará a este terreno.'}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Aplicar</span>
+        <Switch checked={checked} onCheckedChange={onChange} />
+      </div>
+    </div>
+  );
+}
+
 export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
   const { patchAvaluo } = useStore();
-  const m = avaluo.metodologias;
-  const setM = (patch: Partial<typeof m>) =>
-    patchAvaluo(avaluo.id, (a) => ({ ...a, metodologias: { ...a.metodologias, ...patch } }));
-  const setSujetoT = (p: Partial<FichaSujetoTerreno>) => setM({ sujetoTerreno: { ...m.sujetoTerreno, ...p } });
-  const setSujetoI = (p: Partial<FichaSujetoInmueble>) => setM({ sujetoInmueble: { ...m.sujetoInmueble, ...p } });
-  const setDed = (p: Partial<DeduccionesRealizacion>) => setM({ deducciones: { ...m.deducciones, ...p } });
+
+  // ---- Selección de terreno ----
+  const terrenos = avaluo.terrenos ?? [];
+  const [currentTerrenoId, setCurrentTerrenoId] = useState<string>(terrenos[0]?.id ?? '');
+  useEffect(() => {
+    if (!terrenos.find((t) => t.id === currentTerrenoId)) {
+      setCurrentTerrenoId(terrenos[0]?.id ?? '');
+    }
+  }, [terrenos, currentTerrenoId]);
+  const currentTerreno = terrenos.find((t) => t.id === currentTerrenoId);
+
+  // ---- Resolver MemoriaTerreno actual (con hidratación desde avaluo.metodologias legado) ----
+  const mt: MemoriaTerreno = useMemo(() => {
+    const stored = avaluo.metodologiasPorTerreno?.[currentTerrenoId];
+    if (stored) return stored;
+    // Hidratar primer terreno desde la metodología legada para no perder datos
+    const legacy = avaluo.metodologias;
+    const isFirst = terrenos[0]?.id === currentTerrenoId;
+    const base = emptyMemoriaTerreno();
+    if (isFirst && legacy) {
+      return {
+        ...base,
+        sujetoInmueble: legacy.sujetoInmueble ?? base.sujetoInmueble,
+        sujetoTerreno: legacy.sujetoTerreno ?? base.sujetoTerreno,
+        comparablesInmueble: legacy.comparablesInmueble ?? [],
+        comparablesTerreno: legacy.comparablesTerreno ?? [],
+        deducciones: legacy.deducciones ?? base.deducciones,
+        enfoqueConclusion: legacy.enfoqueConclusion ?? 'mercado',
+        notasMercadoInmueble: legacy.notasMercadoInmueble ?? '',
+        notasMercadoTerreno: legacy.notasMercadoTerreno ?? '',
+      };
+    }
+    return base;
+  }, [avaluo.metodologiasPorTerreno, avaluo.metodologias, currentTerrenoId, terrenos]);
+
+  const setMT = (patch: Partial<MemoriaTerreno>) =>
+    patchAvaluo(avaluo.id, (a) => ({
+      ...a,
+      metodologiasPorTerreno: {
+        ...(a.metodologiasPorTerreno ?? {}),
+        [currentTerrenoId]: { ...mt, ...patch },
+      },
+      // Mantener compat con preview legado: si es el primer terreno, espejar a metodologias
+      ...(terrenos[0]?.id === currentTerrenoId
+        ? { metodologias: { ...a.metodologias, ...patch } as any }
+        : {}),
+    }));
+
+  const setAplicar = (p: Partial<AplicarMemorias>) => setMT({ aplicar: { ...mt.aplicar, ...p } });
+  const setSujetoT = (p: Partial<FichaSujetoTerreno>) => setMT({ sujetoTerreno: { ...mt.sujetoTerreno, ...p } });
+  const setSujetoI = (p: Partial<FichaSujetoInmueble>) => setMT({ sujetoInmueble: { ...mt.sujetoInmueble, ...p } });
+  const setDed = (p: Partial<DeduccionesRealizacion>) => setMT({ deducciones: { ...mt.deducciones, ...p } });
 
   const updateInfra = (terrenoId: string, infraId: string, patch: Partial<Infraestructura>) =>
     patchAvaluo(avaluo.id, (a) => ({
@@ -42,37 +109,78 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
     }));
 
   const cons = consolidados(avaluo);
-  const homT = homologacionTerreno(m.sujetoTerreno, m.comparablesTerreno);
-  const homI = homologacionInmueble(m.sujetoInmueble, m.comparablesInmueble);
+  const homT = homologacionTerreno(mt.sujetoTerreno, mt.comparablesTerreno);
+  const homI = homologacionInmueble(mt.sujetoInmueble, mt.comparablesInmueble);
   const valorMercado = (homT.valorMercadoTerreno || 0) + (homI.valorMercado || 0);
-  const valorReal = valorRealizacion(valorMercado || cons.totalReposicionNeto, m.deducciones);
+  const valorReal = valorRealizacion(valorMercado || cons.totalReposicionNeto, mt.deducciones);
 
-  // Recolectar infraestructuras con su terreno
-  const infrasAll = avaluo.terrenos.flatMap((t) =>
-    (t.infraestructuras ?? []).map((i) => ({ terrenoId: t.id, terrenoTitulo: t.titulo, infra: i }))
-  );
+  // Infraestructuras SOLO del terreno actual
+  const infrasAll = (currentTerreno?.infraestructuras ?? []).map((i) => ({
+    terrenoId: currentTerreno!.id, terrenoTitulo: currentTerreno!.titulo, infra: i,
+  }));
   const infrasPrincipales  = infrasAll.filter((x) => x.infra.tipo === 'principal');
   const infrasComplement   = infrasAll.filter((x) => x.infra.tipo === 'complementaria');
   const infrasExteriores   = infrasAll.filter((x) => x.infra.tipo === 'obra_exterior');
+
+  const ap = mt.aplicar;
+
+  if (terrenos.length === 0) {
+    return (
+      <Card className="p-6 text-center text-sm text-muted-foreground">
+        Agregue al menos un terreno en Capítulo III para construir las memorias de cálculo.
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
       <header>
         <div className="text-xs uppercase tracking-widest text-primary">Capítulo VI · INMOVAL</div>
         <h2 className="text-xl font-semibold">Memorias de cálculo</h2>
-        <p className="text-sm text-muted-foreground">Mercado, realización, reposición, depreciación y consolidación de valores.</p>
+        <p className="text-sm text-muted-foreground">Un juego de memorias (1–7) por cada terreno. Active solo las que apliquen.</p>
       </header>
+
+      {/* Selector de terreno */}
+      <Card className="p-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Terreno</div>
+          <div className="flex flex-wrap gap-2">
+            {terrenos.map((t) => (
+              <Button key={t.id} size="sm"
+                variant={t.id === currentTerrenoId ? 'default' : 'outline'}
+                onClick={() => setCurrentTerrenoId(t.id)}>
+                {t.titulo || 'Terreno'}
+              </Button>
+            ))}
+          </div>
+          <div className="ml-auto text-xs text-muted-foreground">
+            Memorias activas:{' '}
+            <span className="mono">
+              {[
+                ap.mercadoInmueble && '1',
+                ap.realizacion && '2',
+                ap.mercadoTerreno && '3',
+                ap.reposicion && '4',
+                ap.ross && '5',
+                ap.consolidado && '6',
+                ap.conclusion && '7',
+              ].filter(Boolean).join(' · ') || 'ninguna'}
+            </span>
+          </div>
+        </div>
+      </Card>
 
       <Tabs defaultValue="inmueble">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="inmueble">1 · Mercado construido</TabsTrigger>
-          <TabsTrigger value="realizacion">2 · Realización</TabsTrigger>
-          <TabsTrigger value="terreno">3 · Mercado terreno</TabsTrigger>
-          <TabsTrigger value="reposicion">4 · Reposición</TabsTrigger>
-          <TabsTrigger value="ross">5 · Ross-Heidecke</TabsTrigger>
-          <TabsTrigger value="consolidado">6 · Consolidado</TabsTrigger>
-          <TabsTrigger value="conclusion">7 · Conclusión</TabsTrigger>
+          <TabsTrigger value="inmueble">1 · Mercado construido {ap.mercadoInmueble ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="realizacion">2 · Realización {ap.realizacion ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="terreno">3 · Mercado terreno {ap.mercadoTerreno ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="reposicion">4 · Reposición {ap.reposicion ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="ross">5 · Ross-Heidecke {ap.ross ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="consolidado">6 · Consolidado {ap.consolidado ? '' : '○'}</TabsTrigger>
+          <TabsTrigger value="conclusion">7 · Conclusión {ap.conclusion ? '' : '○'}</TabsTrigger>
         </TabsList>
+
 
         {/* 1. MERCADO INMUEBLE CONSTRUIDO */}
         <TabsContent value="inmueble" className="mt-4 space-y-4">
