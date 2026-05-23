@@ -76,6 +76,7 @@ export const useStore = create<State>()(
           terrenos: [],
           metodologias: emptyMetodologias(),
           fotos: emptyFotos(),
+          formato: emptyFormatoExport(),
         };
         set((s) => ({ avaluos: [av, ...s.avaluos] }));
         return av;
