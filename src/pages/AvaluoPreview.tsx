@@ -78,13 +78,34 @@ export default function AvaluoPreview() {
   const valorReal = valorRealizacion(base, m.deducciones);
   const valorConcluido = m.enfoqueConclusion === 'mercado' ? base : c.totalReposicionNeto;
 
+  const formato = avaluo.formato || emptyFormatoExport();
+  const fontClass = formato.fuente === 'roboto-mono' ? 'pdf-roboto'
+    : formato.fuente === 'serif' ? 'font-serif' : '';
+
+  // contexto para tokens
+  const ctx: Record<string, string | number> = {
+    empresa: plantilla.empresa,
+    perito: per?.nombre || '',
+    email: per?.email || '',
+    telefono: per?.telefono || '',
+    expediente: i.numeroExpediente || '',
+    cliente: cli?.nombre || '',
+    normativa: plantilla.normativa,
+  };
+
   // numeración rough
-  const totalPages = 8 + avaluo.terrenos.length;
+  const extraPages = (formato.incluirCartaPresentacion ? 1 : 0) + (formato.incluirMetodologia ? 1 : 0);
+  const totalPages = 8 + avaluo.terrenos.length + extraPages;
   let p = 0;
   const nextP = () => ++p;
 
+  // Carta de presentación automática
+  const fechaTexto = i.fechaAvaluo || new Date().toISOString().slice(0, 10);
+  const cartaAuto = formato.textoCartaPresentacion || `Tenemos el agrado de remitirle el informe de avalúo realizado a un inmueble tipo ${i.tipoInmueble}, a solicitud de ${cli?.nombre || i.solicitante || '—'}.\n\nDel estudio realizado, y en conformidad con la metodología adjunta, se obtuvieron los siguientes resultados:`;
+  const metodologiaAuto = formato.textoMetodologia || `${plantilla.textoMetodologia}\n\nI.1. OBJETO Y PROPÓSITO DEL AVALÚO\nEl presente avalúo tiene como propósito ${i.proposito || '—'}, con la finalidad de servir como ${i.tipoAvaluo || 'referencia de valor comercial'} para ${cli?.nombre || i.solicitante || 'el solicitante'}.\n\nI.2. ENFOQUES DE VALUACIÓN APLICADOS\nSe aplicaron los enfoques de costo y mercado, así como la determinación del valor de realización conforme a la normativa SIBOIF.\n\nI.3. METODOLOGÍA DEL ENFOQUE DE COSTO O REPOSICIÓN\nSe estiman los costos directos por etapas constructivas, costos indirectos, impuestos (IVA, IBI), y se aplica la depreciación combinada por el método de Ross-Heidecke (vida útil, edad, estado físico FE).\n\nI.4. METODOLOGÍA DEL ENFOQUE DE MERCADO Y FACTORES DE HOMOLOGACIÓN\nSe identifican comparables en la zona y se homologan al sujeto mediante factores de ubicación, zonificación, vía de acceso, servicios, equipamiento, topografía, posición en manzana, área (Ac/As)^0.10, antigüedad de publicación y negociación.`;
+
   return (
-    <div className="min-h-screen bg-zinc-200">
+    <div className={`min-h-screen bg-zinc-200 ${fontClass}`}>
       <header className="no-print sticky top-0 z-20 bg-card border-b border-border px-6 py-3 flex items-center justify-between">
         <Button variant="ghost" asChild><Link to={`/avaluos/${avaluo.id}`}><ArrowLeft className="h-4 w-4 mr-1" />Volver al editor</Link></Button>
         <div className="text-sm font-medium">Documento técnico · {plantilla.nombre}</div>
@@ -93,30 +114,98 @@ export default function AvaluoPreview() {
 
       <div className="py-8">
         {/* PORTADA */}
-        <div className="doc-page mb-6 flex flex-col mx-auto bg-white text-zinc-900" style={{ width: '210mm', minHeight: '297mm', boxShadow: '0 4px 14px rgba(0,0,0,.08)' }}>
+        <div className={`doc-page mb-6 flex flex-col mx-auto bg-white text-zinc-900 ${fontClass}`} style={{ width: '210mm', minHeight: '297mm', boxShadow: '0 4px 14px rgba(0,0,0,.08)' }}>
           <div className="border-t-8" style={{ borderColor: plantilla.color }} />
-          <div className="flex-1 flex flex-col justify-center text-center px-12">
-            <div className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-4">{plantilla.empresa}</div>
-            <h1 className="text-5xl font-serif font-bold text-zinc-900 mb-3">{plantilla.portadaTitulo}</h1>
-            <div className="text-lg text-zinc-600">{plantilla.portadaSubtitulo}</div>
-            <div className="w-16 h-1 mx-auto my-6" style={{ background: plantilla.color }} />
-            <div className="text-lg text-zinc-700">{i.propietario || 'Propietario'}</div>
-            <div className="text-sm text-zinc-500 mt-1">{i.tipoInmueble}</div>
-            <div className="mt-10 inline-block mx-auto px-6 py-3 border-2 border-zinc-300 rounded">
-              <div className="text-[10px] uppercase tracking-wider text-zinc-500">Expediente</div>
-              <div className="font-mono text-lg">{i.numeroExpediente || 'SIN N°'}</div>
+          <div className="flex-1 flex flex-col justify-start text-center px-12 pt-10">
+            <div className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-3">{plantilla.empresa}</div>
+            <h1 className="text-4xl font-bold text-zinc-900 mb-2">{plantilla.portadaTitulo}</h1>
+            <div className="text-base text-zinc-600 mb-4">{i.tipoInmueble || plantilla.portadaSubtitulo}</div>
+
+            {formato.mostrarPortadaImagen && (
+              <div className="mx-auto my-4 rounded-lg overflow-hidden border border-zinc-200" style={{ width: '70%', height: '90mm' }}>
+                {formato.portadaImagen ? (
+                  <img src={formato.portadaImagen} alt="Portada del inmueble" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full grid place-items-center" style={{ background: `${plantilla.color}15` }}>
+                    <span className="text-xs uppercase tracking-widest text-zinc-400">Sin foto de portada</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-x-10 gap-y-2 text-left text-[12px] max-w-xl mx-auto">
+              <div className="text-zinc-500 uppercase tracking-wider text-[9px]">Nombre del cliente</div>
+              <div className="text-zinc-900 font-medium">{cli?.nombre || i.clienteNombre || '—'}</div>
+              <div className="text-zinc-500 uppercase tracking-wider text-[9px]">Solicitante</div>
+              <div className="text-zinc-900 font-medium">{i.solicitante || cli?.nombre || '—'}</div>
+              <div className="text-zinc-500 uppercase tracking-wider text-[9px]">Fecha de avalúo</div>
+              <div className="text-zinc-900 font-medium">{i.fechaAvaluo || '—'}</div>
+              <div className="text-zinc-500 uppercase tracking-wider text-[9px]">N° expediente</div>
+              <div className="text-zinc-900 font-medium">{i.numeroExpediente || '—'}</div>
+              <div className="text-zinc-500 uppercase tracking-wider text-[9px]">Dirección del inmueble</div>
+              <div className="text-zinc-900 font-medium">{i.direccionInmueble || avaluo.descripcionGeneralTerrenos?.direccion || '—'}</div>
             </div>
           </div>
-          <div className="px-12 pb-12 grid grid-cols-3 gap-6 text-xs">
-            <div><div className="text-zinc-500 uppercase tracking-wider text-[9px]">Solicitante</div><div className="text-zinc-900 font-medium">{cli?.nombre || '—'}</div></div>
-            <div><div className="text-zinc-500 uppercase tracking-wider text-[9px]">Propósito</div><div className="text-zinc-900 font-medium">{i.proposito}</div></div>
-            <div><div className="text-zinc-500 uppercase tracking-wider text-[9px]">Fecha</div><div className="text-zinc-900 font-medium">{i.fechaAvaluo || '—'}</div></div>
-          </div>
-          <div className="px-12 pb-12 text-center text-[10px] text-zinc-500 border-t border-zinc-200 pt-4">
-            {per && (<><div className="font-medium text-zinc-800">{per.nombre}</div><div>NIPEV: {per.registroSIBOIF || per.registro || '—'}</div></>)}
-            <div className="mt-2">{plantilla.normativa}</div>
+          <div className="px-12 pb-10 text-center text-[10px] text-zinc-600 border-t border-zinc-200 pt-4">
+            {per && (<>
+              <div className="font-semibold text-zinc-800">{per.nombre}</div>
+              <div>NIPEV: {per.registroSIBOIF || per.registro || '—'}</div>
+              <div>{per.email || ''} {per.telefono ? `· ${per.telefono}` : ''}</div>
+            </>)}
+            <div className="mt-2 text-zinc-500">{plantilla.normativa}</div>
           </div>
         </div>
+
+        {/* CARTA DE PRESENTACIÓN */}
+        {formato.incluirCartaPresentacion && (
+          <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Carta de presentación" formato={formato} ctx={ctx}>
+            <div className="text-sm leading-relaxed">
+              <div className="mb-6">
+                <div>{fechaTexto}</div>
+                <div className="uppercase">{i.municipio || ''}{i.departamento ? ', ' + i.departamento : ''}</div>
+              </div>
+              <div className="mb-4">
+                <div>Señores:</div>
+                <div className="font-semibold uppercase">{cli?.nombre || i.solicitante || 'CLIENTE'}</div>
+                <div className="text-zinc-600">Cliente</div>
+                <div className="text-zinc-600 italic">Su despacho.</div>
+              </div>
+
+              <p className="mb-3"><b>Estimados Señores:</b></p>
+              <p className="whitespace-pre-line mb-4">{cartaAuto}</p>
+
+              <table className="w-full text-sm border border-zinc-300 mb-4">
+                <tbody>
+                  <tr><td className="p-2 border font-semibold">Valor de Mercado</td><td className="p-2 border">US$</td><td className="p-2 border text-right">{fmtNum(valorMercado || base, 2)}</td></tr>
+                  <tr><td className="p-2 border font-semibold">Valor de Realización</td><td className="p-2 border">US$</td><td className="p-2 border text-right">{fmtNum(valorReal, 2)}</td></tr>
+                  <tr><td className="p-2 border font-semibold">Valor de Reposición Nuevo</td><td className="p-2 border">US$</td><td className="p-2 border text-right">{fmtNum(c.totalTerrenos + c.totalVRN, 2)}</td></tr>
+                  <tr><td className="p-2 border font-semibold">Valor de Reposición Neto</td><td className="p-2 border">US$</td><td className="p-2 border text-right">{fmtNum(c.totalReposicionNeto, 2)}</td></tr>
+                </tbody>
+              </table>
+
+              <p>Los valores aquí reflejados fueron calculados en base a la inspección física realizada al inmueble el día: <b>{i.fechaInspeccion || '—'}</b>.</p>
+              <p className="mt-3">Esperando que dicho avalúo llene las expectativas que un trabajo de esta naturaleza requiere, se despide atentamente,</p>
+
+              <div className="mt-12">
+                <div className="border-b border-zinc-400 w-64 mb-1"></div>
+                <div className="font-semibold">{per?.nombre || 'Perito firmante'}</div>
+                <div className="text-xs text-zinc-500">{per?.cedula || ''}</div>
+                <div className="text-xs text-zinc-500">PERITO VALUADOR NIPEV {per?.registroSIBOIF || per?.registro || '—'}</div>
+              </div>
+            </div>
+          </Page>
+        )}
+
+        {/* METODOLOGÍA AUTOMATICA */}
+        {formato.incluirMetodologia && (
+          <Page num={nextP()} total={totalPages} plantilla={plantilla} title="I. Metodología" formato={formato} ctx={ctx}>
+            <H roman="I" title="Metodología" />
+            <div className="text-sm leading-relaxed whitespace-pre-line text-zinc-800">
+              {metodologiaAuto}
+            </div>
+          </Page>
+        )}
+
 
         {/* ÍNDICE */}
         <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Contenido">
