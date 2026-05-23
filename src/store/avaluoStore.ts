@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import {
   Avaluo, Cliente, Perito, ID,
   emptyInfo, emptyFotos, emptyMetodologias, emptyDocLegal, emptyEntorno, emptyDescripcionGeneralTerrenos,
+  emptyFormatoExport,
 } from './types';
 
 interface State {
