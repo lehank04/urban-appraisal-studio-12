@@ -1,11 +1,47 @@
 // ============================================================
-// MODELO DE DATOS INMOVAL — basado en formato de referencia
+// MODELO DE DATOS INMOVAL
+// Torre de Control + Módulo Técnico Urbano
+//
 // Resolución CD-SIBOIF-868-1-DIC10-2014 "Norma sobre Peritos
 // Valuadores que presten servicios a las Instituciones del
 // Sistema Financiero"
 // ============================================================
 
 export type ID = string;
+
+// ============================================================
+// TORRE DE CONTROL — TIPOS ADMINISTRATIVOS
+// ============================================================
+
+export type TipoModuloAvaluo =
+  | 'urbano'
+  | 'rural'
+  | 'maquinaria'
+  | 'vehiculo'
+  | 'especial';
+
+export type EstatusOperativo =
+  | 'borrador'
+  | 'pendiente_inspeccion'
+  | 'en_inspeccion'
+  | 'en_elaboracion'
+  | 'en_revision'
+  | 'listo_exportar'
+  | 'entregado'
+  | 'cerrado'
+  | 'cancelado';
+
+export type PrioridadExpediente =
+  | 'baja'
+  | 'normal'
+  | 'alta'
+  | 'urgente';
+
+export type EstadoPago =
+  | 'pendiente'
+  | 'parcial'
+  | 'pagado'
+  | 'no_aplica';
 
 // -------------------- ENTIDADES BASE --------------------
 
@@ -49,9 +85,10 @@ export interface InfoGeneral {
   valuadorNombre: string;
   valuadorNipev: string;
   fechaInspeccion: string;
-  fechaAvaluo: string;     // fecha emisión (portada)
+  fechaAvaluo: string;     // fecha emisión / portada
   observaciones: string;
-  // ---- alias / campos legados (UI prototipo) ----
+
+  // ---- alias / campos legados UI prototipo ----
   moneda?: string;
   codigoExpediente?: string;
   tipoAvaluo?: string;
@@ -79,13 +116,13 @@ export type TipoDocumentoLegal =
 export interface DocumentoLegalItem {
   id: string;
   tipo: TipoDocumentoLegal;
-  titulo: string;             // editable; default según tipo
-  nombre: string;             // nombre / número del documento
-  fecha: string;              // yyyy-mm-dd
-  autorizante: string;        // notario / topógrafo / firmante
+  titulo: string;
+  nombre: string;
+  fecha: string;
+  autorizante: string;
   areaM2: number;
   areaVr2: number;
-  // datos de inscripción (desplegables, opcionales)
+
   tieneInscripcion: boolean;
   numeroRegistral: string;
   tomo: string;
@@ -97,7 +134,8 @@ export interface DocumentoLegalItem {
 
 export interface DocumentoLegal {
   documentos: DocumentoLegalItem[];
-  // Campos legacy (compatibilidad con avalúos antiguos)
+
+  // Campos legacy — compatibilidad con avalúos antiguos
   numeroEscritura: string;
   fechaEscritura: string;
   notario: string;
@@ -125,7 +163,7 @@ export interface Entorno {
   tipoConstruccion: string;
   indiceSaturacion: string;
   densidadPoblacional: string;
-  // vías de acceso (zona / inmediato)
+
   carpetaZona: string;
   carpetaInmueble: string;
   flujoZona: string;
@@ -136,7 +174,7 @@ export interface Entorno {
   importanciaInmueble: string;
   proximidadZona: string;
   proximidadInmueble: string;
-  // multi-select editable
+
   contaminacion: string[];
   serviciosPublicos: string[];
   equipamientoUrbano: EquipamientoItem[];
@@ -147,14 +185,21 @@ export interface Entorno {
 
 export interface AreaItem {
   id: string;
-  origen: 'doc_legal' | 'nueva' | 'escritura' | 'plano' | 'levantamiento' | 'contrato' | 'personalizado';
-  origenLabel?: string;             // editable si origen = 'nueva' / 'personalizado'
-  docLegalId?: string;              // referencia al documento legal (Cap II) si origen='doc_legal'
-  unidad1: string;                  // ej. 'm²'
+  origen:
+    | 'doc_legal'
+    | 'nueva'
+    | 'escritura'
+    | 'plano'
+    | 'levantamiento'
+    | 'contrato'
+    | 'personalizado';
+  origenLabel?: string;
+  docLegalId?: string;
+  unidad1: string;
   valor1: number;
-  unidad2: string;                  // ej. 'vr²'
+  unidad2: string;
   valor2: number;
-  usarHomologacion: boolean;        // marca el área usada en homologación / reposición
+  usarHomologacion: boolean;
   observaciones?: string;
 }
 
@@ -164,21 +209,26 @@ export interface DescripcionGeneralTerrenos {
   personaEntrevistada: string;
 }
 
-export type LinderoFuente = 'escritura' | 'plano' | 'levantamiento' | 'personalizado';
+export type LinderoFuente =
+  | 'escritura'
+  | 'plano'
+  | 'levantamiento'
+  | 'personalizado';
 
 export interface LinderoMedida {
   id: string;
   fuente: LinderoFuente;
-  fuenteLabel?: string;        // editable cuando fuente='personalizado'
+  fuenteLabel?: string;
   colindante: string;
-  medida: number;              // metros lineales
+  medida: number;
 }
 
 export interface Lindero {
   orientacion: 'NORTE' | 'SUR' | 'ESTE' | 'OESTE';
   medidas: LinderoMedida[];
   delimitanteFisico: string;
-  // ---- legacy ----
+
+  // legacy
   levantamientoColindante: string;
   levantamientoMedida: number;
   escrituraColindante: string;
@@ -191,11 +241,12 @@ export interface Terreno {
   id: ID;
   titulo: string;
   ubicacionExacta: string;
-  coordenadas: string;               // lat, lng
+  coordenadas: string;
   personaEntrevistada: string;
-  // áreas (nueva tabla comparativa)
+
   areas: AreaItem[];
-  // áreas legadas (compat)
+
+  // áreas legadas
   areaEscrituraM2: number;
   areaEscrituraVr2: number;
   areaCatastralM2: number;
@@ -205,9 +256,9 @@ export interface Terreno {
   areaHomologacionFuente: 'escritura' | 'catastral' | 'levantamiento';
   diferenciaArea: number;
   observacionesArea: string;
-  // morfología
-  topografia: string;     // PLANA / IRREGULAR / QUEBRADA
-  forma: string;          // REGULAR / IRREGULAR / etc.
+
+  topografia: string;
+  forma: string;
   servidumbres: string;
   caracteristicasPanoramicas: string;
   consideracionesAdicionales: string;
@@ -215,13 +266,14 @@ export interface Terreno {
   estadoOcupacion: string;
   tieneObrasComplementarias: boolean;
   obrasComplementarias: string;
-  // linderos
+
   linderos: Lindero[];
-  // valoración terreno
-  valorUnitarioVr2: number;          // calculado, US$/vr²
-  // infraestructuras (anidadas)
+
+  valorUnitarioVr2: number;
+
   infraestructuras: Infraestructura[];
-  // ---- alias / legados (UI prototipo) ----
+
+  // alias / legados UI prototipo
   area?: number;
   valorUnitario?: number;
   tipoAcceso?: string;
@@ -242,14 +294,14 @@ export interface AmbienteCount {
 }
 
 export interface DescripcionConstructiva {
-  elemento: string;            // CIMIENTOS, SISTEMA CONSTRUCTIVO...
+  elemento: string;
   descripcion: string;
 }
 
 export interface CostoEtapa {
   id: ID;
   grupo: 'directos' | 'indirectos' | 'impuestos';
-  etapa: string;               // OBRAS PRELIMINARES, FUNDACIONES, etc.
+  etapa: string;
   descripcion: string;
   unidad: string;
   cantidad: number;
@@ -259,28 +311,29 @@ export interface CostoEtapa {
 export interface Infraestructura {
   id: ID;
   tipo: 'principal' | 'complementaria' | 'obra_exterior';
-  nombre: string;              // CASA DE HABITACIÓN
+  nombre: string;
   areaTotalM2: number;
   niveles: number;
   ambientes: AmbienteCount[];
-  descripciones: DescripcionConstructiva[];  // CIMIENTOS, SISTEMA, etc.
+  descripciones: DescripcionConstructiva[];
   observaciones: string;
-  // Ross-Heidecke
-  vidaUtilAnios: number;       // V.U.E
-  edadAnios: number;           // E
-  estadoFE: number;            // 2..10 (criterio FE)
+
+  vidaUtilAnios: number;
+  edadAnios: number;
+  estadoFE: number;
   anioConstruccion: number;
   estadoConservacionTexto: string;
-  // memoria de costos (etapas)
+
   costos: CostoEtapa[];
-  // unidad para obras exteriores (ml/m²/und)
+
   unidadObraExterior?: string;
   cantidadObraExterior?: number;
   descripcionObraExterior?: string;
-  // memoria de reposición (nuevo modelo)
-  costoReposicionM2?: number;     // US$/m² VRN
-  depAjustadaPct?: number;        // % depreciación ajustado (override del cálculo Ross-Heidecke)
-  // ---- alias / legados (UI prototipo) ----
+
+  costoReposicionM2?: number;
+  depAjustadaPct?: number;
+
+  // alias / legados UI prototipo
   unidadMedida?: string;
   area?: number;
   costoUnitario?: number;
@@ -290,16 +343,15 @@ export interface Infraestructura {
   descripcion?: string;
 }
 
-// -------------------- ENFOQUE DE MERCADO (homologación) --------------------
+// -------------------- ENFOQUE DE MERCADO --------------------
 
-/** Ficha del sujeto inmueble / terreno para homologación */
 export interface FichaSujetoInmueble {
   direccion: string;
   areaConstruccionM2: number;
   areaTerrenoM2: number;
-  ubicacionKey: string;          // CENTRICA / SEMI-CENTRICA / PERIFERICA / SUBURBANA
-  zonaKey: string;               // RESIDENCIAL / COMERCIAL / etc.
-  viaAccesoKey: string;          // CONCRETO / ASFALTO / etc.
+  ubicacionKey: string;
+  zonaKey: string;
+  viaAccesoKey: string;
   fechaInspeccion: string;
   dormitorios: number;
   banosCompletos: number;
@@ -364,11 +416,11 @@ export interface ComparableTerreno {
 // -------------------- VALOR DE REALIZACIÓN --------------------
 
 export interface DeduccionesRealizacion {
-  ir: number;                     // %  Impuesto Renta ganancia capital
-  ibi: number;                    // %  Impuesto Bienes Inmuebles
-  corretaje: number;              // %
-  legales: number;                // %
-  comercializacion: number;       // %
+  ir: number;
+  ibi: number;
+  corretaje: number;
+  legales: number;
+  comercializacion: number;
 }
 
 // -------------------- METODOLOGÍAS --------------------
@@ -391,30 +443,31 @@ export interface Comparable {
 }
 
 export const defaultFactores = (): FactorComparable[] => [
-  { key: 'ubicacion',  label: 'Ubicación',  value: 1.00, active: true },
-  { key: 'area',       label: 'Área',       value: 1.00, active: true },
-  { key: 'topografia', label: 'Topografía', value: 1.00, active: true },
-  { key: 'acceso',     label: 'Acceso',     value: 1.00, active: true },
-  { key: 'servicios',  label: 'Servicios',  value: 1.00, active: true },
-  { key: 'uso',        label: 'Uso',        value: 1.00, active: true },
+  { key: 'ubicacion', label: 'Ubicación', value: 1.0, active: true },
+  { key: 'area', label: 'Área', value: 1.0, active: true },
+  { key: 'topografia', label: 'Topografía', value: 1.0, active: true },
+  { key: 'acceso', label: 'Acceso', value: 1.0, active: true },
+  { key: 'servicios', label: 'Servicios', value: 1.0, active: true },
+  { key: 'uso', label: 'Uso', value: 1.0, active: true },
 ];
 
 export interface Metodologias {
   enfoqueMercado: boolean;
   enfoqueCosto: boolean;
   enfoqueIngresos: boolean;
-  // sujetos
+
   sujetoInmueble: FichaSujetoInmueble;
   sujetoTerreno: FichaSujetoTerreno;
-  // comparables (INMOVAL)
+
   comparablesInmueble: ComparableInmueble[];
   comparablesTerreno: ComparableTerreno[];
-  // valor mercado / realización
+
   deducciones: DeduccionesRealizacion;
   enfoqueConclusion: 'mercado' | 'costo';
   notasMercadoInmueble: string;
   notasMercadoTerreno: string;
-  // ---- alias / legados (UI prototipo) ----
+
+  // alias / legados UI prototipo
   comparativo?: boolean;
   reposicion?: boolean;
   mercadoTerreno?: boolean;
@@ -436,7 +489,6 @@ export interface AplicarMemorias {
 
 export interface MemoriaTerreno {
   aplicar: AplicarMemorias;
-  /** IDs de infraestructuras principales del terreno usadas para componer el sujeto inmueble construido */
   infraestructurasPrincipalesIds?: ID[];
   sujetoInmueble: FichaSujetoInmueble;
   sujetoTerreno: FichaSujetoTerreno;
@@ -451,32 +503,48 @@ export interface MemoriaTerreno {
 // -------------------- FOTOS --------------------
 
 export type FotoCategoria =
-  | 'fachada' | 'interior' | 'lindero_norte' | 'lindero_sur'
-  | 'lindero_este' | 'lindero_oeste' | 'infraestructuras'
-  | 'comparables_inmueble' | 'comparables_terreno' | 'comparables'
-  | 'planos' | 'macrolocalizacion' | 'microlocalizacion' | 'legales';
+  | 'fachada'
+  | 'interior'
+  | 'lindero_norte'
+  | 'lindero_sur'
+  | 'lindero_este'
+  | 'lindero_oeste'
+  | 'infraestructuras'
+  | 'comparables_inmueble'
+  | 'comparables_terreno'
+  | 'comparables'
+  | 'planos'
+  | 'macrolocalizacion'
+  | 'microlocalizacion'
+  | 'legales';
 
-export interface Foto { id: ID; src: string; descripcion: string; }
+export interface Foto {
+  id: ID;
+  src: string;
+  descripcion: string;
+}
+
 export type Fotografias = Record<FotoCategoria, Foto[]>;
 
-// -------------------- FORMATO DE EXPORTACIÓN (PDF) --------------------
+// -------------------- FORMATO EXPORTACIÓN --------------------
 
 export interface FormatoExport {
-  /** Imagen de la portada (data URL o ruta) */
   portadaImagen?: string;
   mostrarPortadaImagen: boolean;
-  /** Plantillas con tokens: {{empresa}} {{capitulo}} {{perito}} {{email}} {{telefono}} {{pagina}} {{totalPaginas}} {{expediente}} {{cliente}} {{normativa}} */
+
   headerIzq: string;
   headerDer: string;
   footerIzq: string;
   footerDer: string;
   mostrarHeader: boolean;
   mostrarFooter: boolean;
+
   fuente: 'roboto-mono' | 'inter' | 'serif';
   bordesRedondeados: boolean;
+
   incluirCartaPresentacion: boolean;
   incluirMetodologia: boolean;
-  /** Override de textos (vacío = autogenerado) */
+
   textoCartaPresentacion?: string;
   textoMetodologia?: string;
 }
@@ -495,77 +563,147 @@ export const emptyFormatoExport = (): FormatoExport => ({
   incluirMetodologia: true,
 });
 
-// -------------------- AVALÚO --------------------
+// -------------------- AVALÚO / EXPEDIENTE --------------------
 
 export interface Avaluo {
   id: ID;
   createdAt: string;
   updatedAt: string;
+
+  /**
+   * Estado técnico legado.
+   * Se mantiene por compatibilidad con pantallas existentes.
+   */
   estado: 'borrador' | 'en_proceso' | 'finalizado';
+
+  // ============================================================
+  // TORRE DE CONTROL — DATOS ADMINISTRATIVOS DEL EXPEDIENTE
+  // ============================================================
+
+  tipoModulo: TipoModuloAvaluo;
+  estatusOperativo: EstatusOperativo;
+  prioridad: PrioridadExpediente;
+
+  fechaSolicitud: string;
+  fechaEntregaEstimada: string;
+  fechaCierre: string;
+
+  costoServicio: number;
+  montoPagado: number;
+  estadoPago: EstadoPago;
+
+  observacionesAdministrativas: string;
+
+  // ============================================================
+  // RELACIONES Y MÓDULO TÉCNICO URBANO
+  // ============================================================
+
   clienteId?: ID;
   peritoId?: ID;
+
   info: InfoGeneral;
   documentoLegal: DocumentoLegal;
   entorno: Entorno;
   descripcionGeneralTerrenos: DescripcionGeneralTerrenos;
   terrenos: Terreno[];
+
   metodologias: Metodologias;
-  /** Memorias de cálculo (Cap VI) por terreno — clave: terreno.id */
   metodologiasPorTerreno?: Record<ID, MemoriaTerreno>;
+
   fotos: Fotografias;
   formato?: FormatoExport;
 }
 
-// -------------------- FACTORIES --------------------
+// ============================================================
+// FACTORIES
+// ============================================================
+
+export const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export const emptyInfo = (): InfoGeneral => ({
-  numeroExpediente: '', tipoInmueble: 'CASA DE HABITACIÓN - IU',
-  regimen: 'PRIVADA INDIVIDUAL', proposito: 'REFERENCIA DE VALORES - RV',
+  numeroExpediente: '',
+  tipoInmueble: 'CASA DE HABITACIÓN - IU',
+  regimen: 'PRIVADA INDIVIDUAL',
+  proposito: 'REFERENCIA DE VALORES - RV',
   propietario: '',
-  solicitante: '', clienteNombre: '',
-  valuadorNombre: '', valuadorNipev: '',
-  fechaInspeccion: '', fechaAvaluo: '',
+  solicitante: '',
+  clienteNombre: '',
+  valuadorNombre: '',
+  valuadorNipev: '',
+  fechaInspeccion: '',
+  fechaAvaluo: '',
   observaciones: '',
+  moneda: 'US$',
 });
 
 export const emptyDocLegal = (): DocumentoLegal => ({
   documentos: [],
-  numeroEscritura: '', fechaEscritura: '', notario: '',
-  areaTerrenoEscritura: 0, areaTerrenoEscrituraVr2: 0,
-  numeroCatastral: '', numeroRegistral: '', tomo: '', folio: '', asiento: '',
+  numeroEscritura: '',
+  fechaEscritura: '',
+  notario: '',
+  areaTerrenoEscritura: 0,
+  areaTerrenoEscrituraVr2: 0,
+  numeroCatastral: '',
+  numeroRegistral: '',
+  tomo: '',
+  folio: '',
+  asiento: '',
   observaciones: '',
 });
 
 export const emptyEntorno = (): Entorno => ({
-  clasificacionZona: '', tipoConstruccion: '', indiceSaturacion: '',
+  clasificacionZona: '',
+  tipoConstruccion: '',
+  indiceSaturacion: '',
   densidadPoblacional: '',
-  carpetaZona: '', carpetaInmueble: '',
-  flujoZona: '', flujoInmueble: '',
-  estadoZona: '', estadoInmueble: '',
-  importanciaZona: '', importanciaInmueble: '',
-  proximidadZona: '', proximidadInmueble: '',
-  contaminacion: [], serviciosPublicos: [],
-  equipamientoUrbano: [], distancias: '',
+  carpetaZona: '',
+  carpetaInmueble: '',
+  flujoZona: '',
+  flujoInmueble: '',
+  estadoZona: '',
+  estadoInmueble: '',
+  importanciaZona: '',
+  importanciaInmueble: '',
+  proximidadZona: '',
+  proximidadInmueble: '',
+  contaminacion: [],
+  serviciosPublicos: [],
+  equipamientoUrbano: [],
+  distancias: '',
 });
 
-export const emptyLinderoMedida = (fuente: LinderoFuente = 'levantamiento'): LinderoMedida => ({
-  id: crypto.randomUUID(), fuente, fuenteLabel: '', colindante: '', medida: 0,
+export const emptyLinderoMedida = (
+  fuente: LinderoFuente = 'levantamiento'
+): LinderoMedida => ({
+  id: crypto.randomUUID(),
+  fuente,
+  fuenteLabel: '',
+  colindante: '',
+  medida: 0,
 });
 
-export const emptyLinderos = (): Lindero[] => (['NORTE','SUR','ESTE','OESTE'] as const).map((o) => ({
-  orientacion: o,
-  medidas: [emptyLinderoMedida('levantamiento')],
-  delimitanteFisico: '',
-  levantamientoColindante: '', levantamientoMedida: 0,
-  escrituraColindante: '', escrituraMedida: 0,
-  planoColindante: '', planoMedida: 0,
-}));
+export const emptyLinderos = (): Lindero[] =>
+  (['NORTE', 'SUR', 'ESTE', 'OESTE'] as const).map((o) => ({
+    orientacion: o,
+    medidas: [emptyLinderoMedida('levantamiento')],
+    delimitanteFisico: '',
+    levantamientoColindante: '',
+    levantamientoMedida: 0,
+    escrituraColindante: '',
+    escrituraMedida: 0,
+    planoColindante: '',
+    planoMedida: 0,
+  }));
 
 export const emptyDescripcionGeneralTerrenos = (): DescripcionGeneralTerrenos => ({
-  direccion: '', coordenadas: '', personaEntrevistada: '',
+  direccion: '',
+  coordenadas: '',
+  personaEntrevistada: '',
 });
 
-export const emptyAreaItem = (origen: AreaItem['origen'] = 'levantamiento'): AreaItem => ({
+export const emptyAreaItem = (
+  origen: AreaItem['origen'] = 'levantamiento'
+): AreaItem => ({
   id: crypto.randomUUID(),
   origen,
   origenLabel: '',
@@ -579,81 +717,157 @@ export const emptyAreaItem = (origen: AreaItem['origen'] = 'levantamiento'): Are
 
 export const emptyTerreno = (n = 1): Terreno => ({
   id: crypto.randomUUID(),
-  titulo: `Terreno ${n}`, ubicacionExacta: '', coordenadas: '', personaEntrevistada: '',
+  titulo: `Terreno ${n}`,
+  ubicacionExacta: '',
+  coordenadas: '',
+  personaEntrevistada: '',
+
   areas: [emptyAreaItem('levantamiento')],
-  areaEscrituraM2: 0, areaEscrituraVr2: 0,
-  areaCatastralM2: 0, areaCatastralVr2: 0,
-  areaLevantamientoM2: 0, areaLevantamientoVr2: 0,
+
+  areaEscrituraM2: 0,
+  areaEscrituraVr2: 0,
+  areaCatastralM2: 0,
+  areaCatastralVr2: 0,
+  areaLevantamientoM2: 0,
+  areaLevantamientoVr2: 0,
   areaHomologacionFuente: 'levantamiento',
-  diferenciaArea: 0, observacionesArea: '',
-  topografia: '', forma: '', servidumbres: '',
-  caracteristicasPanoramicas: '', consideracionesAdicionales: '',
-  usoTipo: '', estadoOcupacion: '', tieneObrasComplementarias: false, obrasComplementarias: '',
+  diferenciaArea: 0,
+  observacionesArea: '',
+
+  topografia: '',
+  forma: '',
+  servidumbres: '',
+  caracteristicasPanoramicas: '',
+  consideracionesAdicionales: '',
+  usoTipo: '',
+  estadoOcupacion: '',
+  tieneObrasComplementarias: false,
+  obrasComplementarias: '',
+
   linderos: emptyLinderos(),
+
   valorUnitarioVr2: 0,
+
   infraestructuras: [],
 });
 
-export const emptyInfra = (tipo: Infraestructura['tipo'] = 'principal'): Infraestructura => ({
+export const emptyInfra = (
+  tipo: Infraestructura['tipo'] = 'principal'
+): Infraestructura => ({
   id: crypto.randomUUID(),
-  tipo, nombre: '',
-  areaTotalM2: 0, niveles: 1,
-  ambientes: [], descripciones: [], observaciones: '',
-  vidaUtilAnios: 70, edadAnios: 0, estadoFE: 8,
+  tipo,
+  nombre: '',
+  areaTotalM2: 0,
+  niveles: 1,
+  ambientes: [],
+  descripciones: [],
+  observaciones: '',
+
+  vidaUtilAnios: 70,
+  edadAnios: 0,
+  estadoFE: 8,
   anioConstruccion: new Date().getFullYear(),
   estadoConservacionTexto: '',
+
   costos: [],
 });
 
 export const emptySujetoInmueble = (): FichaSujetoInmueble => ({
-  direccion: '', areaConstruccionM2: 0, areaTerrenoM2: 0,
-  ubicacionKey: 'PERIFERICA', zonaKey: 'RESIDENCIAL', viaAccesoKey: 'ASFALTO',
+  direccion: '',
+  areaConstruccionM2: 0,
+  areaTerrenoM2: 0,
+  ubicacionKey: 'PERIFERICA',
+  zonaKey: 'RESIDENCIAL',
+  viaAccesoKey: 'ASFALTO',
   fechaInspeccion: '',
-  dormitorios: 0, banosCompletos: 0, banoMedio: 0, cuartoBanoServicio: 0,
+  dormitorios: 0,
+  banosCompletos: 0,
+  banoMedio: 0,
+  cuartoBanoServicio: 0,
 });
 
 export const emptySujetoTerreno = (): FichaSujetoTerreno => ({
-  direccion: '', areaTerrenoVr2: 0,
-  ubicacionKey: 'PERIFERICA', zonaKey: 'RESIDENCIAL', viaAccesoKey: 'ASFALTO',
+  direccion: '',
+  areaTerrenoVr2: 0,
+  ubicacionKey: 'PERIFERICA',
+  zonaKey: 'RESIDENCIAL',
+  viaAccesoKey: 'ASFALTO',
   fechaInspeccion: '',
-  serviciosKey: 'ESTANDAR', equipamientoKey: 'MEDIA',
-  topografiaKey: 'PLANA', posicionManzanaKey: 'MEDIANERO',
+  serviciosKey: 'ESTANDAR',
+  equipamientoKey: 'MEDIA',
+  topografiaKey: 'PLANA',
+  posicionManzanaKey: 'MEDIANERO',
 });
 
 export const emptyComparableInmueble = (): ComparableInmueble => ({
   id: crypto.randomUUID(),
-  paginaWeb: '', enlace: '', contacto: '', idAnuncio: '',
-  direccion: '', precioVentaUSD: 0,
-  areaConstruccionM2: 0, areaTerrenoM2: 0,
-  fechaPublicacion: '', diasAntiguedad: 0,
-  ubicacionKey: 'PERIFERICA', zonaKey: 'RESIDENCIAL', viaAccesoKey: 'ASFALTO',
-  dormitorios: 0, banosCompletos: 0, banoMedio: 0, cuartoBanoServicio: 0,
+  paginaWeb: '',
+  enlace: '',
+  contacto: '',
+  idAnuncio: '',
+  direccion: '',
+  precioVentaUSD: 0,
+  areaConstruccionM2: 0,
+  areaTerrenoM2: 0,
+  fechaPublicacion: '',
+  diasAntiguedad: 0,
+  ubicacionKey: 'PERIFERICA',
+  zonaKey: 'RESIDENCIAL',
+  viaAccesoKey: 'ASFALTO',
+  dormitorios: 0,
+  banosCompletos: 0,
+  banoMedio: 0,
+  cuartoBanoServicio: 0,
 });
 
 export const emptyComparableTerreno = (): ComparableTerreno => ({
   id: crypto.randomUUID(),
-  paginaWeb: '', enlace: '', contacto: '', idAnuncio: '',
-  direccion: '', precioVentaUSD: 0, areaTerrenoVr2: 0,
-  fechaPublicacion: '', diasAntiguedad: 0,
-  ubicacionKey: 'PERIFERICA', zonaKey: 'RESIDENCIAL', viaAccesoKey: 'ASFALTO',
-  serviciosKey: 'ESTANDAR', equipamientoKey: 'MEDIA',
-  topografiaKey: 'PLANA', posicionManzanaKey: 'MEDIANERO',
+  paginaWeb: '',
+  enlace: '',
+  contacto: '',
+  idAnuncio: '',
+  direccion: '',
+  precioVentaUSD: 0,
+  areaTerrenoVr2: 0,
+  fechaPublicacion: '',
+  diasAntiguedad: 0,
+  ubicacionKey: 'PERIFERICA',
+  zonaKey: 'RESIDENCIAL',
+  viaAccesoKey: 'ASFALTO',
+  serviciosKey: 'ESTANDAR',
+  equipamientoKey: 'MEDIA',
+  topografiaKey: 'PLANA',
+  posicionManzanaKey: 'MEDIANERO',
 });
 
 export const emptyMetodologias = (): Metodologias => ({
-  enfoqueMercado: true, enfoqueCosto: true, enfoqueIngresos: false,
+  enfoqueMercado: true,
+  enfoqueCosto: true,
+  enfoqueIngresos: false,
   sujetoInmueble: emptySujetoInmueble(),
   sujetoTerreno: emptySujetoTerreno(),
   comparablesInmueble: [],
   comparablesTerreno: [],
-  deducciones: { ir: 2, ibi: 1, corretaje: 4, legales: 1, comercializacion: 2 },
+  deducciones: {
+    ir: 2,
+    ibi: 1,
+    corretaje: 4,
+    legales: 1,
+    comercializacion: 2,
+  },
   enfoqueConclusion: 'mercado',
-  notasMercadoInmueble: '', notasMercadoTerreno: '',
+  notasMercadoInmueble: '',
+  notasMercadoTerreno: '',
 });
 
 export const emptyAplicarMemorias = (): AplicarMemorias => ({
-  mercadoInmueble: true, realizacion: true, mercadoTerreno: true,
-  reposicion: true, ross: true, consolidado: true, conclusion: true,
+  mercadoInmueble: true,
+  realizacion: true,
+  mercadoTerreno: true,
+  reposicion: true,
+  ross: true,
+  consolidado: true,
+  conclusion: true,
 });
 
 export const emptyMemoriaTerreno = (): MemoriaTerreno => ({
@@ -663,15 +877,31 @@ export const emptyMemoriaTerreno = (): MemoriaTerreno => ({
   sujetoTerreno: emptySujetoTerreno(),
   comparablesInmueble: [],
   comparablesTerreno: [],
-  deducciones: { ir: 2, ibi: 1, corretaje: 4, legales: 1, comercializacion: 2 },
+  deducciones: {
+    ir: 2,
+    ibi: 1,
+    corretaje: 4,
+    legales: 1,
+    comercializacion: 2,
+  },
   enfoqueConclusion: 'mercado',
-  notasMercadoInmueble: '', notasMercadoTerreno: '',
+  notasMercadoInmueble: '',
+  notasMercadoTerreno: '',
 });
 
 export const emptyFotos = (): Fotografias => ({
-  fachada: [], interior: [],
-  lindero_norte: [], lindero_sur: [], lindero_este: [], lindero_oeste: [],
+  fachada: [],
+  interior: [],
+  lindero_norte: [],
+  lindero_sur: [],
+  lindero_este: [],
+  lindero_oeste: [],
   infraestructuras: [],
-  comparables_inmueble: [], comparables_terreno: [], comparables: [],
-  planos: [], macrolocalizacion: [], microlocalizacion: [], legales: [],
+  comparables_inmueble: [],
+  comparables_terreno: [],
+  comparables: [],
+  planos: [],
+  macrolocalizacion: [],
+  microlocalizacion: [],
+  legales: [],
 });
