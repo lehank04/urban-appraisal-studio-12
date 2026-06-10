@@ -1,216 +1,349 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useStore } from '@/store/avaluoStore';
-import { Avaluo, Cliente } from '@/store/types';
-import { Input } from '@/components/ui/input';
+import { Avaluo } from '@/store/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { TextField } from '@/components/forms/Fields';
-import { Plus, Search, Check, Users } from 'lucide-react';
-
-const emptyCliente: Omit<Cliente, 'id'> = {
-  nombre: '',
-  documento: '',
-  telefono: '',
-  email: '',
-  direccion: '',
-};
+  AlertTriangle,
+  Building2,
+  Check,
+  FileText,
+  Plus,
+  Search,
+  UserRound,
+} from 'lucide-react';
 
 export function StepCliente({ avaluo }: { avaluo: Avaluo }) {
-  const { clientes, addCliente, updateAvaluo } = useStore();
-
+  const { clientes, avaluos, updateAvaluo } = useStore();
   const [q, setQ] = useState('');
-  const [open, setOpen] = useState(false);
-  const [nuevo, setNuevo] = useState<Omit<Cliente, 'id'>>(emptyCliente);
 
-  const query = q.trim().toLowerCase();
+  const clienteActual = clientes.find((c) => c.id === avaluo.clienteId);
 
-  const filtered = clientes.filter((c) => {
-    if (!query) return true;
+  const expedientesPorCliente = useMemo(() => {
+    const map = new Map<string, number>();
 
-    return (
-      c.nombre.toLowerCase().includes(query) ||
-      c.documento.toLowerCase().includes(query) ||
-      (c.email || '').toLowerCase().includes(query) ||
-      (c.telefono || '').toLowerCase().includes(query)
-    );
-  });
+    for (const a of avaluos) {
+      if (!a.clienteId) continue;
+      map.set(a.clienteId, (map.get(a.clienteId) || 0) + 1);
+    }
 
-  const puedeGuardar = nuevo.nombre.trim().length > 0 && nuevo.documento.trim().length > 0;
+    return map;
+  }, [avaluos]);
 
-  const guardarYSeleccionar = () => {
-    if (!puedeGuardar) return;
+  const clientesFiltrados = useMemo(() => {
+    const query = q.trim().toLowerCase();
 
-    const cliente = addCliente({
-      ...nuevo,
-      nombre: nuevo.nombre.trim(),
-      documento: nuevo.documento.trim(),
-      telefono: nuevo.telefono?.trim(),
-      email: nuevo.email?.trim(),
-      direccion: nuevo.direccion?.trim(),
+    return clientes
+      .filter((cliente) => {
+        if (!query) return true;
+
+        const texto = [
+          cliente.nombre,
+          cliente.documento,
+          cliente.telefono,
+          cliente.email,
+          cliente.direccion,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return texto.includes(query);
+      })
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [clientes, q]);
+
+  const seleccionarCliente = (clienteId: string) => {
+    const cliente = clientes.find((c) => c.id === clienteId);
+
+    updateAvaluo(avaluo.id, {
+      clienteId,
+      info: {
+        ...avaluo.info,
+        clienteNombre: cliente?.nombre || '',
+        solicitante: avaluo.info.solicitante || cliente?.nombre || '',
+      },
     });
+  };
 
-    updateAvaluo(avaluo.id, { clienteId: cliente.id });
+  const limpiarCliente = () => {
+    updateAvaluo(avaluo.id, {
+      clienteId: undefined,
+      info: {
+        ...avaluo.info,
+        clienteNombre: '',
+      },
+    });
+  };
 
-    setOpen(false);
-    setNuevo(emptyCliente);
-    setQ('');
+  const updateInfo = (patch: Partial<Avaluo['info']>) => {
+    updateAvaluo(avaluo.id, {
+      info: {
+        ...avaluo.info,
+        ...patch,
+      },
+    });
   };
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="space-y-5 max-w-5xl">
       <header>
-        <h2 className="text-xl font-semibold">Paso 2 · Cliente / Solicitante</h2>
+        <div className="text-xs uppercase tracking-widest text-primary">
+          Módulo urbano · Expediente técnico
+        </div>
+        <h2 className="text-xl font-semibold">
+          Cliente, solicitante y propietario
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Selecciona el cliente solicitante del avalúo o registra uno nuevo para este expediente.
+          Confirma el cliente asignado al expediente y ajusta los nombres que saldrán en el informe.
         </p>
       </header>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre, cédula, RUC, teléfono o correo..."
-            className="pl-9"
-            disabled={clientes.length === 0}
-          />
-        </div>
-
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Plus className="h-4 w-4 mr-1" />
-              Nuevo cliente
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Registrar cliente</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-3">
-              <TextField
-                label="Nombre / Razón social"
-                value={nuevo.nombre}
-                onChange={(v) => setNuevo({ ...nuevo, nombre: v })}
-              />
-
-              <TextField
-                label="Cédula / RUC"
-                value={nuevo.documento}
-                onChange={(v) => setNuevo({ ...nuevo, documento: v })}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <TextField
-                  label="Teléfono"
-                  value={nuevo.telefono || ''}
-                  onChange={(v) => setNuevo({ ...nuevo, telefono: v })}
-                />
-
-                <TextField
-                  label="Email"
-                  value={nuevo.email || ''}
-                  onChange={(v) => setNuevo({ ...nuevo, email: v })}
-                />
-              </div>
-
-              <TextField
-                label="Dirección"
-                value={nuevo.direccion || ''}
-                onChange={(v) => setNuevo({ ...nuevo, direccion: v })}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  setNuevo(emptyCliente);
-                }}
-              >
-                Cancelar
-              </Button>
-
-              <Button onClick={guardarYSeleccionar} disabled={!puedeGuardar}>
-                Guardar y seleccionar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="space-y-2">
-        {clientes.length === 0 ? (
-          <Card className="p-8 border-dashed">
-            <div className="flex flex-col items-center text-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-muted grid place-items-center">
-                <Users className="h-6 w-6 text-muted-foreground" />
+      {clienteActual ? (
+        <Card className="p-5 border-primary/30 bg-primary/5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 grid place-items-center shrink-0">
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
 
               <div>
-                <h3 className="font-semibold">No hay clientes registrados</h3>
-                <p className="text-sm text-muted-foreground mt-1 max-w-md">
-                  Registra el cliente o solicitante del avalúo. Puede ser una persona natural,
-                  empresa, banco, institución o propietario solicitante.
-                </p>
-              </div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Cliente asignado al expediente
+                </div>
 
-              <Button onClick={() => setOpen(true)}>
+                <h3 className="text-lg font-semibold mt-1">
+                  {clienteActual.nombre}
+                </h3>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Badge variant="outline">
+                    Documento: {clienteActual.documento || '—'}
+                  </Badge>
+
+                  {clienteActual.telefono && (
+                    <Badge variant="outline">
+                      Tel: {clienteActual.telefono}
+                    </Badge>
+                  )}
+
+                  {clienteActual.email && (
+                    <Badge variant="outline">
+                      {clienteActual.email}
+                    </Badge>
+                  )}
+
+                  <Badge variant="outline">
+                    <FileText className="h-3 w-3 mr-1" />
+                    {expedientesPorCliente.get(clienteActual.id) || 0} expediente(s)
+                  </Badge>
+                </div>
+
+                {clienteActual.direccion && (
+                  <div className="text-xs text-muted-foreground mt-3 max-w-2xl">
+                    {clienteActual.direccion}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={limpiarCliente}>
+              Cambiar
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-4 border-amber-500/30 bg-amber-500/10">
+          <div className="flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-700 mt-0.5" />
+            <div>
+              <div className="font-medium text-amber-800">
+                Este expediente no tiene cliente asignado
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Puedes continuar, pero conviene asignar un cliente para controlar historial, entregas y pagos desde Dashboard INMOVAL.
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-5 space-y-4">
+        <div>
+          <h3 className="font-semibold">Datos que aparecerán en el informe</h3>
+          <p className="text-xs text-muted-foreground">
+            Estos campos son independientes del cliente administrativo. Sirven para el documento técnico.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs">Solicitante</Label>
+            <Input
+              value={avaluo.info.solicitante || ''}
+              onChange={(e) => updateInfo({ solicitante: e.target.value })}
+              placeholder={clienteActual?.nombre || 'Nombre del solicitante'}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">Propietario</Label>
+            <Input
+              value={avaluo.info.propietario || ''}
+              onChange={(e) => updateInfo({ propietario: e.target.value })}
+              placeholder="Nombre del propietario"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">Cliente en informe</Label>
+            <Input
+              value={avaluo.info.clienteNombre || ''}
+              onChange={(e) => updateInfo({ clienteNombre: e.target.value })}
+              placeholder={clienteActual?.nombre || 'Nombre del cliente'}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">Tipo de inmueble</Label>
+            <Input
+              value={avaluo.info.tipoInmueble || ''}
+              onChange={(e) => updateInfo({ tipoInmueble: e.target.value })}
+              placeholder="CASA DE HABITACIÓN - IU"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {clientes.length === 0 ? (
+        <Card className="p-8 border-dashed">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-muted grid place-items-center">
+              <UserRound className="h-6 w-6 text-muted-foreground" />
+            </div>
+
+            <div>
+              <h3 className="font-semibold">No hay clientes registrados</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Registra clientes para asignarlos a expedientes, controlar historial y reutilizar datos administrativos.
+              </p>
+            </div>
+
+            <Button asChild>
+              <Link to="/clientes">
                 <Plus className="h-4 w-4 mr-1" />
                 Registrar cliente
-              </Button>
+              </Link>
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">
+                {clienteActual ? 'Cambiar cliente asignado' : 'Seleccionar cliente'}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                El cliente seleccionado queda vinculado al expediente administrativo.
+              </p>
+            </div>
+
+            <Button variant="outline" asChild>
+              <Link to="/clientes">
+                <Plus className="h-4 w-4 mr-1" />
+                Gestionar clientes
+              </Link>
+            </Button>
+          </div>
+
+          <Card className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar cliente por nombre, documento, teléfono, email o dirección..."
+                className="w-full h-9 rounded-md border border-input bg-background px-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
           </Card>
-        ) : filtered.length === 0 ? (
-          <div className="text-sm text-muted-foreground text-center py-6">
-            No se encontraron clientes con ese criterio de búsqueda.
-          </div>
-        ) : (
-          filtered.map((c) => {
-            const selected = c.id === avaluo.clienteId;
 
-            return (
-              <Card
-                key={c.id}
-                className={`p-4 cursor-pointer transition-colors ${
-                  selected
-                    ? 'border-primary bg-primary/5'
-                    : 'hover:bg-muted/30'
-                }`}
-                onClick={() => updateAvaluo(avaluo.id, { clienteId: c.id })}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{c.nombre}</div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {clientesFiltrados.map((cliente) => {
+              const selected = clienteActual?.id === cliente.id;
+              const total = expedientesPorCliente.get(cliente.id) || 0;
 
-                    <div className="text-xs text-muted-foreground font-mono truncate">
-                      {c.documento || 'Sin documento'}
+              return (
+                <Card
+                  key={cliente.id}
+                  onClick={() => seleccionarCliente(cliente.id)}
+                  className={`p-5 cursor-pointer transition-all relative ${
+                    selected
+                      ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
+                      : 'hover:border-primary/40'
+                  }`}
+                >
+                  {selected && (
+                    <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                      <Check className="h-3.5 w-3.5" />
                     </div>
+                  )}
 
-                    <div className="text-xs text-muted-foreground truncate mt-1">
-                      {c.email || c.telefono || c.direccion || 'Sin datos de contacto'}
-                    </div>
+                  <div className="h-10 w-10 rounded-md bg-primary/10 grid place-items-center mb-3">
+                    <Building2 className="h-5 w-5 text-primary" />
                   </div>
 
-                  {selected && <Check className="h-5 w-5 text-primary shrink-0" />}
-                </div>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                  <div className="font-semibold pr-8">
+                    {cliente.nombre}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground mt-1 mono">
+                    {cliente.documento || 'Sin documento'}
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-[5.5rem_1fr] gap-y-1 text-xs">
+                    {cliente.telefono && (
+                      <>
+                        <dt className="text-muted-foreground">Teléfono</dt>
+                        <dd className="truncate">{cliente.telefono}</dd>
+                      </>
+                    )}
+
+                    {cliente.email && (
+                      <>
+                        <dt className="text-muted-foreground">Email</dt>
+                        <dd className="truncate">{cliente.email}</dd>
+                      </>
+                    )}
+
+                    {cliente.direccion && (
+                      <>
+                        <dt className="text-muted-foreground">Dirección</dt>
+                        <dd className="line-clamp-2">{cliente.direccion}</dd>
+                      </>
+                    )}
+                  </dl>
+
+                  <div className="mt-4 pt-3 border-t border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {total} expediente(s) asociado(s)
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {clientesFiltrados.length === 0 && (
+            <Card className="p-6 text-center text-sm text-muted-foreground border-dashed">
+              No hay clientes que coincidan con la búsqueda.
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }
