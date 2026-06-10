@@ -5,13 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft,
   Building2,
   CalendarClock,
   CircleDollarSign,
+  FileBadge,
   FileText,
   Plus,
+  UserCog,
 } from 'lucide-react';
 import {
   EstatusOperativo,
@@ -19,6 +22,7 @@ import {
   TipoModuloAvaluo,
   todayISO,
 } from '@/store/types';
+import { PLANTILLAS } from '@/templates/plantillas';
 
 const MODULO_LABEL: Record<TipoModuloAvaluo, string> = {
   urbano: 'Urbano',
@@ -58,11 +62,26 @@ const codigoSugerido = () => {
   return `INMOVAL-U-${yy}${mm}${dd}-${hh}${min}`;
 };
 
+const estadoTecnicoDesdeEstatus = (
+  estatus: EstatusOperativo
+): 'borrador' | 'en_proceso' | 'finalizado' => {
+  if (estatus === 'entregado' || estatus === 'cerrado') return 'finalizado';
+  if (estatus === 'borrador') return 'borrador';
+  return 'en_proceso';
+};
+
 export default function NuevoExpediente() {
   const navigate = useNavigate();
-  const { clientes, createAvaluo, updateAvaluo } = useStore();
+  const {
+    clientes,
+    peritos,
+    createAvaluo,
+    updateAvaluo,
+  } = useStore();
 
   const [clienteId, setClienteId] = useState('');
+  const [peritoId, setPeritoId] = useState('');
+
   const [tipoModulo, setTipoModulo] = useState<TipoModuloAvaluo>('urbano');
   const [estatusOperativo, setEstatusOperativo] =
     useState<EstatusOperativo>('borrador');
@@ -86,6 +105,15 @@ export default function NuevoExpediente() {
     [clientes, clienteId]
   );
 
+  const peritoSeleccionado = useMemo(
+    () => peritos.find((p) => p.id === peritoId),
+    [peritos, peritoId]
+  );
+
+  const plantillaSeleccionada = peritoSeleccionado
+    ? PLANTILLAS[peritoSeleccionado.plantilla]
+    : null;
+
   const puedeCrear = numeroExpediente.trim().length > 0;
 
   const crear = (e: FormEvent) => {
@@ -100,6 +128,8 @@ export default function NuevoExpediente() {
 
     updateAvaluo(av.id, {
       clienteId: clienteId || undefined,
+      peritoId: peritoId || undefined,
+
       tipoModulo,
       estatusOperativo,
       prioridad,
@@ -117,12 +147,7 @@ export default function NuevoExpediente() {
               ? 'pagado'
               : 'parcial',
 
-      estado:
-        estatusOperativo === 'borrador'
-          ? 'borrador'
-          : estatusOperativo === 'entregado' || estatusOperativo === 'cerrado'
-            ? 'finalizado'
-            : 'en_proceso',
+      estado: estadoTecnicoDesdeEstatus(estatusOperativo),
 
       info: {
         ...av.info,
@@ -133,6 +158,11 @@ export default function NuevoExpediente() {
         solicitante: solicitante || clienteSeleccionado?.nombre || '',
         clienteNombre: clienteSeleccionado?.nombre || '',
         fechaInspeccion,
+        valuadorNombre: peritoSeleccionado?.nombre || '',
+        valuadorNipev:
+          peritoSeleccionado?.registroSIBOIF ||
+          peritoSeleccionado?.registro ||
+          '',
       },
     });
 
@@ -140,7 +170,7 @@ export default function NuevoExpediente() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-primary">
@@ -150,7 +180,7 @@ export default function NuevoExpediente() {
             Nuevo expediente
           </h1>
           <p className="text-sm text-muted-foreground">
-            Crea la ficha administrativa antes de abrir el módulo técnico.
+            Crea la ficha administrativa, asigna cliente y perito, y luego abre el módulo técnico.
           </p>
         </div>
 
@@ -183,7 +213,9 @@ export default function NuevoExpediente() {
               <Label className="text-xs">Módulo técnico</Label>
               <select
                 value={tipoModulo}
-                onChange={(e) => setTipoModulo(e.target.value as TipoModuloAvaluo)}
+                onChange={(e) =>
+                  setTipoModulo(e.target.value as TipoModuloAvaluo)
+                }
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 {Object.entries(MODULO_LABEL).map(([key, label]) => (
@@ -192,6 +224,7 @@ export default function NuevoExpediente() {
                   </option>
                 ))}
               </select>
+
               {tipoModulo !== 'urbano' && (
                 <p className="text-[11px] text-amber-700 mt-1">
                   Por ahora solo el módulo urbano está activo. Los demás quedan preparados para futuro.
@@ -251,54 +284,137 @@ export default function NuevoExpediente() {
           </div>
         </Card>
 
-        <Card className="p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" />
-            <h2 className="font-semibold">Cliente, solicitante y propietario</h2>
-          </div>
+        <div className="grid lg:grid-cols-2 gap-5">
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <h2 className="font-semibold">Cliente, solicitante y propietario</h2>
+            </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-4">
+              <div>
+                <Label className="text-xs">Cliente registrado</Label>
+                <select
+                  value={clienteId}
+                  onChange={(e) => setClienteId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Sin cliente seleccionado</option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} · {c.documento}
+                    </option>
+                  ))}
+                </select>
+
+                {clientes.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    No hay clientes registrados. Puedes crear el expediente y registrar el cliente después.
+                  </p>
+                )}
+              </div>
+
+              {clienteSeleccionado && (
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <div className="text-sm font-medium">
+                    {clienteSeleccionado.nombre}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {clienteSeleccionado.documento}
+                    {clienteSeleccionado.telefono
+                      ? ` · ${clienteSeleccionado.telefono}`
+                      : ''}
+                    {clienteSeleccionado.email
+                      ? ` · ${clienteSeleccionado.email}`
+                      : ''}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Solicitante</Label>
+                  <Input
+                    value={solicitante}
+                    onChange={(e) => setSolicitante(e.target.value)}
+                    placeholder={clienteSeleccionado?.nombre || 'Nombre del solicitante'}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Propietario</Label>
+                  <Input
+                    value={propietario}
+                    onChange={(e) => setPropietario(e.target.value)}
+                    placeholder="Nombre del propietario"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <UserCog className="h-4 w-4 text-primary" />
+              <h2 className="font-semibold">Perito y plantilla documental</h2>
+            </div>
+
             <div>
-              <Label className="text-xs">Cliente registrado</Label>
+              <Label className="text-xs">Perito asignado</Label>
               <select
-                value={clienteId}
-                onChange={(e) => setClienteId(e.target.value)}
+                value={peritoId}
+                onChange={(e) => setPeritoId(e.target.value)}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">Sin cliente seleccionado</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} · {c.documento}
+                <option value="">Sin perito seleccionado</option>
+                {peritos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre} · {PLANTILLAS[p.plantilla].nombre}
                   </option>
                 ))}
               </select>
 
-              {clientes.length === 0 && (
+              {peritos.length === 0 && (
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  No hay clientes registrados. Puedes crear el expediente y registrar el cliente después.
+                  No hay peritos registrados. Puedes crear el expediente y asignar perito después.
                 </p>
               )}
             </div>
 
-            <div>
-              <Label className="text-xs">Solicitante</Label>
-              <Input
-                value={solicitante}
-                onChange={(e) => setSolicitante(e.target.value)}
-                placeholder={clienteSeleccionado?.nombre || 'Nombre del solicitante'}
-              />
-            </div>
+            {peritoSeleccionado && plantillaSeleccionada ? (
+              <div className="rounded-md border border-border bg-muted/20 p-3 flex items-start gap-3">
+                <div
+                  className="h-10 w-10 rounded grid place-items-center text-white shrink-0"
+                  style={{ background: plantillaSeleccionada.color }}
+                >
+                  <FileBadge className="h-5 w-5" />
+                </div>
 
-            <div>
-              <Label className="text-xs">Propietario</Label>
-              <Input
-                value={propietario}
-                onChange={(e) => setPropietario(e.target.value)}
-                placeholder="Nombre del propietario"
-              />
-            </div>
-          </div>
-        </Card>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">
+                    {peritoSeleccionado.nombre}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    NIPEV: {peritoSeleccionado.registroSIBOIF || peritoSeleccionado.registro || '—'}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Plantilla: {plantillaSeleccionada.nombre} · {plantillaSeleccionada.capitulos.length} capítulos
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <Badge variant="outline">
+                      {plantillaSeleccionada.empresa}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed border-border bg-muted/10 p-3 text-sm text-muted-foreground">
+                Selecciona un perito para vincular automáticamente la plantilla documental del expediente.
+              </div>
+            )}
+          </Card>
+        </div>
 
         <Card className="p-5 space-y-4">
           <div className="flex items-center gap-2">
