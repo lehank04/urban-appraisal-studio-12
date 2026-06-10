@@ -3,7 +3,7 @@ import { useStore } from '@/store/avaluoStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { PLANTILLAS } from '@/templates/plantillas';
-import { emptyFormatoExport } from '@/store/types';
+import { DocumentoLegalItem, emptyFormatoExport } from '@/store/types';
 import {
   consolidados, homologacionInmueble, homologacionTerreno,
   totalesCostos, valorRealizacion, deduccionesDetalle,
@@ -49,6 +49,60 @@ function Row({ k, v }: { k: string; v: any }) {
 }
 
 function H(props: { roman: string; title: string }) {
+  const LABEL_DOCUMENTO_LEGAL: Record<string, string> = {
+    escritura: 'Escritura pública',
+    contrato: 'Contrato',
+    plano_topografico: 'Plano topográfico',
+    razon_inscripcion: 'Razón de inscripción',
+    personalizado: 'Documento',
+  };
+  
+  const fmtAreaLegal = (m2?: number, vr2?: number) => {
+    const partes: string[] = [];
+  
+    if (m2 && m2 > 0) partes.push(`${fmtNum(m2)} m²`);
+    if (vr2 && vr2 > 0) partes.push(`${fmtNum(vr2)} vr²`);
+  
+    return partes.length ? partes.join(' · ') : '—';
+  };
+  
+  const documentoLegalLegacy = (d: any): DocumentoLegalItem | null => {
+    if (
+      !d.numeroEscritura &&
+      !d.fechaEscritura &&
+      !d.notario &&
+      !d.numeroFinca &&
+      !d.numeroRegistral &&
+      !d.numeroCatastral
+    ) {
+      return null;
+    }
+  
+    return {
+      id: 'legacy-documento-legal',
+      tipo: 'escritura',
+      titulo: 'Escritura pública',
+      nombre: d.numeroEscritura || '',
+      fecha: d.fechaEscritura || '',
+      autorizante: d.notario || '',
+      areaM2: d.areaTerrenoEscritura || 0,
+      areaVr2: d.areaTerrenoEscrituraVr2 || 0,
+      tieneInscripcion: Boolean(
+        d.numeroFinca ||
+          d.numeroRegistral ||
+          d.tomo ||
+          d.folio ||
+          d.asiento ||
+          d.numeroCatastral
+      ),
+      numeroRegistral: d.numeroFinca || d.numeroRegistral || '',
+      tomo: d.tomo || '',
+      folio: d.folio || '',
+      asiento: d.asiento || '',
+      numeroCatastral: d.numeroCatastral || '',
+      observaciones: '',
+    };
+  };
   return (
     <div className="mb-4">
       <div className="text-[10px] uppercase tracking-widest text-zinc-400">Capítulo {props.roman}</div>
@@ -69,6 +123,14 @@ export default function AvaluoPreview() {
   const c = consolidados(avaluo);
   const i = avaluo.info;
   const d = avaluo.documentoLegal;
+
+  const documentosLegales: DocumentoLegalItem[] =
+    d.documentos && d.documentos.length > 0
+      ? d.documentos
+      : documentoLegalLegacy(d)
+        ? [documentoLegalLegacy(d)!]
+        : [];
+  
   const e = avaluo.entorno;
   const m = avaluo.metodologias;
   const homT = homologacionTerreno(m.sujetoTerreno, m.comparablesTerreno);
@@ -246,21 +308,142 @@ export default function AvaluoPreview() {
         </Page>
 
         {/* CAP II — DOC LEGAL */}
-        <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. II · Documentación legal" formato={formato} ctx={ctx}>
-          <H roman="II" title="Documentación legal presentada" />
-          <table className="w-full text-sm border-collapse">
-            <tbody>
-              <Row k="N° escritura" v={d.numeroEscritura} />
-              <Row k="Fecha escritura" v={d.fechaEscritura} />
-              <Row k="Notario público" v={d.notario} />
-              <Row k="Área según escritura" v={`${fmtNum(d.areaTerrenoEscritura)} m² · ${fmtNum(d.areaTerrenoEscrituraVr2)} vr²`} />
-              <Row k="N° registral" v={d.numeroRegistral} />
-              <Row k="Tomo / Folio / Asiento" v={`${d.tomo} / ${d.folio} / ${d.asiento}`} />
-              <Row k="N° catastral" v={d.numeroCatastral} />
-            </tbody>
-          </table>
-          {d.observaciones && (<div className="mt-4 text-sm text-zinc-700"><b>Observaciones legales:</b> {d.observaciones}</div>)}
-        </Page>
+<Page
+  num={nextP()}
+  total={totalPages}
+  plantilla={plantilla}
+  title="Cap. II · Documentación legal"
+  formato={formato}
+  ctx={ctx}
+>
+  <H roman="II" title="Documentación legal presentada" />
+
+  {documentosLegales.length === 0 ? (
+    <div className="text-sm text-zinc-500 border border-dashed border-zinc-300 p-4">
+      No se registró documentación legal en el expediente.
+    </div>
+  ) : (
+    <div className="space-y-5">
+      {documentosLegales.map((doc, idx) => {
+        const tipoLabel =
+          LABEL_DOCUMENTO_LEGAL[doc.tipo] || doc.titulo || 'Documento';
+
+        return (
+          <div key={doc.id || idx} className="border border-zinc-300">
+            <div className="bg-zinc-100 px-3 py-2 border-b border-zinc-300">
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500">
+                Documento {idx + 1} · {tipoLabel}
+              </div>
+              <div className="text-sm font-semibold">
+                {doc.titulo || tipoLabel}
+                {doc.nombre ? ` — ${doc.nombre}` : ''}
+              </div>
+            </div>
+
+            <table className="w-full text-xs border-collapse">
+              <tbody>
+                <tr className="border-b border-zinc-200">
+                  <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider w-1/3">
+                    Tipo de documento
+                  </td>
+                  <td className="p-2 font-medium">
+                    {tipoLabel}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-zinc-200">
+                  <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                    Nombre / número
+                  </td>
+                  <td className="p-2 font-medium">
+                    {doc.nombre || '—'}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-zinc-200">
+                  <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                    Fecha
+                  </td>
+                  <td className="p-2 font-medium">
+                    {doc.fecha || '—'}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-zinc-200">
+                  <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                    Autorizante / emisor
+                  </td>
+                  <td className="p-2 font-medium">
+                    {doc.autorizante || '—'}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-zinc-200">
+                  <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                    Área indicada
+                  </td>
+                  <td className="p-2 font-medium">
+                    {fmtAreaLegal(doc.areaM2, doc.areaVr2)}
+                  </td>
+                </tr>
+
+                {doc.tieneInscripcion && (
+                  <>
+                    <tr className="border-b border-zinc-200">
+                      <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                        N° registral / finca
+                      </td>
+                      <td className="p-2 font-medium">
+                        {doc.numeroRegistral || '—'}
+                      </td>
+                    </tr>
+
+                    <tr className="border-b border-zinc-200">
+                      <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                        Tomo / Folio / Asiento
+                      </td>
+                      <td className="p-2 font-medium">
+                        {(doc.tomo || doc.folio || doc.asiento)
+                          ? `${doc.tomo || '—'} / ${doc.folio || '—'} / ${doc.asiento || '—'}`
+                          : '—'}
+                      </td>
+                    </tr>
+
+                    <tr className="border-b border-zinc-200">
+                      <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider">
+                        N° catastral
+                      </td>
+                      <td className="p-2 font-medium">
+                        {doc.numeroCatastral || '—'}
+                      </td>
+                    </tr>
+                  </>
+                )}
+
+                {doc.observaciones && (
+                  <tr>
+                    <td className="p-2 text-zinc-500 uppercase text-[10px] tracking-wider align-top">
+                      Observaciones
+                    </td>
+                    <td className="p-2 text-zinc-700">
+                      {doc.observaciones}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  )}
+
+  {d.observaciones && (
+    <div className="mt-5 text-sm text-zinc-700 border-t border-zinc-300 pt-3">
+      <b>Observaciones legales generales:</b> {d.observaciones}
+    </div>
+  )}
+</Page>
 
         {/* CAP III — ENTORNO */}
         <Page num={nextP()} total={totalPages} plantilla={plantilla} title="Cap. III · Entorno urbano" formato={formato} ctx={ctx}>
