@@ -29,6 +29,11 @@ const mainItems = [
     icon: ClipboardList,
   },
   {
+    title: 'Cotizaciones',
+    url: '/cotizaciones',
+    icon: FileText,
+  },
+  {
     title: 'Nuevo expediente',
     url: '/avaluos/nuevo',
     icon: Plus,

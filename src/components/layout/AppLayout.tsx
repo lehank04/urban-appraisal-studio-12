@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { BarChart3, ClipboardList, FilePlus2, UserCog, Users, Boxes } from 'lucide-react';
+import { BarChart3, ClipboardList, FilePlus2, UserCog, Users, Boxes, FileText } from 'lucide-react';
 
 const tabs = [
   {
@@ -16,6 +16,11 @@ const tabs = [
     label: 'Expedientes Plataforma',
     to: '/expedientes-plataforma',
     icon: ClipboardList,
+  },
+  {
+    label: 'Cotizaciones',
+    to: '/cotizaciones',
+    icon: FileText,
   },
   {
     label: 'Nuevo expediente',
