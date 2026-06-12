@@ -1,15 +1,16 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ArrowLeft,
+  Archive,
   CheckCircle2,
+  ExternalLink,
   FileText,
+  PlusCircle,
   Search,
   Send,
   Wallet,
   XCircle,
-  ArrowLeft,
-  Archive,
-  ExternalLink,
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
 import {
@@ -17,22 +18,54 @@ import {
   upsertCotizacionINMOVAL,
 } from './cotizacionIndexStorage';
 import { CotizacionINMOVAL } from './cotizacionTypes';
+import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
+import { crearExpedienteDeCotizacionAprobada } from './cotizacionExpedienteBridge';
 import { CotizacionEstadoBadge } from './components/CotizacionEstadoBadge';
 import { CotizacionResumenCard } from './components/CotizacionResumenCard';
 import {
   cotizacionCoincideConBusqueda,
   formatMoneyCotizacion,
 } from './cotizacionUiUtils';
-import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
-import { crearExpedienteDeCotizacionAprobada } from './cotizacionExpedienteBridge';
-import { nowISO } from '@/shared/utils/dateUtils';
+import { crearCotizacionINMOVALBase } from './cotizacionDefaults';
+import {
+  calcularSubtotalCotizacion,
+  calcularTotalCotizacion,
+} from './cotizacionTypes';
+import { nowISO, todayISO } from '@/shared/utils/dateUtils';
 
 type CotizacionFiltroEstado = EstadoCotizacion | 'todos';
+
+function createId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function buildNumeroCotizacion() {
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+
+  return `COT-${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+}
 
 export default function CotizacionesINMOVALPage() {
   const [cotizaciones, setCotizaciones] = useState<CotizacionINMOVAL[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState<CotizacionFiltroEstado>('todos');
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+
+  const [clienteNombre, setClienteNombre] = useState('');
+  const [servicio, setServicio] = useState('Avalúo de inmueble urbano');
+  const [monto, setMonto] = useState('350');
+  const [moneda, setMoneda] = useState<'US$' | 'C$'>('US$');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
 
   useEffect(() => {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
@@ -40,6 +73,74 @@ export default function CotizacionesINMOVALPage() {
 
   function refrescarCotizaciones() {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
+  }
+
+  function limpiarFormulario() {
+    setClienteNombre('');
+    setServicio('Avalúo de inmueble urbano');
+    setMonto('350');
+    setMoneda('US$');
+    setFechaVencimiento('');
+  }
+
+  function handleCrearCotizacionReal() {
+    const total = Number(monto || 0);
+
+    if (!clienteNombre.trim()) {
+      window.alert('Ingresá el nombre del cliente.');
+      return;
+    }
+
+    if (!servicio.trim()) {
+      window.alert('Ingresá el servicio.');
+      return;
+    }
+
+    if (!Number.isFinite(total) || total <= 0) {
+      window.alert('Ingresá un monto válido.');
+      return;
+    }
+
+    const item = {
+      id: createId(),
+      descripcion: servicio.trim(),
+      cantidad: 1,
+      precioUnitario: total,
+      subtotal: total,
+    };
+
+    const subtotal = calcularSubtotalCotizacion([item]);
+
+    const cotizacion = crearCotizacionINMOVALBase({
+      id: createId(),
+      numero: buildNumeroCotizacion(),
+      clienteNombre: clienteNombre.trim(),
+    });
+
+    const nuevaCotizacion: CotizacionINMOVAL = {
+      ...cotizacion,
+      servicio: servicio.trim(),
+      descripcionServicio: servicio.trim(),
+      items: [item],
+      subtotal,
+      descuento: 0,
+      impuestos: 0,
+      total: calcularTotalCotizacion({
+        subtotal,
+        descuento: 0,
+        impuestos: 0,
+      }),
+      moneda,
+      fecha: todayISO(),
+      fechaVencimiento: fechaVencimiento || cotizacion.fechaVencimiento,
+      estado: 'borrador',
+      actualizadoEn: nowISO(),
+    };
+
+    upsertCotizacionINMOVAL(nuevaCotizacion);
+    refrescarCotizaciones();
+    limpiarFormulario();
+    setMostrarFormulario(false);
   }
 
   function handleCrearCotizacionDemo() {
@@ -159,10 +260,19 @@ export default function CotizacionesINMOVALPage() {
 
               <button
                 type="button"
+                onClick={() => setMostrarFormulario((value) => !value)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Nueva cotización
+              </button>
+
+              <button
+                type="button"
                 onClick={handleCrearCotizacionDemo}
                 className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
               >
-                Crear cotización demo
+                Crear demo
               </button>
 
               <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
@@ -171,6 +281,82 @@ export default function CotizacionesINMOVALPage() {
             </div>
           </div>
         </header>
+
+        {mostrarFormulario ? (
+          <section className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-xl shadow-black/20">
+            <div className="mb-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
+                Nueva cotización
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-50">
+                Datos básicos de cotización
+              </h2>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_180px_140px_180px]">
+              <input
+                value={clienteNombre}
+                onChange={(event) => setClienteNombre(event.target.value)}
+                placeholder="Cliente"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+              />
+
+              <input
+                value={servicio}
+                onChange={(event) => setServicio(event.target.value)}
+                placeholder="Servicio"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+              />
+
+              <input
+                value={monto}
+                onChange={(event) => setMonto(event.target.value)}
+                placeholder="Monto"
+                type="number"
+                min="0"
+                step="0.01"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+              />
+
+              <select
+                value={moneda}
+                onChange={(event) => setMoneda(event.target.value as 'US$' | 'C$')}
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+              >
+                <option value="US$">US$</option>
+                <option value="C$">C$</option>
+              </select>
+
+              <input
+                value={fechaVencimiento}
+                onChange={(event) => setFechaVencimiento(event.target.value)}
+                type="date"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleCrearCotizacionReal}
+                className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+              >
+                Guardar cotización
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  limpiarFormulario();
+                  setMostrarFormulario(false);
+                }}
+                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                Cancelar
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <CotizacionResumenCard
@@ -244,7 +430,7 @@ export default function CotizacionesINMOVALPage() {
                 No hay cotizaciones en el índice de Plataforma INMOVAL
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-                Creá una cotización demo para probar el flujo administrativo.
+                Creá una cotización para probar el flujo administrativo.
               </p>
             </div>
           ) : (
@@ -366,7 +552,7 @@ export default function CotizacionesINMOVALPage() {
 
                           {cotizacion.expedienteId ? (
                             <Link
-                              to="/expedientes-plataforma"
+                              to={`/expedientes-plataforma/${cotizacion.expedienteId}`}
                               className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
                             >
                               Ver expediente
