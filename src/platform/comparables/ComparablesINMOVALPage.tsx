@@ -8,6 +8,7 @@ import {
   FileImage,
   Home,
   PlusCircle,
+  PencilLine,
   Search,
   Trash2,
   Upload,
@@ -15,6 +16,7 @@ import {
 import { Link } from 'react-router-dom';
 import { nowISO, todayISO } from '@/shared/utils/dateUtils';
 import {
+  AplicacionMercadoComparableINMOVAL,
   ComparableIndiceINMOVAL,
   EstadoComparableINMOVAL,
   MonedaComparableINMOVAL,
@@ -101,6 +103,8 @@ export default function ComparablesINMOVALPage() {
 
   const [titulo, setTitulo] = useState('Comparable urbano');
   const [tipo, setTipo] = useState<TipoComparableINMOVAL>('oferta');
+  const [aplicaMercado, setAplicaMercado] =
+    useState<AplicacionMercadoComparableINMOVAL>('ambos');
   const [estado, setEstado] = useState<EstadoComparableINMOVAL>('activo');
   const [fuente, setFuente] = useState('');
   const [contacto, setContacto] = useState('');
@@ -121,6 +125,9 @@ export default function ComparablesINMOVALPage() {
   const [observaciones, setObservaciones] = useState('');
   const [importMessage, setImportMessage] = useState('');
   const [error, setError] = useState('');
+  const [editingComparableId, setEditingComparableId] = useState<string | null>(
+    null
+  );
 
   function refrescar() {
     setComparables(getComparablesIndiceINMOVAL());
@@ -157,6 +164,7 @@ export default function ComparablesINMOVALPage() {
   function limpiarFormulario() {
     setTitulo('Comparable urbano');
     setTipo('oferta');
+    setAplicaMercado('ambos');
     setEstado('activo');
     setFuente('');
     setContacto('');
@@ -173,6 +181,52 @@ export default function ComparablesINMOVALPage() {
     setPrecio('0');
     setMoneda('US$');
     setObservaciones('');
+    setEditingComparableId(null);
+  }
+
+  function handleEditarComparable(comparable: ComparableIndiceINMOVAL) {
+    setEditingComparableId(comparable.id);
+
+    setTitulo(comparable.titulo || 'Comparable urbano');
+    setTipo(comparable.tipo || 'oferta');
+    setAplicaMercado(comparable.aplicaMercado || 'ambos');
+    setEstado(comparable.estado || 'activo');
+
+    setFuente(comparable.fuente || '');
+    setContacto(comparable.contacto || '');
+    setTelefono(comparable.telefono || '');
+    setUrl(comparable.url || '');
+
+    setTestigoWebImagenDataUrl(comparable.testigoWebImagenDataUrl || '');
+    setTestigoWebImagenNombre(comparable.testigoWebImagenNombre || '');
+    setTestigoWebNotas(comparable.testigoWebNotas || '');
+
+    setFecha(comparable.fecha || todayISO());
+
+    setUbicacion(comparable.ubicacion || '');
+    setBarrio(comparable.barrio || '');
+    setMunicipio(comparable.municipio || '');
+    setDepartamento(comparable.departamento || '');
+
+    setAreaTerreno(
+      comparable.areaTerreno !== undefined ? String(comparable.areaTerreno) : ''
+    );
+    setAreaConstruccion(
+      comparable.areaConstruccion !== undefined
+        ? String(comparable.areaConstruccion)
+        : ''
+    );
+
+    setPrecio(String(comparable.precio || 0));
+    setMoneda(comparable.moneda || 'US$');
+    setObservaciones(comparable.observaciones || '');
+
+    setMostrarFormulario(true);
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
   }
 
   function handleCrearComparable() {
@@ -196,14 +250,20 @@ export default function ComparablesINMOVALPage() {
     }
 
     const ahora = nowISO();
-    const codigo = buildCodigoComparable();
+
+    const comparableExistente = editingComparableId
+      ? comparables.find((item) => item.id === editingComparableId)
+      : undefined;
+
+    const codigo = comparableExistente?.codigo || buildCodigoComparable();
 
     const comparable: ComparableIndiceINMOVAL = {
-      id: createId(),
+      id: editingComparableId || createId(),
       codigo,
       titulo: titulo.trim(),
 
       tipo,
+      aplicaMercado,
       estado,
 
       fuente: fuente.trim() || undefined,
@@ -213,7 +273,9 @@ export default function ComparablesINMOVALPage() {
 
       testigoWebImagenDataUrl: testigoWebImagenDataUrl || undefined,
       testigoWebImagenNombre: testigoWebImagenNombre || undefined,
-      testigoWebCapturadoEn: testigoWebImagenDataUrl ? nowISO() : undefined,
+      testigoWebCapturadoEn: testigoWebImagenDataUrl
+        ? comparableExistente?.testigoWebCapturadoEn || nowISO()
+        : undefined,
       testigoWebNotas: testigoWebNotas.trim() || undefined,
 
       fecha,
@@ -239,7 +301,10 @@ export default function ComparablesINMOVALPage() {
 
       observaciones: observaciones.trim() || undefined,
 
-      creadoEn: ahora,
+      expedienteOrigenId: comparableExistente?.expedienteOrigenId,
+      expedienteOrigenCodigo: comparableExistente?.expedienteOrigenCodigo,
+
+      creadoEn: comparableExistente?.creadoEn || ahora,
       actualizadoEn: ahora,
     };
 
@@ -455,6 +520,23 @@ export default function ComparablesINMOVALPage() {
                   <option value="renta">Renta</option>
                   <option value="avaluo">Avalúo</option>
                   <option value="referencia">Referencia</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2">
+                <FieldLabel>Aplica para</FieldLabel>
+                <select
+                  value={aplicaMercado}
+                  onChange={(event) =>
+                    setAplicaMercado(
+                      event.target.value as AplicacionMercadoComparableINMOVAL
+                    )
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                >
+                  <option value="ambos">Ambos mercados</option>
+                  <option value="construido">Mercado construido</option>
+                  <option value="terreno">Mercado terreno</option>
                 </select>
               </label>
 
@@ -793,6 +875,10 @@ export default function ComparablesINMOVALPage() {
                             Fuente: {comparable.fuente}
                           </p>
                         ) : null}
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          Aplica: {comparable.aplicaMercado || 'ambos'}
+                        </p>
 
                         {comparable.testigoWebImagenDataUrl ? (
                           <p className="mt-2 inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-xs font-medium text-emerald-100">
