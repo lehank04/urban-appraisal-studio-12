@@ -1,12 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import {
-  ClipboardList,
-  FileText,
-  LayoutDashboard,
-  Plus,
-  UserCog,
-  Users,
-} from 'lucide-react';
+import { ClipboardList, FileText, LayoutDashboard, Plus, UserCog, Users, Boxes } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +24,11 @@ const mainItems = [
     icon: ClipboardList,
   },
   {
+    title: 'Expedientes Plataforma',
+    url: '/expedientes-plataforma',
+    icon: ClipboardList,
+  },
+  {
     title: 'Nuevo expediente',
     url: '/avaluos/nuevo',
     icon: Plus,
@@ -47,6 +45,11 @@ const adminItems = [
     title: 'Peritos',
     url: '/peritos',
     icon: UserCog,
+  },
+  {
+    title: 'Módulos',
+    url: '/modulos',
+    icon: Boxes,
   },
 ];
 

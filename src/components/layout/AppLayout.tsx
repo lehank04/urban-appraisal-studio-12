@@ -1,11 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import {
-  BarChart3,
-  ClipboardList,
-  FilePlus2,
-  UserCog,
-  Users,
-} from 'lucide-react';
+import { BarChart3, ClipboardList, FilePlus2, UserCog, Users, Boxes } from 'lucide-react';
 
 const tabs = [
   {
@@ -16,6 +10,11 @@ const tabs = [
   {
     label: 'Expedientes',
     to: '/avaluos',
+    icon: ClipboardList,
+  },
+  {
+    label: 'Expedientes Plataforma',
+    to: '/expedientes-plataforma',
     icon: ClipboardList,
   },
   {
@@ -32,6 +31,11 @@ const tabs = [
     label: 'Peritos',
     to: '/peritos',
     icon: UserCog,
+  },
+  {
+    label: 'Módulos',
+    to: '/modulos',
+    icon: Boxes,
   },
 ];
 
