@@ -32,6 +32,13 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
+    label: 'Centro INMOVAL',
+    to: '/plataforma',
+    icon: Gauge,
+    description: 'Centro de control administrativo',
+    group: 'plataforma',
+  },
+  {
     label: 'Expedientes Plataforma',
     to: '/expedientes-plataforma',
     icon: ClipboardList,
