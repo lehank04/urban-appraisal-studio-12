@@ -324,7 +324,7 @@ export default function Dashboard() {
                         )}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        {a.estatusOperativo.replace(/_/g, ' ')}
+                      {(a.estatusOperativo || 'borrador').replace(/_/g, ' ')}
                       </div>
                     </div>
                   </Link>
