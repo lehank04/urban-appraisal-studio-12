@@ -25,6 +25,11 @@ export type ComparableIndiceINMOVAL = {
   telefono?: string;
   url?: string;
 
+  testigoWebImagenDataUrl?: string;
+  testigoWebImagenNombre?: string;
+  testigoWebCapturadoEn?: string;
+  testigoWebNotas?: string;
+
   fecha: string;
 
   ubicacion: string;

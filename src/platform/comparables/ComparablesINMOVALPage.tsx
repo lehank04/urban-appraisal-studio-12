@@ -5,6 +5,7 @@ import {
   Database,
   Download,
   FileInput,
+  FileImage,
   Home,
   PlusCircle,
   Search,
@@ -105,6 +106,9 @@ export default function ComparablesINMOVALPage() {
   const [contacto, setContacto] = useState('');
   const [telefono, setTelefono] = useState('');
   const [url, setUrl] = useState('');
+  const [testigoWebImagenDataUrl, setTestigoWebImagenDataUrl] = useState('');
+  const [testigoWebImagenNombre, setTestigoWebImagenNombre] = useState('');
+  const [testigoWebNotas, setTestigoWebNotas] = useState('');
   const [fecha, setFecha] = useState(todayISO());
   const [ubicacion, setUbicacion] = useState('');
   const [barrio, setBarrio] = useState('');
@@ -122,6 +126,34 @@ export default function ComparablesINMOVALPage() {
     setComparables(getComparablesIndiceINMOVAL());
   }
 
+  function handleSeleccionarTestigoWeb(file?: File) {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      window.alert('Seleccioná una imagen válida como respaldo web.');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setTestigoWebImagenDataUrl(String(reader.result || ''));
+      setTestigoWebImagenNombre(file.name);
+    };
+
+    reader.onerror = () => {
+      window.alert('No se pudo leer la imagen del respaldo web.');
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function limpiarTestigoWeb() {
+    setTestigoWebImagenDataUrl('');
+    setTestigoWebImagenNombre('');
+    setTestigoWebNotas('');
+  }
+
   function limpiarFormulario() {
     setTitulo('Comparable urbano');
     setTipo('oferta');
@@ -130,6 +162,7 @@ export default function ComparablesINMOVALPage() {
     setContacto('');
     setTelefono('');
     setUrl('');
+    limpiarTestigoWeb();
     setFecha(todayISO());
     setUbicacion('');
     setBarrio('');
@@ -177,6 +210,11 @@ export default function ComparablesINMOVALPage() {
       contacto: contacto.trim() || undefined,
       telefono: telefono.trim() || undefined,
       url: url.trim() || undefined,
+
+      testigoWebImagenDataUrl: testigoWebImagenDataUrl || undefined,
+      testigoWebImagenNombre: testigoWebImagenNombre || undefined,
+      testigoWebCapturadoEn: testigoWebImagenDataUrl ? nowISO() : undefined,
+      testigoWebNotas: testigoWebNotas.trim() || undefined,
 
       fecha,
 
@@ -473,6 +511,60 @@ export default function ComparablesINMOVALPage() {
                 />
               </label>
 
+              <div className="grid gap-2 xl:col-span-3">
+                <FieldLabel>Respaldo web / testigo</FieldLabel>
+
+                <div className="grid gap-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 lg:grid-cols-[1fr_220px]">
+                  <div>
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-400/30 bg-slate-950/50 px-4 py-5 text-sm font-medium text-sky-100 transition hover:bg-sky-400/10">
+                      <FileImage className="h-5 w-5" />
+                      {testigoWebImagenNombre || 'Cargar captura del anuncio o página web'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) =>
+                          handleSeleccionarTestigoWeb(event.target.files?.[0])
+                        }
+                      />
+                    </label>
+
+                    <textarea
+                      value={testigoWebNotas}
+                      onChange={(event) => setTestigoWebNotas(event.target.value)}
+                      rows={3}
+                      placeholder="Notas del testigo web: fecha de consulta, plataforma, condiciones, observaciones..."
+                      className="mt-3 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+                    />
+
+                    {testigoWebImagenDataUrl ? (
+                      <button
+                        type="button"
+                        onClick={limpiarTestigoWeb}
+                        className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-100 hover:bg-rose-400/20"
+                      >
+                        Quitar respaldo
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/70">
+                    {testigoWebImagenDataUrl ? (
+                      <img
+                        src={testigoWebImagenDataUrl}
+                        alt="Testigo web del comparable"
+                        className="h-44 w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-44 flex-col items-center justify-center px-4 text-center text-sm text-slate-500">
+                        <FileImage className="mb-2 h-7 w-7" />
+                        Sin imagen de respaldo
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <label className="grid gap-2">
                 <FieldLabel>Fecha</FieldLabel>
                 <input
@@ -701,6 +793,16 @@ export default function ComparablesINMOVALPage() {
                             Fuente: {comparable.fuente}
                           </p>
                         ) : null}
+
+                        {comparable.testigoWebImagenDataUrl ? (
+                          <p className="mt-2 inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-xs font-medium text-emerald-100">
+                            Testigo web guardado
+                          </p>
+                        ) : (
+                          <p className="mt-2 inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-xs font-medium text-amber-100">
+                            Sin testigo web
+                          </p>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 text-slate-300">
