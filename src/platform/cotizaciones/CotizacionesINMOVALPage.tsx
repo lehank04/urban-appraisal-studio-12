@@ -1,12 +1,12 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft,
   Archive,
   CheckCircle2,
   ExternalLink,
   FileText,
   PlusCircle,
+  RotateCcw,
   Search,
   Send,
   Settings,
@@ -15,7 +15,12 @@ import {
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
 import { addDaysISO, nowISO, todayISO } from '@/shared/utils/dateUtils';
-import { getConfiguracionPlataformaINMOVAL } from '@/platform/configuracion/configuracionPlataformaStorage';
+import {
+  ConfiguracionCotizacionesINMOVAL,
+  getConfiguracionCotizacionesINMOVAL,
+  resetConfiguracionCotizacionesINMOVAL,
+  saveConfiguracionCotizacionesINMOVAL,
+} from './cotizacionConfigStorage';
 import {
   getCotizacionesIndiceINMOVAL,
   upsertCotizacionINMOVAL,
@@ -45,7 +50,7 @@ function createId() {
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function buildNumeroCotizacion() {
+function buildNumeroCotizacion(prefijo: string) {
   const date = new Date();
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -54,25 +59,33 @@ function buildNumeroCotizacion() {
   const min = String(date.getMinutes()).padStart(2, '0');
   const ss = String(date.getSeconds()).padStart(2, '0');
 
-  return `COT-${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+  return `${prefijo || 'COT'}-${yyyy}${mm}${dd}-${hh}${min}${ss}`;
 }
 
 export default function CotizacionesINMOVALPage() {
-  const configuracionPlataforma = getConfiguracionPlataformaINMOVAL();
+  const configuracionInicial = getConfiguracionCotizacionesINMOVAL();
 
   const [cotizaciones, setCotizaciones] = useState<CotizacionINMOVAL[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState<CotizacionFiltroEstado>('todos');
+
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarConfiguracion, setMostrarConfiguracion] = useState(false);
+
+  const [configCotizaciones, setConfigCotizaciones] =
+    useState<ConfiguracionCotizacionesINMOVAL>(configuracionInicial);
+
+  const [configDraft, setConfigDraft] =
+    useState<ConfiguracionCotizacionesINMOVAL>(configuracionInicial);
 
   const [clienteNombre, setClienteNombre] = useState('');
-  const [servicio, setServicio] = useState('Avalúo de inmueble urbano');
-  const [monto, setMonto] = useState('350');
+  const [servicio, setServicio] = useState(configuracionInicial.servicioPredeterminado);
+  const [monto, setMonto] = useState(String(configuracionInicial.montoPredeterminado));
   const [moneda, setMoneda] = useState<'US$' | 'C$'>(
-    configuracionPlataforma.monedaPrincipal
+    configuracionInicial.monedaPredeterminada
   );
   const [fechaVencimiento, setFechaVencimiento] = useState(
-    addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion)
+    addDaysISO(todayISO(), configuracionInicial.diasValidez)
   );
 
   useEffect(() => {
@@ -83,14 +96,38 @@ export default function CotizacionesINMOVALPage() {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
   }
 
-  function limpiarFormulario() {
+  function limpiarFormulario(config = configCotizaciones) {
     setClienteNombre('');
-    setServicio('Avalúo de inmueble urbano');
-    setMonto('350');
-    setMoneda(configuracionPlataforma.monedaPrincipal);
-    setFechaVencimiento(
-      addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion)
-    );
+    setServicio(config.servicioPredeterminado);
+    setMonto(String(config.montoPredeterminado));
+    setMoneda(config.monedaPredeterminada);
+    setFechaVencimiento(addDaysISO(todayISO(), config.diasValidez));
+  }
+
+  function updateConfigDraft(cambios: Partial<ConfiguracionCotizacionesINMOVAL>) {
+    setConfigDraft((current) => ({
+      ...current,
+      ...cambios,
+    }));
+  }
+
+  function handleGuardarConfiguracion() {
+    saveConfiguracionCotizacionesINMOVAL(configDraft);
+
+    const nuevaConfig = getConfiguracionCotizacionesINMOVAL();
+
+    setConfigCotizaciones(nuevaConfig);
+    setConfigDraft(nuevaConfig);
+    limpiarFormulario(nuevaConfig);
+    setMostrarConfiguracion(false);
+  }
+
+  function handleResetConfiguracion() {
+    const reset = resetConfiguracionCotizacionesINMOVAL();
+
+    setConfigCotizaciones(reset);
+    setConfigDraft(reset);
+    limpiarFormulario(reset);
   }
 
   function handleCrearCotizacionReal() {
@@ -121,14 +158,14 @@ export default function CotizacionesINMOVALPage() {
 
     const subtotal = calcularSubtotalCotizacion([item]);
 
-    const cotizacion = crearCotizacionINMOVALBase({
+    const cotizacionBase = crearCotizacionINMOVALBase({
       id: createId(),
-      numero: buildNumeroCotizacion(),
+      numero: buildNumeroCotizacion(configCotizaciones.prefijoCotizacion),
       clienteNombre: clienteNombre.trim(),
     });
 
     const nuevaCotizacion: CotizacionINMOVAL = {
-      ...cotizacion,
+      ...cotizacionBase,
       servicio: servicio.trim(),
       descripcionServicio: servicio.trim(),
       items: [item],
@@ -143,8 +180,7 @@ export default function CotizacionesINMOVALPage() {
       moneda,
       fecha: todayISO(),
       fechaVencimiento:
-        fechaVencimiento ||
-        addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion),
+        fechaVencimiento || addDaysISO(todayISO(), configCotizaciones.diasValidez),
       estado: 'borrador',
       actualizadoEn: nowISO(),
     };
@@ -156,9 +192,20 @@ export default function CotizacionesINMOVALPage() {
   }
 
   function handleCrearCotizacionDemo() {
-    const nuevaCotizacion = crearCotizacionDemoINMOVAL();
+    const nuevaCotizacion = crearCotizacionDemoINMOVAL({
+      servicio: configCotizaciones.servicioPredeterminado,
+      total: configCotizaciones.montoPredeterminado,
+    });
 
-    upsertCotizacionINMOVAL(nuevaCotizacion);
+    const ajustada: CotizacionINMOVAL = {
+      ...nuevaCotizacion,
+      numero: buildNumeroCotizacion(configCotizaciones.prefijoCotizacion),
+      moneda: configCotizaciones.monedaPredeterminada,
+      fechaVencimiento: addDaysISO(todayISO(), configCotizaciones.diasValidez),
+      actualizadoEn: nowISO(),
+    };
+
+    upsertCotizacionINMOVAL(ajustada);
     refrescarCotizaciones();
   }
 
@@ -194,6 +241,16 @@ export default function CotizacionesINMOVALPage() {
     refrescarCotizaciones();
   }
 
+  function puedeCrearExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
+    if (cotizacion.expedienteId) return false;
+
+    if (!configCotizaciones.requiereAprobacionParaExpediente) {
+      return true;
+    }
+
+    return cotizacion.estado === 'aprobada';
+  }
+
   const cotizacionesFiltradas = useMemo(() => {
     return cotizaciones.filter((cotizacion) => {
       if (estado !== 'todos' && cotizacion.estado !== estado) return false;
@@ -209,15 +266,9 @@ export default function CotizacionesINMOVALPage() {
 
   const resumen = useMemo(() => {
     const total = cotizaciones.length;
-    const enviadas = cotizaciones.filter(
-      (item) => item.estado === 'enviada'
-    ).length;
-    const aprobadas = cotizaciones.filter(
-      (item) => item.estado === 'aprobada'
-    ).length;
-    const rechazadas = cotizaciones.filter(
-      (item) => item.estado === 'rechazada'
-    ).length;
+    const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+    const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+    const rechazadas = cotizaciones.filter((item) => item.estado === 'rechazada').length;
     const montoTotal = cotizaciones.reduce(
       (totalMonto, cotizacion) => totalMonto + Number(cotizacion.total || 0),
       0
@@ -252,14 +303,6 @@ export default function CotizacionesINMOVALPage() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
               <Link
-                to="/"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Dashboard
-              </Link>
-
-              <Link
                 to="/expedientes-plataforma"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
               >
@@ -267,13 +310,14 @@ export default function CotizacionesINMOVALPage() {
                 Expedientes
               </Link>
 
-              <Link
-                to="/configuracion-plataforma"
+              <button
+                type="button"
+                onClick={() => setMostrarConfiguracion((value) => !value)}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
               >
                 <Settings className="h-4 w-4" />
-                Configuración
-              </Link>
+                Configurar cotizaciones
+              </button>
 
               <button
                 type="button"
@@ -299,6 +343,156 @@ export default function CotizacionesINMOVALPage() {
           </div>
         </header>
 
+        {mostrarConfiguracion ? (
+          <section className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-5 shadow-xl shadow-black/20">
+            <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-300">
+                  Configuración de cotizaciones
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-50">
+                  Parámetros propios del área
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Estos valores aplican solo a nuevas cotizaciones.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-400/20 bg-slate-950/50 px-4 py-3 text-sm text-amber-100">
+                Actualizado: {configDraft.actualizadoEn}
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <label className="grid gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Prefijo
+                </span>
+                <input
+                  value={configDraft.prefijoCotizacion}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      prefijoCotizacion: event.target.value.toUpperCase(),
+                    })
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Servicio predeterminado
+                </span>
+                <input
+                  value={configDraft.servicioPredeterminado}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      servicioPredeterminado: event.target.value,
+                    })
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Monto predeterminado
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={configDraft.montoPredeterminado}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      montoPredeterminado: Number(event.target.value || 0),
+                    })
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Moneda predeterminada
+                </span>
+                <select
+                  value={configDraft.monedaPredeterminada}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      monedaPredeterminada: event.target.value as 'US$' | 'C$',
+                    })
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                >
+                  <option value="US$">US$</option>
+                  <option value="C$">C$</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Días de validez
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={configDraft.diasValidez}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      diasValidez: Number(event.target.value || 1),
+                    })
+                  }
+                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
+                />
+              </label>
+
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={configDraft.requiereAprobacionParaExpediente}
+                  onChange={(event) =>
+                    updateConfigDraft({
+                      requiereAprobacionParaExpediente: event.target.checked,
+                    })
+                  }
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-slate-200">
+                  Requiere aprobación para crear expediente
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleGuardarConfiguracion}
+                className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+              >
+                Guardar configuración
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetConfiguracion}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Restaurar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMostrarConfiguracion(false)}
+                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                Cerrar
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         {mostrarFormulario ? (
           <section className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-xl shadow-black/20">
             <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
@@ -312,8 +506,8 @@ export default function CotizacionesINMOVALPage() {
               </div>
 
               <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/50 px-4 py-3 text-sm text-emerald-100">
-                Configuración aplicada: {configuracionPlataforma.monedaPrincipal} ·{' '}
-                {configuracionPlataforma.diasValidezCotizacion} días de validez
+                Configuración aplicada: {configCotizaciones.monedaPredeterminada} ·{' '}
+                {configCotizaciones.diasValidez} días de validez
               </div>
             </div>
 
@@ -411,7 +605,7 @@ export default function CotizacionesINMOVALPage() {
             titulo="Monto"
             valor={formatMoneyCotizacion(
               resumen.montoTotal,
-              configuracionPlataforma.monedaPrincipal
+              configCotizaciones.monedaPredeterminada
             )}
             descripcion="Total cotizado"
             icono={<Wallet className="h-5 w-5" />}
@@ -564,8 +758,7 @@ export default function CotizacionesINMOVALPage() {
                             </button>
                           ) : null}
 
-                          {cotizacion.estado === 'aprobada' &&
-                          !cotizacion.expedienteId ? (
+                          {puedeCrearExpedienteDesdeCotizacion(cotizacion) ? (
                             <button
                               type="button"
                               onClick={() =>
