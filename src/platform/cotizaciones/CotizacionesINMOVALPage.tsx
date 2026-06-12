@@ -8,8 +8,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
-import { getCotizacionesIndiceINMOVAL } from './cotizacionIndexStorage';
+import { getCotizacionesIndiceINMOVAL, upsertCotizacionINMOVAL } from './cotizacionIndexStorage';
 import { CotizacionINMOVAL } from './cotizacionTypes';
+import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
 import { CotizacionEstadoBadge } from './components/CotizacionEstadoBadge';
 import { CotizacionResumenCard } from './components/CotizacionResumenCard';
 import {
@@ -27,6 +28,13 @@ export default function CotizacionesINMOVALPage() {
   useEffect(() => {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
   }, []);
+
+  function handleCrearCotizacionDemo() {
+    const nuevaCotizacion = crearCotizacionDemoINMOVAL();
+
+    upsertCotizacionINMOVAL(nuevaCotizacion);
+    setCotizaciones(getCotizacionesIndiceINMOVAL());
+  }
 
   const cotizacionesFiltradas = useMemo(() => {
     return cotizaciones.filter((cotizacion) => {
@@ -79,8 +87,18 @@ export default function CotizacionesINMOVALPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
-              {cotizacionesFiltradas.length} cotización(es) visibles
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={handleCrearCotizacionDemo}
+                className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+              >
+                Crear cotización demo
+              </button>
+
+              <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
+                {cotizacionesFiltradas.length} cotización(es) visibles
+              </div>
             </div>
           </div>
         </header>
