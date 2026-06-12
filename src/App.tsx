@@ -62,9 +62,9 @@ const App = () => (
             <Route path="/avaluos/nuevo" element={<NuevoExpediente />} />
             <Route path="/avaluos/:id/memoria-calculo" element={<AvaluoMemoriaCalculoPage />} />
             <Route path="/avaluos/:id" element={<AvaluoWizard />} />
-            <Route path="/avaluos/:id/mercado-construido" element={<AvaluoMercadoComparablesPage tipoMercado="construido" />} />
-            <Route path="/avaluos/:id/mercado-terreno" element={<AvaluoMercadoComparablesPage tipoMercado="terreno" />} />
-            <Route path="/avaluos/:id/comparables" element={<AvaluoComparablesTecnicosPage />} />
+
+
+            <Route path="/avaluos/:id/comparables" element={<AvaluoMemoriaCalculoPage />} />
             <Route path="/avaluos/:id/anexos-testigos" element={<AvaluoAnexosTestigosPage />} />
             <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
 

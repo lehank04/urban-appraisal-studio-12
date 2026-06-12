@@ -102,9 +102,9 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Comparables técnicos',
-    to: '/avaluos/demo/comparables',
+    to: '/avaluos/demo/memoria-calculo',
     icon: Database,
-    description: 'Selección técnica dentro del avalúo',
+    description: 'Memoria de cálculo, filtros y sustentos',
     group: 'operacion',
   },
   {
@@ -112,27 +112,6 @@ const NAV_ITEMS: NavItem[] = [
     to: '/avaluos/demo/memoria-calculo',
     icon: Database,
     description: 'Mercado construido, terreno y sustentos',
-    group: 'operacion',
-  },
-  {
-    label: 'Mercado construido',
-    to: '/avaluos/demo/mercado-construido',
-    icon: Database,
-    description: 'Comparables de construcciones',
-    group: 'operacion',
-  },
-  {
-    label: 'Mercado terreno',
-    to: '/avaluos/demo/mercado-terreno',
-    icon: Database,
-    description: 'Comparables de terreno',
-    group: 'operacion',
-  },
-  {
-    label: 'Anexos testigos web',
-    to: '/avaluos/demo/anexos-testigos',
-    icon: Image,
-    description: 'Vista imprimible de respaldos web',
     group: 'operacion',
   },
   {

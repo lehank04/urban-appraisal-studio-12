@@ -103,10 +103,10 @@ export function ExpedienteModuloTecnicoPanel({
 
           {expediente.avaluoTecnicoId ? (
             <Link
-              to={`/avaluos/${expediente.avaluoTecnicoId}/comparables`}
+              to={`/avaluos/${expediente.avaluoTecnicoId}/memoria-calculo`}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
             >
-              Comparables técnicos
+              Memoria de cálculo
             </Link>
           ) : null}
 
