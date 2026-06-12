@@ -9,15 +9,23 @@ import {
   PlusCircle,
   Search,
   Send,
+  Settings,
   Wallet,
   XCircle,
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
+import { addDaysISO, nowISO, todayISO } from '@/shared/utils/dateUtils';
+import { getConfiguracionPlataformaINMOVAL } from '@/platform/configuracion/configuracionPlataformaStorage';
 import {
   getCotizacionesIndiceINMOVAL,
   upsertCotizacionINMOVAL,
 } from './cotizacionIndexStorage';
-import { CotizacionINMOVAL } from './cotizacionTypes';
+import {
+  calcularSubtotalCotizacion,
+  calcularTotalCotizacion,
+  CotizacionINMOVAL,
+} from './cotizacionTypes';
+import { crearCotizacionINMOVALBase } from './cotizacionDefaults';
 import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
 import { crearExpedienteDeCotizacionAprobada } from './cotizacionExpedienteBridge';
 import { CotizacionEstadoBadge } from './components/CotizacionEstadoBadge';
@@ -26,12 +34,6 @@ import {
   cotizacionCoincideConBusqueda,
   formatMoneyCotizacion,
 } from './cotizacionUiUtils';
-import { crearCotizacionINMOVALBase } from './cotizacionDefaults';
-import {
-  calcularSubtotalCotizacion,
-  calcularTotalCotizacion,
-} from './cotizacionTypes';
-import { nowISO, todayISO } from '@/shared/utils/dateUtils';
 
 type CotizacionFiltroEstado = EstadoCotizacion | 'todos';
 
@@ -56,6 +58,8 @@ function buildNumeroCotizacion() {
 }
 
 export default function CotizacionesINMOVALPage() {
+  const configuracionPlataforma = getConfiguracionPlataformaINMOVAL();
+
   const [cotizaciones, setCotizaciones] = useState<CotizacionINMOVAL[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState<CotizacionFiltroEstado>('todos');
@@ -64,8 +68,12 @@ export default function CotizacionesINMOVALPage() {
   const [clienteNombre, setClienteNombre] = useState('');
   const [servicio, setServicio] = useState('Avalúo de inmueble urbano');
   const [monto, setMonto] = useState('350');
-  const [moneda, setMoneda] = useState<'US$' | 'C$'>('US$');
-  const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [moneda, setMoneda] = useState<'US$' | 'C$'>(
+    configuracionPlataforma.monedaPrincipal
+  );
+  const [fechaVencimiento, setFechaVencimiento] = useState(
+    addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion)
+  );
 
   useEffect(() => {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
@@ -79,8 +87,10 @@ export default function CotizacionesINMOVALPage() {
     setClienteNombre('');
     setServicio('Avalúo de inmueble urbano');
     setMonto('350');
-    setMoneda('US$');
-    setFechaVencimiento('');
+    setMoneda(configuracionPlataforma.monedaPrincipal);
+    setFechaVencimiento(
+      addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion)
+    );
   }
 
   function handleCrearCotizacionReal() {
@@ -132,7 +142,9 @@ export default function CotizacionesINMOVALPage() {
       }),
       moneda,
       fecha: todayISO(),
-      fechaVencimiento: fechaVencimiento || cotizacion.fechaVencimiento,
+      fechaVencimiento:
+        fechaVencimiento ||
+        addDaysISO(todayISO(), configuracionPlataforma.diasValidezCotizacion),
       estado: 'borrador',
       actualizadoEn: nowISO(),
     };
@@ -159,18 +171,9 @@ export default function CotizacionesINMOVALPage() {
     const actualizada: CotizacionINMOVAL = {
       ...cotizacion,
       estado: nuevoEstado,
-      enviadaEn:
-        nuevoEstado === 'enviada'
-          ? ahora
-          : cotizacion.enviadaEn,
-      aprobadaEn:
-        nuevoEstado === 'aprobada'
-          ? ahora
-          : cotizacion.aprobadaEn,
-      rechazadaEn:
-        nuevoEstado === 'rechazada'
-          ? ahora
-          : cotizacion.rechazadaEn,
+      enviadaEn: nuevoEstado === 'enviada' ? ahora : cotizacion.enviadaEn,
+      aprobadaEn: nuevoEstado === 'aprobada' ? ahora : cotizacion.aprobadaEn,
+      rechazadaEn: nuevoEstado === 'rechazada' ? ahora : cotizacion.rechazadaEn,
       actualizadoEn: ahora,
     };
 
@@ -206,9 +209,15 @@ export default function CotizacionesINMOVALPage() {
 
   const resumen = useMemo(() => {
     const total = cotizaciones.length;
-    const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
-    const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
-    const rechazadas = cotizaciones.filter((item) => item.estado === 'rechazada').length;
+    const enviadas = cotizaciones.filter(
+      (item) => item.estado === 'enviada'
+    ).length;
+    const aprobadas = cotizaciones.filter(
+      (item) => item.estado === 'aprobada'
+    ).length;
+    const rechazadas = cotizaciones.filter(
+      (item) => item.estado === 'rechazada'
+    ).length;
     const montoTotal = cotizaciones.reduce(
       (totalMonto, cotizacion) => totalMonto + Number(cotizacion.total || 0),
       0
@@ -258,6 +267,14 @@ export default function CotizacionesINMOVALPage() {
                 Expedientes
               </Link>
 
+              <Link
+                to="/configuracion-plataforma"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+              >
+                <Settings className="h-4 w-4" />
+                Configuración
+              </Link>
+
               <button
                 type="button"
                 onClick={() => setMostrarFormulario((value) => !value)}
@@ -284,13 +301,20 @@ export default function CotizacionesINMOVALPage() {
 
         {mostrarFormulario ? (
           <section className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-xl shadow-black/20">
-            <div className="mb-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-                Nueva cotización
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-50">
-                Datos básicos de cotización
-              </h2>
+            <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
+                  Nueva cotización
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-50">
+                  Datos básicos de cotización
+                </h2>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/50 px-4 py-3 text-sm text-emerald-100">
+                Configuración aplicada: {configuracionPlataforma.monedaPrincipal} ·{' '}
+                {configuracionPlataforma.diasValidezCotizacion} días de validez
+              </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_180px_140px_180px]">
@@ -385,7 +409,10 @@ export default function CotizacionesINMOVALPage() {
           />
           <CotizacionResumenCard
             titulo="Monto"
-            valor={formatMoneyCotizacion(resumen.montoTotal, 'US$')}
+            valor={formatMoneyCotizacion(
+              resumen.montoTotal,
+              configuracionPlataforma.monedaPrincipal
+            )}
             descripcion="Total cotizado"
             icono={<Wallet className="h-5 w-5" />}
           />
