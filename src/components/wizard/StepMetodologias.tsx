@@ -1,3 +1,4 @@
+import { ComparableIndiceINMOVAL, getComparablesIndiceINMOVAL } from '@/platform/comparables/comparableStorage';
 import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '@/store/avaluoStore';
 import {
@@ -26,7 +27,7 @@ import {
   memoriaReposicion, rossHeidecke, depAjustado,
   fmtMoney, fmtNum, fmtPct, valorNetoInfra,
 } from '@/lib/calculations';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 , Database } from 'lucide-react';
 
 // Toggle visual reutilizable para cada memoria
 function ApplyToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -877,6 +878,136 @@ function ConsolidadoBloque({ titulo, filas }: {
 }
 
 // ============ Fila de comparable Terreno ============
+
+function textoComparableBaseINMOVAL(comparable: ComparableIndiceINMOVAL) {
+  return [
+    comparable.codigo,
+    comparable.titulo,
+    comparable.tipo,
+    comparable.aplicaMercado,
+    comparable.ubicacion,
+    comparable.barrio,
+    comparable.municipio,
+    comparable.departamento,
+    comparable.fuente,
+    comparable.observaciones,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function seleccionarComparableBaseINMOVAL(
+  tipoMercado: 'construido' | 'terreno'
+) {
+  const termino = window.prompt(
+    tipoMercado === 'construido'
+      ? 'Buscar comparable construido por municipio, departamento, ubicación, zona o palabra clave:'
+      : 'Buscar comparable de terreno por municipio, departamento, ubicación, zona o palabra clave:',
+    ''
+  );
+
+  if (termino === null) return null;
+
+  const q = termino.trim().toLowerCase();
+
+  const candidatos = getComparablesIndiceINMOVAL()
+    .filter((comparable) => {
+      const aplica = comparable.aplicaMercado || 'ambos';
+
+      if (tipoMercado === 'construido') {
+        return aplica === 'construido' || aplica === 'ambos';
+      }
+
+      return aplica === 'terreno' || aplica === 'ambos';
+    })
+    .filter((comparable) => {
+      if (!q) return true;
+
+      return textoComparableBaseINMOVAL(comparable).includes(q);
+    })
+    .slice(0, 10);
+
+  if (candidatos.length === 0) {
+    window.alert(
+      'No encontré comparables en la base con ese filtro. Revisá que el comparable tenga el campo “Aplica para” correcto.'
+    );
+    return null;
+  }
+
+  const lista = candidatos
+    .map((comparable, index) => {
+      return [
+        String(index + 1) + '.',
+        comparable.codigo,
+        '-',
+        comparable.titulo,
+        '-',
+        comparable.ubicacion,
+        '-',
+        comparable.moneda,
+        Number(comparable.precio || 0).toLocaleString('en-US'),
+      ].join(' ');
+    })
+    .join('\n');
+
+  const seleccion = window.prompt(
+    'Elegí el número del comparable:\n\n' + lista,
+    '1'
+  );
+
+  if (seleccion === null) return null;
+
+  const index = Number(seleccion) - 1;
+
+  if (!Number.isInteger(index) || index < 0 || index >= candidatos.length) {
+    window.alert('Selección inválida.');
+    return null;
+  }
+
+  return candidatos[index];
+}
+
+function comparableBaseAInmuebleINMOVAL(comparable: ComparableIndiceINMOVAL) {
+  return {
+    ...emptyComparableInmueble(),
+    id:
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : 'comp-inm-' + Date.now(),
+    paginaWeb: comparable.fuente || '',
+    enlace: comparable.url || '',
+    contacto: comparable.contacto || '',
+    idAnuncio: comparable.codigo,
+    direccion: comparable.ubicacion,
+    precioVentaUSD: Number(comparable.precio || 0),
+    areaConstruccionM2: Number(comparable.areaConstruccion || 0),
+    areaTerrenoM2: Number(comparable.areaTerreno || 0),
+    fechaPublicacion: comparable.fecha || '',
+    diasAntiguedad: 0,
+  };
+}
+
+function comparableBaseATerrenoINMOVAL(comparable: ComparableIndiceINMOVAL) {
+  return {
+    ...emptyComparableTerreno(),
+    id:
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : 'comp-ter-' + Date.now(),
+    paginaWeb: comparable.fuente || '',
+    enlace: comparable.url || '',
+    contacto: comparable.contacto || '',
+    idAnuncio: comparable.codigo,
+    direccion: comparable.ubicacion,
+    precioVentaUSD: Number(comparable.precio || 0),
+    areaTerrenoVr2: Number(comparable.areaTerreno || 0),
+    fechaPublicacion: comparable.fecha || '',
+    diasAntiguedad: 0,
+  };
+}
+
+
 function CompTerrenoRow({ comp, idx, onChange, onRemove }: {
   comp: ComparableTerreno; idx: number; onChange: (p: Partial<ComparableTerreno>) => void; onRemove: () => void;
 }) {

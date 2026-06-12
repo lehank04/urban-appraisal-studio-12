@@ -1,6 +1,7 @@
 import { nowISO } from '@/shared/utils/dateUtils';
 import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
 import { ExpedienteActivityINMOVAL } from './expedienteActivityStorage';
+import { ComparableExpedienteINMOVAL, getExpedienteComparablesINMOVAL } from './expedienteComparablesStorage';
 
 export type ExpedienteIMVArchivo = {
   formato: 'INMOVAL_EXPEDIENTE_IMV';
@@ -10,6 +11,7 @@ export type ExpedienteIMVArchivo = {
   origen: 'plataforma_inmoval';
   expediente: ExpedienteIndiceINMOVAL;
   actividad?: ExpedienteActivityINMOVAL[];
+  comparables?: ComparableExpedienteINMOVAL[];
   metadata: {
     app: 'INMOVAL';
     tipoArchivo: 'expediente';
@@ -22,6 +24,8 @@ export function buildExpedienteIMV(
   expediente: ExpedienteIndiceINMOVAL,
   actividad: ExpedienteActivityINMOVAL[] = []
 ): ExpedienteIMVArchivo {
+  const comparables = getExpedienteComparablesINMOVAL(expediente.id);
+
   return {
     formato: 'INMOVAL_EXPEDIENTE_IMV',
     version: '2.0',
@@ -30,6 +34,7 @@ export function buildExpedienteIMV(
     origen: 'plataforma_inmoval',
     expediente,
     actividad,
+    comparables,
     metadata: {
       app: 'INMOVAL',
       tipoArchivo: 'expediente',

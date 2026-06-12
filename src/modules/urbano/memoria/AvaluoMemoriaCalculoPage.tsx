@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -468,7 +468,7 @@ function MercadoSection({
             <input
               value={busquedaBase}
               onChange={(event) => setBusquedaBase(event.target.value)}
-              placeholder="Buscar por municipio, departamento, zona, ubicación, tipo o palabra clave..."
+              placeholder="Buscar comparable por municipio, departamento, ubicación, zona, tipo o palabra clave..."
               className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 text-sm text-slate-100 outline-none focus:border-sky-400"
             />
           </div>
@@ -476,7 +476,7 @@ function MercadoSection({
           <div className="mt-4 grid gap-3">
             {comparablesBaseFiltrados.length === 0 ? (
               <div className="rounded-2xl border border-slate-700 bg-slate-950/50 p-5 text-sm text-slate-400">
-                No hay comparables disponibles con ese filtro.
+                No hay comparables disponibles con ese filtro. Primero crea o importa comparables en la Base de Comparables.
               </div>
             ) : (
               comparablesBaseFiltrados.map((comparable) => (

@@ -2,6 +2,7 @@ import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
 import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
 import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
 import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
 ﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -650,6 +651,8 @@ export default function ExpedienteDetalleINMOVALPage() {
             expediente={expediente}
             onUpdated={refrescarExpediente}
           />
+
+          <ExpedienteComparablesPanel expediente={expediente} />
 
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

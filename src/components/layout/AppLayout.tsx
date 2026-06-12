@@ -101,20 +101,6 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Comparables técnicos',
-    to: '/avaluos/demo/memoria-calculo',
-    icon: Database,
-    description: 'Memoria de cálculo, filtros y sustentos',
-    group: 'operacion',
-  },
-  {
-    label: 'Memoria de cálculo',
-    to: '/avaluos/demo/memoria-calculo',
-    icon: Database,
-    description: 'Mercado construido, terreno y sustentos',
-    group: 'operacion',
-  },
-  {
     label: 'Configuración',
     to: '/configuracion-plataforma',
     icon: Settings,

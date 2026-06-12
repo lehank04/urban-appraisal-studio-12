@@ -5,6 +5,11 @@ export type TipoComparableINMOVAL =
   | 'avaluo'
   | 'referencia';
 
+export type AplicacionMercadoComparableINMOVAL =
+  | 'construido'
+  | 'terreno'
+  | 'ambos';
+
 export type EstadoComparableINMOVAL =
   | 'activo'
   | 'congelado'
@@ -18,6 +23,7 @@ export type ComparableIndiceINMOVAL = {
   titulo: string;
 
   tipo: TipoComparableINMOVAL;
+  aplicaMercado?: AplicacionMercadoComparableINMOVAL;
   estado: EstadoComparableINMOVAL;
 
   fuente?: string;
