@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  ArrowLeft,
   Boxes,
   Building2,
   ChevronDown,
@@ -118,7 +119,9 @@ function getCurrentPage(pathname: string) {
 export function AppLayout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPage = getCurrentPage(location.pathname);
+  const CurrentIcon = currentPage.icon;
 
   const groupedItems = NAV_ITEMS.reduce<Record<NavItem['group'], NavItem[]>>(
     (acc, item) => {
@@ -132,107 +135,135 @@ export function AppLayout() {
     }
   );
 
+  function handleBack() {
+    setOpen(false);
+
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/');
+  }
+
+  function handleNavClick() {
+    setOpen(false);
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          <div className="relative">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => setOpen((value) => !value)}
-              className="inline-flex items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left shadow-lg shadow-black/20 transition hover:bg-sky-400/20"
+              onClick={handleBack}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm font-medium text-slate-200 shadow-lg shadow-black/20 transition hover:bg-slate-800"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500 text-sm font-black text-slate-950">
-                IN
-              </div>
-
-              <div className="hidden sm:block">
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-200">
-                  INMOVAL
-                </p>
-                <p className="text-xs text-slate-400">
-                  Navegación de plataforma
-                </p>
-              </div>
-
-              <ChevronDown
-                className={`h-4 w-4 text-sky-200 transition ${
-                  open ? 'rotate-180' : ''
-                }`}
-              />
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Volver</span>
             </button>
 
-            {open ? (
-              <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(92vw,520px)] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/40">
-                <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-100">
-                      Menú INMOVAL
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Plataforma, operación y catálogos
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="rounded-xl border border-slate-700 bg-slate-950/60 p-2 text-slate-300 hover:bg-slate-800"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpen((value) => !value)}
+                className="inline-flex h-12 items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 text-left shadow-lg shadow-black/20 transition hover:bg-sky-400/20"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500 text-sm font-black text-slate-950">
+                  IN
                 </div>
 
-                <nav className="max-h-[72vh] overflow-y-auto p-3">
-                  {(['plataforma', 'operacion', 'catalogos'] as const).map(
-                    (group) => (
-                      <div key={group} className="mb-3 last:mb-0">
-                        <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          {GROUP_LABELS[group]}
-                        </p>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-200">
+                    INMOVAL
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Todas las pantallas
+                  </p>
+                </div>
 
-                        <div className="grid gap-2">
-                          {groupedItems[group].map((item) => {
-                            const Icon = item.icon;
+                <ChevronDown
+                  className={`h-4 w-4 text-sky-200 transition ${
+                    open ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
 
-                            return (
-                              <NavLink
-                                key={item.to}
-                                to={item.to}
-                                onClick={() => setOpen(false)}
-                                end={item.to === '/'}
-                                className={({ isActive }) =>
-                                  `flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm transition ${
-                                    isActive
-                                      ? 'border-sky-400/40 bg-sky-400/15 text-sky-100'
-                                      : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-800/80'
-                                  }`
-                                }
-                              >
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60">
-                                  <Icon className="h-4 w-4" />
-                                </div>
+              {open ? (
+                <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(92vw,540px)] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/40">
+                  <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">
+                        Menú INMOVAL
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Plataforma, operación y catálogos
+                      </p>
+                    </div>
 
-                                <div>
-                                  <p className="font-semibold">{item.label}</p>
-                                  <p className="mt-0.5 text-xs text-slate-500">
-                                    {item.description}
-                                  </p>
-                                </div>
-                              </NavLink>
-                            );
-                          })}
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      className="rounded-xl border border-slate-700 bg-slate-950/60 p-2 text-slate-300 hover:bg-slate-800"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <nav className="max-h-[72vh] overflow-y-auto p-3">
+                    {(['plataforma', 'operacion', 'catalogos'] as const).map(
+                      (group) => (
+                        <div key={group} className="mb-3 last:mb-0">
+                          <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            {GROUP_LABELS[group]}
+                          </p>
+
+                          <div className="grid gap-2">
+                            {groupedItems[group].map((item) => {
+                              const Icon = item.icon;
+
+                              return (
+                                <NavLink
+                                  key={item.to}
+                                  to={item.to}
+                                  onClick={handleNavClick}
+                                  end={item.to === '/'}
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm transition ${
+                                      isActive
+                                        ? 'border-sky-400/40 bg-sky-400/15 text-sky-100'
+                                        : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-800/80'
+                                    }`
+                                  }
+                                >
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60">
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+
+                                  <div>
+                                    <p className="font-semibold">
+                                      {item.label}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                      {item.description}
+                                    </p>
+                                  </div>
+                                </NavLink>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  )}
-                </nav>
-              </div>
-            ) : null}
+                      )
+                    )}
+                  </nav>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-            <currentPage.icon className="hidden h-4 w-4 shrink-0 text-sky-300 sm:block" />
+            <CurrentIcon className="hidden h-4 w-4 shrink-0 text-sky-300 sm:block" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-100">
                 {currentPage.label}
@@ -252,6 +283,15 @@ export function AppLayout() {
           </button>
         </div>
       </header>
+
+      {open ? (
+        <button
+          type="button"
+          aria-label="Cerrar menú INMOVAL"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 cursor-default bg-black/20"
+        />
+      ) : null}
 
       <main>
         <Outlet />
