@@ -336,6 +336,8 @@ export default function ExpedienteDetalleINMOVALPage() {
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
+              <ExportarExpedienteIMVButton expediente={expediente} disabled={false} />
+
             <ActionButton
               tone="sky"
               disabled={estaCerrado}
