@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
@@ -11,6 +11,7 @@ import AvaluoWizard from './pages/AvaluoWizard';
 import AvaluoPreview from './pages/AvaluoPreview';
 import ClientesPage from './pages/ClientesPage';
 import PeritosPage from './pages/PeritosPage';
+import ModulosINMOVALPage from '@/platform/modulos/ModulosINMOVALPage';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/avaluos/:id" element={<AvaluoWizard />} />
             <Route path="/clientes" element={<ClientesPage />} />
             <Route path="/peritos" element={<PeritosPage />} />
+          <Route path="/modulos" element={<ModulosINMOVALPage />} />
           </Route>
 
           <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
@@ -40,3 +42,4 @@ const App = () => (
 );
 
 export default App;
+
