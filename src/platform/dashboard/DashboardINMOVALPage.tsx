@@ -1,3 +1,4 @@
+import { getConfiguracionExpedientesINMOVAL } from '@/platform/expedientes/expedienteConfigStorage';
 ﻿import { Link } from 'react-router-dom';
 import {
   BadgeDollarSign,
@@ -16,6 +17,7 @@ import { DashboardMetricCard } from './components/DashboardMetricCard';
 import { formatMoneyINMOVAL } from '@/platform/expedientes/expedienteUiUtils';
 
 export default function DashboardINMOVALPage() {
+  const configExpedientes = getConfiguracionExpedientesINMOVAL();
   const expedientes = getExpedientesIndiceINMOVAL();
   const cotizaciones = getCotizacionesIndiceINMOVAL();
   const actividad = getAllExpedienteActivityINMOVAL().slice(0, 6);
@@ -79,6 +81,79 @@ export default function DashboardINMOVALPage() {
             </div>
           </div>
         </header>
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-300">
+                Configuración activa de expedientes
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-50">
+                Reglas operativas del área
+              </h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Estos parámetros gobiernan la creación y cierre administrativo de expedientes.
+              </p>
+            </div>
+
+            <Link
+              to="/expedientes-plataforma/configuracion"
+              className="inline-flex items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+            >
+              Configurar expedientes
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Prefijo
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configExpedientes.prefijoExpediente}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Estado inicial
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configExpedientes.estadoInicial}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Prioridad
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configExpedientes.prioridadPredeterminada}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Entrega
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configExpedientes.diasEntregaEstimados} días
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Cierre
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configExpedientes.requierePagoYFacturaParaCerrar
+                  ? 'Pago + factura'
+                  : 'Flexible'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DashboardMetricCard
