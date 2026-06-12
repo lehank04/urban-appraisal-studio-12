@@ -122,6 +122,8 @@ export function AppLayout() {
   const navigate = useNavigate();
   const currentPage = getCurrentPage(location.pathname);
   const CurrentIcon = currentPage.icon;
+  const isStartPage =
+    location.pathname === '/' || location.pathname === '/plataforma';
 
   const groupedItems = NAV_ITEMS.reduce<Record<NavItem['group'], NavItem[]>>(
     (acc, item) => {
@@ -155,14 +157,17 @@ export function AppLayout() {
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm font-medium text-slate-200 shadow-lg shadow-black/20 transition hover:bg-slate-800"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Volver</span>
-            </button>
+            {!isStartPage ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                title="Volver a la pantalla anterior"
+                aria-label="Volver a la pantalla anterior"
+                className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 shadow-lg shadow-black/20 transition hover:bg-slate-800"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            ) : null}
 
             <div className="relative">
               <button
