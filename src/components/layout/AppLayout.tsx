@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   Home,
   Menu,
   Settings,
+  SlidersHorizontal,
   Users,
   UserSquare2,
   X,
@@ -48,10 +49,31 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
+    label: 'Nuevo expediente administrativo',
+    to: '/expedientes-plataforma/nuevo',
+    icon: FilePlus2,
+    description: 'Crear expediente desde Plataforma',
+    group: 'plataforma',
+  },
+  {
+    label: 'Config. Expedientes',
+    to: '/expedientes-plataforma/configuracion',
+    icon: SlidersHorizontal,
+    description: 'Reglas propias del área de expedientes',
+    group: 'plataforma',
+  },
+  {
     label: 'Cotizaciones',
     to: '/cotizaciones',
     icon: FileText,
     description: 'Cotizaciones, aprobación y flujo a expediente',
+    group: 'plataforma',
+  },
+  {
+    label: 'Config. Cotizaciones',
+    to: '/cotizaciones/configuracion',
+    icon: SlidersHorizontal,
+    description: 'Reglas propias del área de cotizaciones',
     group: 'plataforma',
   },
   {
@@ -111,8 +133,12 @@ function getCurrentPage(pathname: string) {
 
   return (
     NAV_ITEMS.find(
+      (item) => item.to !== '/' && pathname === item.to
+    ) ||
+    NAV_ITEMS.find(
       (item) => item.to !== '/' && pathname.startsWith(`${item.to}/`)
-    ) || NAV_ITEMS[0]
+    ) ||
+    NAV_ITEMS[0]
   );
 }
 

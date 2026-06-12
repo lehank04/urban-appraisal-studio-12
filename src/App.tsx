@@ -1,5 +1,6 @@
 import ConfiguracionExpedientesINMOVALPage from '@/platform/expedientes/ConfiguracionExpedientesINMOVALPage';
 import NuevoExpedienteINMOVALPage from '@/platform/expedientes/NuevoExpedienteINMOVALPage';
+import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/ConfiguracionCotizacionesINMOVALPage';
 ﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
+            <Route path="/cotizaciones/configuracion" element={<ConfiguracionCotizacionesINMOVALPage />} />
             <Route path="/configuracion-plataforma" element={<ConfiguracionINMOVALPage />} />
             <Route path="/modulos" element={<ModulosINMOVALPage />} />
 

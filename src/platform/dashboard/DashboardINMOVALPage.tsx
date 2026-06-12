@@ -1,4 +1,5 @@
 import { getConfiguracionExpedientesINMOVAL } from '@/platform/expedientes/expedienteConfigStorage';
+import { getConfiguracionCotizacionesINMOVAL } from '@/platform/cotizaciones/cotizacionConfigStorage';
 ﻿import { Link } from 'react-router-dom';
 import {
   BadgeDollarSign,
@@ -18,6 +19,7 @@ import { formatMoneyINMOVAL } from '@/platform/expedientes/expedienteUiUtils';
 
 export default function DashboardINMOVALPage() {
   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+  const configCotizaciones = getConfiguracionCotizacionesINMOVAL();
   const expedientes = getExpedientesIndiceINMOVAL();
   const cotizaciones = getCotizacionesIndiceINMOVAL();
   const actividad = getAllExpedienteActivityINMOVAL().slice(0, 6);
@@ -81,6 +83,79 @@ export default function DashboardINMOVALPage() {
             </div>
           </div>
         </header>
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
+                Configuración activa de cotizaciones
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-50">
+                Reglas comerciales del área
+              </h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Estos parámetros gobiernan nuevas cotizaciones y su conversión a expedientes.
+              </p>
+            </div>
+
+            <Link
+              to="/cotizaciones/configuracion"
+              className="inline-flex items-center justify-center rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+            >
+              Configurar cotizaciones
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Prefijo
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configCotizaciones.prefijoCotizacion}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Servicio base
+              </p>
+              <p className="mt-2 truncate text-lg font-semibold text-slate-100">
+                {configCotizaciones.servicioPredeterminado}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Monto base
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configCotizaciones.monedaPredeterminada} {configCotizaciones.montoPredeterminado}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Vigencia
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configCotizaciones.diasValidez} días
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Expediente
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-100">
+                {configCotizaciones.requiereAprobacionParaExpediente
+                  ? 'Solo aprobada'
+                  : 'Flexible'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+
         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
