@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Archive, ClipboardList, DollarSign, FileText, Search, ArrowLeft, Boxes } from 'lucide-react';
+import { AlertTriangle, Archive, ClipboardList, DollarSign, FileText, Search,
+  Settings, ArrowLeft, Boxes } from 'lucide-react';
 import { getExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
 import { sincronizarAvaluosLegacyConIndicePlataforma } from './legacyAvaluoIndexBridge';
 import {
@@ -108,6 +109,14 @@ export default function ExpedientesINMOVALPage() {
               >
                 <Boxes className="h-4 w-4" />
                 Módulos
+              </Link>
+
+              <Link
+                to="/expedientes-plataforma/configuracion"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+              >
+                <Settings className="h-4 w-4" />
+                Configurar expedientes
               </Link>
 
               <button
