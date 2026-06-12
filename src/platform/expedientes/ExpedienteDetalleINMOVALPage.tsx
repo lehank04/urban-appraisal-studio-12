@@ -14,6 +14,9 @@ import {
   History,
   LockKeyhole,
   ReceiptText,
+  CreditCard,
+  Link2,
+  Save,
   UserRound,
 } from 'lucide-react';
 import {
@@ -101,6 +104,23 @@ export default function ExpedienteDetalleINMOVALPage() {
     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
   );
 
+  const [abonoMonto, setAbonoMonto] = useState('');
+  const [prioridadDraft, setPrioridadDraft] = useState(
+    expedienteInicial?.prioridad || 'normal'
+  );
+  const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+    expedienteInicial?.fechaEntregaEstimada || ''
+  );
+  const [peritoDraft, setPeritoDraft] = useState(
+    expedienteInicial?.peritoNombre || ''
+  );
+  const [driveUrlDraft, setDriveUrlDraft] = useState(
+    expedienteInicial?.driveUrl || ''
+  );
+  const [archivoImvDraft, setArchivoImvDraft] = useState(
+    expedienteInicial?.archivoImvNombre || ''
+  );
+
   function guardarCambios(
     cambios: Partial<ExpedienteIndiceINMOVAL>,
     actividadParams?: {
@@ -130,6 +150,69 @@ export default function ExpedienteDetalleINMOVALPage() {
 
       setActividad(getExpedienteActivityINMOVAL(expediente.id));
     }
+  }
+
+  function handleGuardarDatosOperativos() {
+    if (!expediente) return;
+
+    guardarCambios(
+      {
+        prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+        fechaEntregaEstimada: fechaEntregaDraft || undefined,
+        peritoNombre: peritoDraft.trim() || undefined,
+        driveUrl: driveUrlDraft.trim() || undefined,
+        archivoImvNombre: archivoImvDraft.trim() || undefined,
+      },
+      {
+        tipo: 'nota',
+        titulo: 'Datos administrativos actualizados',
+        descripcion:
+          'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+      }
+    );
+  }
+
+  function handleRegistrarAbono() {
+    if (!expediente) return;
+
+    const abono = Number(abonoMonto || 0);
+
+    if (!Number.isFinite(abono) || abono <= 0) {
+      window.alert('Ingresá un monto de abono válido.');
+      return;
+    }
+
+    const nuevoMontoPagado = Math.min(
+      Number(expediente.costoServicio || 0),
+      Number(expediente.montoPagado || 0) + abono
+    );
+
+    const nuevoSaldo = Math.max(
+      0,
+      Number(expediente.costoServicio || 0) - nuevoMontoPagado
+    );
+
+    guardarCambios(
+      {
+        montoPagado: nuevoMontoPagado,
+        saldo: nuevoSaldo,
+        estadoPago:
+          nuevoSaldo <= 0
+            ? 'pagado'
+            : nuevoMontoPagado > 0
+              ? 'parcial'
+              : 'pendiente',
+      },
+      {
+        tipo: 'pago',
+        titulo: 'Abono registrado',
+        descripcion: `Se registró un abono de ${expediente.moneda} ${abono.toFixed(
+          2
+        )}.`,
+      }
+    );
+
+    setAbonoMonto('');
   }
 
   if (!expediente) {
@@ -380,6 +463,149 @@ export default function ExpedienteDetalleINMOVALPage() {
               Para cerrar el expediente debe estar pagado y con factura emitida.
             </p>
           ) : null}
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+              <Save className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                Edición administrativa
+              </p>
+              <h2 className="text-lg font-semibold text-slate-100">
+                Datos rápidos del expediente
+              </h2>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <label className="grid gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Prioridad
+              </span>
+              <select
+                value={prioridadDraft}
+                onChange={(event) => setPrioridadDraft(event.target.value)}
+                disabled={estaCerrado}
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+              >
+                <option value="baja">Baja</option>
+                <option value="normal">Normal</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Entrega estimada
+              </span>
+              <input
+                type="date"
+                value={fechaEntregaDraft}
+                onChange={(event) => setFechaEntregaDraft(event.target.value)}
+                disabled={estaCerrado}
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+              />
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Perito asignado
+              </span>
+              <input
+                value={peritoDraft}
+                onChange={(event) => setPeritoDraft(event.target.value)}
+                disabled={estaCerrado}
+                placeholder="Nombre del perito"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+              />
+            </label>
+
+            <label className="grid gap-2 md:col-span-2">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                URL de Drive
+              </span>
+              <div className="relative">
+                <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  value={driveUrlDraft}
+                  onChange={(event) => setDriveUrlDraft(event.target.value)}
+                  disabled={estaCerrado}
+                  placeholder="https://drive.google.com/..."
+                  className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+                />
+              </div>
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Archivo .imv
+              </span>
+              <input
+                value={archivoImvDraft}
+                onChange={(event) => setArchivoImvDraft(event.target.value)}
+                disabled={estaCerrado}
+                placeholder="EXP-0001.imv"
+                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <ActionButton
+              tone="emerald"
+              disabled={estaCerrado}
+              onClick={handleGuardarDatosOperativos}
+            >
+              <Save className="h-4 w-4" />
+              Guardar datos
+            </ActionButton>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+              <CreditCard className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                Pagos parciales
+              </p>
+              <h2 className="text-lg font-semibold text-slate-100">
+                Registrar abono
+              </h2>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={abonoMonto}
+              onChange={(event) => setAbonoMonto(event.target.value)}
+              disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+              placeholder={`Monto de abono en ${expediente.moneda}`}
+              className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400 disabled:opacity-50"
+            />
+
+            <ActionButton
+              tone="sky"
+              disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+              onClick={handleRegistrarAbono}
+            >
+              <CreditCard className="h-4 w-4" />
+              Registrar abono
+            </ActionButton>
+          </div>
+
+          <p className="mt-3 text-sm text-slate-400">
+            El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
+          </p>
         </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
