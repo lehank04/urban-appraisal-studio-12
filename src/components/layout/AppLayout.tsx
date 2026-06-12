@@ -1,143 +1,248 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { BarChart3, ClipboardList, FilePlus2, UserCog, Users, Boxes, FileText } from 'lucide-react';
+﻿import { useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import {
+  Boxes,
+  Building2,
+  ChevronDown,
+  ClipboardList,
+  FilePlus2,
+  FileText,
+  Gauge,
+  Home,
+  Menu,
+  Users,
+  UserSquare2,
+  X,
+} from 'lucide-react';
 
-const tabs = [
+type NavItem = {
+  label: string;
+  to: string;
+  icon: typeof Home;
+  description: string;
+  group: 'plataforma' | 'operacion' | 'catalogos';
+};
+
+const NAV_ITEMS: NavItem[] = [
   {
     label: 'Dashboard',
     to: '/',
-    icon: BarChart3,
-  },
-  {
-    label: 'Expedientes',
-    to: '/avaluos',
-    icon: ClipboardList,
+    icon: Gauge,
+    description: 'Vista general operativa',
+    group: 'plataforma',
   },
   {
     label: 'Expedientes Plataforma',
     to: '/expedientes-plataforma',
     icon: ClipboardList,
+    description: 'Control administrativo de expedientes',
+    group: 'plataforma',
   },
   {
     label: 'Cotizaciones',
     to: '/cotizaciones',
     icon: FileText,
-  },
-  {
-    label: 'Nuevo expediente',
-    to: '/avaluos/nuevo',
-    icon: FilePlus2,
-  },
-  {
-    label: 'Clientes',
-    to: '/clientes',
-    icon: Users,
-  },
-  {
-    label: 'Peritos',
-    to: '/peritos',
-    icon: UserCog,
+    description: 'Cotizaciones, aprobación y flujo a expediente',
+    group: 'plataforma',
   },
   {
     label: 'Módulos',
     to: '/modulos',
     icon: Boxes,
+    description: 'Cartuchos técnicos disponibles',
+    group: 'plataforma',
+  },
+  {
+    label: 'Expedientes técnicos',
+    to: '/avaluos',
+    icon: Building2,
+    description: 'Lista técnica actual de avalúos',
+    group: 'operacion',
+  },
+  {
+    label: 'Nuevo expediente',
+    to: '/avaluos/nuevo',
+    icon: FilePlus2,
+    description: 'Crear expediente técnico urbano',
+    group: 'operacion',
+  },
+  {
+    label: 'Clientes',
+    to: '/clientes',
+    icon: Users,
+    description: 'Catálogo de clientes',
+    group: 'catalogos',
+  },
+  {
+    label: 'Peritos',
+    to: '/peritos',
+    icon: UserSquare2,
+    description: 'Catálogo de peritos',
+    group: 'catalogos',
   },
 ];
 
-export default function AppLayout() {
-  const location = useLocation();
+const GROUP_LABELS: Record<NavItem['group'], string> = {
+  plataforma: 'Plataforma INMOVAL',
+  operacion: 'Operación técnica',
+  catalogos: 'Catálogos',
+};
 
-  const isActive = (to: string) => {
-    if (to === '/') return location.pathname === '/';
-    return location.pathname.startsWith(to);
-  };
+function getCurrentPage(pathname: string) {
+  const exact = NAV_ITEMS.find((item) => item.to === pathname);
+
+  if (exact) return exact;
 
   return (
-    <div className="min-h-screen w-full bg-[#111827] text-slate-100">
-      <header className="sticky top-0 z-30 px-4 py-3">
-        <div className="mx-auto max-w-[1500px] rounded-[2rem] border border-slate-700/70 bg-[#1f2937]/90 backdrop-blur-xl shadow-lg shadow-black/10 px-4 py-3 flex items-center justify-between gap-5">
-          <Link to="/" className="flex items-center gap-3 min-w-0 shrink-0">
-            <div className="h-11 w-11 rounded-2xl overflow-hidden bg-[#0f5f8f] border border-slate-600 shadow-sm grid place-items-center shrink-0">
-              <img
-                src="/inmoval-logo.jpg"
-                alt="INMOVAL"
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <span className="text-xs font-black text-[#facc15]">
+    NAV_ITEMS.find(
+      (item) => item.to !== '/' && pathname.startsWith(`${item.to}/`)
+    ) || NAV_ITEMS[0]
+  );
+}
+
+export function AppLayout() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const currentPage = getCurrentPage(location.pathname);
+
+  const groupedItems = NAV_ITEMS.reduce<Record<NavItem['group'], NavItem[]>>(
+    (acc, item) => {
+      acc[item.group].push(item);
+      return acc;
+    },
+    {
+      plataforma: [],
+      operacion: [],
+      catalogos: [],
+    }
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+              className="inline-flex items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left shadow-lg shadow-black/20 transition hover:bg-sky-400/20"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500 text-sm font-black text-slate-950">
                 IN
-              </span>
-            </div>
-
-            <div className="leading-tight min-w-0">
-              <div className="text-sm font-black tracking-tight text-sky-300">
-                INMOVAL
               </div>
-              <div className="text-[11px] text-slate-400 truncate">
-                Confianza que da valor
+
+              <div className="hidden sm:block">
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-200">
+                  INMOVAL
+                </p>
+                <p className="text-xs text-slate-400">
+                  Navegación de plataforma
+                </p>
               </div>
-            </div>
-          </Link>
 
-          <nav className="hidden lg:flex items-center gap-2 rounded-full bg-[#0f172a] border border-slate-700 p-1.5 shadow-inner">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const active = isActive(tab.to);
+              <ChevronDown
+                className={`h-4 w-4 text-sky-200 transition ${
+                  open ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
-              return (
-                <Link
-                  key={tab.to}
-                  to={tab.to}
-                  className={`h-10 px-5 rounded-full text-xs font-medium flex items-center gap-2 transition-all whitespace-nowrap ${
-                    active
-                      ? 'bg-sky-500 text-white shadow-sm'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700/80'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </nav>
+            {open ? (
+              <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(92vw,520px)] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-100">
+                      Menú INMOVAL
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Plataforma, operación y catálogos
+                    </p>
+                  </div>
 
-          <div className="hidden xl:flex items-center gap-2 shrink-0">
-            <div className="rounded-full bg-emerald-500/10 border border-emerald-400/30 px-3 py-1.5 text-xs font-medium text-emerald-300 whitespace-nowrap">
-              Módulo urbano activo
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="rounded-xl border border-slate-700 bg-slate-950/60 p-2 text-slate-300 hover:bg-slate-800"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <nav className="max-h-[72vh] overflow-y-auto p-3">
+                  {(['plataforma', 'operacion', 'catalogos'] as const).map(
+                    (group) => (
+                      <div key={group} className="mb-3 last:mb-0">
+                        <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          {GROUP_LABELS[group]}
+                        </p>
+
+                        <div className="grid gap-2">
+                          {groupedItems[group].map((item) => {
+                            const Icon = item.icon;
+
+                            return (
+                              <NavLink
+                                key={item.to}
+                                to={item.to}
+                                onClick={() => setOpen(false)}
+                                end={item.to === '/'}
+                                className={({ isActive }) =>
+                                  `flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm transition ${
+                                    isActive
+                                      ? 'border-sky-400/40 bg-sky-400/15 text-sky-100'
+                                      : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-800/80'
+                                  }`
+                                }
+                              >
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60">
+                                  <Icon className="h-4 w-4" />
+                                </div>
+
+                                <div>
+                                  <p className="font-semibold">{item.label}</p>
+                                  <p className="mt-0.5 text-xs text-slate-500">
+                                    {item.description}
+                                  </p>
+                                </div>
+                              </NavLink>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </nav>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+            <currentPage.icon className="hidden h-4 w-4 shrink-0 text-sky-300 sm:block" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-100">
+                {currentPage.label}
+              </p>
+              <p className="hidden truncate text-xs text-slate-500 sm:block">
+                {currentPage.description}
+              </p>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 sm:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
-
-        <nav className="lg:hidden mx-auto max-w-[1500px] mt-3 flex gap-2 overflow-x-auto pb-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const active = isActive(tab.to);
-
-            return (
-              <Link
-                key={tab.to}
-                to={tab.to}
-                className={`h-10 px-4 rounded-full text-xs font-medium flex items-center gap-2 transition-all whitespace-nowrap border ${
-                  active
-                    ? 'bg-sky-500 text-white border-sky-400'
-                    : 'bg-[#1f2937] text-slate-300 border-slate-700'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
       </header>
 
-      <main className="px-4 pb-6">
-        <div className="mx-auto max-w-[1500px] rounded-[2rem] border border-slate-700/70 bg-[#172033] min-h-[calc(100vh-6rem)] overflow-hidden shadow-lg shadow-black/10">
-          <Outlet />
-        </div>
+      <main>
+        <Outlet />
       </main>
     </div>
   );
 }
+
+export default AppLayout;
