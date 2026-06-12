@@ -1,4 +1,4 @@
-﻿import {
+import {
   EstadoExpedienteINMOVAL,
   EstadoPagoINMOVAL,
   TipoModuloTecnico,
@@ -38,6 +38,11 @@ export type ExpedienteIndiceINMOVAL = {
 
   driveUrl?: string;
   archivoImvNombre?: string;
+
+  avaluoTecnicoId?: string;
+  avaluoTecnicoRuta?: string;
+  moduloTecnicoVinculado?: TipoModuloTecnico;
+  vinculadoModuloTecnicoEn?: string;
 
   creadoEn: string;
   actualizadoEn: string;

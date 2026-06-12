@@ -1,4 +1,4 @@
-﻿import { INMOVAL_STORAGE_KEYS } from '@/platform/configuracion/inmovalStorageKeys';
+import { INMOVAL_STORAGE_KEYS } from '@/platform/configuracion/inmovalStorageKeys';
 import {
   readLocalStorageJSON,
   writeLocalStorageJSON,
@@ -100,4 +100,9 @@ export function ordenarExpedientesIndice(
   return [...expedientes].sort((a, b) =>
     b.actualizadoEn.localeCompare(a.actualizadoEn)
   );
+}
+
+
+export function getExpedienteIndiceINMOVAL(id: string) {
+  return getExpedientesIndiceINMOVAL().find((expediente) => expediente.id === id);
 }

@@ -1,6 +1,7 @@
 import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
 import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
 import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
 ﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -124,6 +125,10 @@ export default function ExpedienteDetalleINMOVALPage() {
   const [archivoImvDraft, setArchivoImvDraft] = useState(
     expedienteInicial?.archivoImvNombre || ''
   );
+  function refrescarExpediente() {
+    setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+  }
+
 
   function guardarCambios(
     cambios: Partial<ExpedienteIndiceINMOVAL>,
@@ -617,6 +622,11 @@ export default function ExpedienteDetalleINMOVALPage() {
             El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
           </p>
         </section>
+          <ExpedienteModuloTecnicoPanel
+            expediente={expediente}
+            onUpdated={refrescarExpediente}
+          />
+
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DetailItem label="Cliente" value={expediente.clienteNombre} />
