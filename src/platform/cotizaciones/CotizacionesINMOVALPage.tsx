@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
   FileText,
@@ -6,6 +7,9 @@ import {
   Send,
   Wallet,
   XCircle,
+  ArrowLeft,
+  Archive,
+  ExternalLink,
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
 import {
@@ -136,7 +140,23 @@ export default function CotizacionesINMOVALPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Dashboard
+              </Link>
+
+              <Link
+                to="/expedientes-plataforma"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+              >
+                <Archive className="h-4 w-4" />
+                Expedientes
+              </Link>
+
               <button
                 type="button"
                 onClick={handleCrearCotizacionDemo}
@@ -342,6 +362,16 @@ export default function CotizacionesINMOVALPage() {
                             >
                               Crear expediente
                             </button>
+                          ) : null}
+
+                          {cotizacion.expedienteId ? (
+                            <Link
+                              to="/expedientes-plataforma"
+                              className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
+                            >
+                              Ver expediente
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
                           ) : null}
                         </div>
                       </td>
