@@ -11,6 +11,7 @@ import {
   FileText,
   FolderOpen,
   Home,
+  History,
   LockKeyhole,
   ReceiptText,
   UserRound,
@@ -26,6 +27,10 @@ import {
   getModuloLabel,
 } from './expedienteUiUtils';
 import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+import {
+  getExpedienteActivityINMOVAL,
+  registrarActividadExpedienteINMOVAL,
+} from './expedienteActivityStorage';
 
 function DetailItem({
   label,
@@ -92,7 +97,18 @@ export default function ExpedienteDetalleINMOVALPage() {
     ExpedienteIndiceINMOVAL | undefined
   >(expedienteInicial);
 
-  function guardarCambios(cambios: Partial<ExpedienteIndiceINMOVAL>) {
+  const [actividad, setActividad] = useState(() =>
+    expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+  );
+
+  function guardarCambios(
+    cambios: Partial<ExpedienteIndiceINMOVAL>,
+    actividadParams?: {
+      tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+      titulo: string;
+      descripcion?: string;
+    }
+  ) {
     if (!expediente) return;
 
     const actualizado: ExpedienteIndiceINMOVAL = {
@@ -103,6 +119,17 @@ export default function ExpedienteDetalleINMOVALPage() {
 
     upsertExpedienteIndiceINMOVAL(actualizado);
     setExpediente(actualizado);
+
+    if (actividadParams) {
+      registrarActividadExpedienteINMOVAL({
+        expedienteId: expediente.id,
+        tipo: actividadParams.tipo,
+        titulo: actividadParams.titulo,
+        descripcion: actividadParams.descripcion,
+      });
+
+      setActividad(getExpedienteActivityINMOVAL(expediente.id));
+    }
   }
 
   if (!expediente) {
@@ -222,9 +249,16 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="sky"
               disabled={estaCerrado}
               onClick={() =>
-                guardarCambios({
-                  estado: 'en_elaboracion',
-                })
+                guardarCambios(
+                  {
+                    estado: 'en_elaboracion',
+                  },
+                  {
+                    tipo: 'estado',
+                    titulo: 'Estado actualizado',
+                    descripcion: 'El expediente fue marcado como En elaboración.',
+                  }
+                )
               }
             >
               <ClipboardList className="h-4 w-4" />
@@ -235,9 +269,16 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="amber"
               disabled={estaCerrado}
               onClick={() =>
-                guardarCambios({
-                  estado: 'en_revision',
-                })
+                guardarCambios(
+                  {
+                    estado: 'en_revision',
+                  },
+                  {
+                    tipo: 'estado',
+                    titulo: 'Estado actualizado',
+                    descripcion: 'El expediente fue marcado como En revisión.',
+                  }
+                )
               }
             >
               <FileText className="h-4 w-4" />
@@ -248,9 +289,16 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="emerald"
               disabled={estaCerrado}
               onClick={() =>
-                guardarCambios({
-                  estado: 'entregado',
-                })
+                guardarCambios(
+                  {
+                    estado: 'entregado',
+                  },
+                  {
+                    tipo: 'estado',
+                    titulo: 'Estado actualizado',
+                    descripcion: 'El expediente fue marcado como Entregado.',
+                  }
+                )
               }
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -261,11 +309,18 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="emerald"
               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
               onClick={() =>
-                guardarCambios({
-                  montoPagado: expediente.costoServicio,
-                  saldo: 0,
-                  estadoPago: 'pagado',
-                })
+                guardarCambios(
+                  {
+                    montoPagado: expediente.costoServicio,
+                    saldo: 0,
+                    estadoPago: 'pagado',
+                  },
+                  {
+                    tipo: 'pago',
+                    titulo: 'Pago registrado',
+                    descripcion: 'El expediente fue marcado como pagado en su totalidad.',
+                  }
+                )
               }
             >
               <BadgeDollarSign className="h-4 w-4" />
@@ -276,15 +331,22 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="amber"
               disabled={estaCerrado || expediente.facturaEmitida}
               onClick={() =>
-                guardarCambios({
-                  facturaEmitida: true,
-                  numeroFactura:
-                    expediente.numeroFactura ||
-                    `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
-                      -4
-                    )}`,
-                  estado: 'facturado',
-                })
+                guardarCambios(
+                  {
+                    facturaEmitida: true,
+                    numeroFactura:
+                      expediente.numeroFactura ||
+                      `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+                        -4
+                      )}`,
+                    estado: 'facturado',
+                  },
+                  {
+                    tipo: 'facturacion',
+                    titulo: 'Factura emitida',
+                    descripcion: 'Se registró la emisión de factura del expediente.',
+                  }
+                )
               }
             >
               <ReceiptText className="h-4 w-4" />
@@ -295,10 +357,17 @@ export default function ExpedienteDetalleINMOVALPage() {
               tone="rose"
               disabled={estaCerrado || !puedeCerrar}
               onClick={() =>
-                guardarCambios({
-                  estado: 'cerrado',
-                  fechaCierre: todayISO(),
-                })
+                guardarCambios(
+                  {
+                    estado: 'cerrado',
+                    fechaCierre: todayISO(),
+                  },
+                  {
+                    tipo: 'cierre',
+                    titulo: 'Expediente cerrado',
+                    descripcion: 'El expediente fue cerrado administrativamente.',
+                  }
+                )
               }
             >
               <LockKeyhole className="h-4 w-4" />
@@ -446,6 +515,58 @@ export default function ExpedienteDetalleINMOVALPage() {
               <ExternalLink className="h-4 w-4" />
             </a>
           ) : null}
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+              <History className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                Historial
+              </p>
+              <h2 className="text-lg font-semibold text-slate-100">
+                Actividad del expediente
+              </h2>
+            </div>
+          </div>
+
+          {actividad.length === 0 ? (
+            <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+              Todavía no hay actividad registrada para este expediente.
+            </p>
+          ) : (
+            <div className="mt-5 space-y-3">
+              {actividad.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
+                >
+                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {item.titulo}
+                      </p>
+                      {item.descripcion ? (
+                        <p className="mt-1 text-sm text-slate-400">
+                          {item.descripcion}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+                      {item.tipo}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    {item.creadoEn} · {item.usuarioNombre}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
