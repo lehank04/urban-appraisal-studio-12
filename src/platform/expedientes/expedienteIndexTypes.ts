@@ -44,6 +44,11 @@ export type ExpedienteIndiceINMOVAL = {
   moduloTecnicoVinculado?: TipoModuloTecnico;
   vinculadoModuloTecnicoEn?: string;
 
+  preparacionTecnicaId?: string;
+  preparacionTecnicaEstado?: 'pendiente' | 'preparado' | 'vinculado';
+  preparacionTecnicaEn?: string;
+  preparacionTecnicaResumen?: string;
+
   creadoEn: string;
   actualizadoEn: string;
 };

@@ -3,6 +3,7 @@ import NuevoExpedienteINMOVALPage from '@/platform/expedientes/NuevoExpedienteIN
 import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/ConfiguracionCotizacionesINMOVALPage';
 import ImportarExpedienteIMVPage from '@/platform/expedientes/ImportarExpedienteIMVPage';
 import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPage';
+import PrepararModuloTecnicoINMOVALPage from '@/platform/expedientes/PrepararModuloTecnicoINMOVALPage';
 ﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/expedientes-plataforma/configuracion" element={<ConfiguracionExpedientesINMOVALPage />} />
             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
             <Route path="/expedientes-plataforma/importar" element={<ImportarExpedienteIMVPage />} />
+            <Route path="/expedientes-plataforma/:id/preparar-tecnico" element={<PrepararModuloTecnicoINMOVALPage />} />
             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
             <Route path="/cotizaciones/configuracion" element={<ConfiguracionCotizacionesINMOVALPage />} />
