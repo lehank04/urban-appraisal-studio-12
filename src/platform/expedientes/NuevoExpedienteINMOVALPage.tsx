@@ -1,3 +1,4 @@
+import { registrarActividadExpedienteINMOVAL } from './expedienteActivityStorage';
 ﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -125,6 +126,15 @@ export default function NuevoExpedienteINMOVALPage() {
     };
 
     upsertExpedienteIndiceINMOVAL(expediente);
+
+    registrarActividadExpedienteINMOVAL({
+      expedienteId: id,
+      tipo: 'nota',
+      titulo: 'Expediente creado desde Plataforma',
+      descripcion: `Se creó el expediente ${codigo} para ${clienteNombre.trim()}.`,
+      creadoEn: ahora,
+    });
+
     navigate(`/expedientes-plataforma/${id}`);
   }
 
