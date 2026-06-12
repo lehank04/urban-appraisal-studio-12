@@ -1,3 +1,5 @@
+import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
 ﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -89,6 +91,7 @@ function ActionButton({
 }
 
 export default function ExpedienteDetalleINMOVALPage() {
+  const configExpedientes = getConfiguracionExpedientesINMOVAL();
   const { id } = useParams();
 
   const expedienteInicial = useMemo(
@@ -240,6 +243,11 @@ export default function ExpedienteDetalleINMOVALPage() {
       </div>
     );
   }
+
+  const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+    expediente,
+    configExpedientes
+  );
 
   const puedeCerrar =
     expediente.estadoPago === 'pagado' && expediente.facturaEmitida;
