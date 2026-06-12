@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FilePlus2,
   FileText,
+  Database,
   Gauge,
   Home,
   Menu,
@@ -89,6 +90,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/modulos',
     icon: Boxes,
     description: 'Cartuchos técnicos disponibles',
+    group: 'plataforma',
+  },
+  {
+    label: 'Base de Comparables',
+    to: '/comparables',
+    icon: Database,
+    description: 'Comparables locales y archivos .imc',
     group: 'plataforma',
   },
   {
