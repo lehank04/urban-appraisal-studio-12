@@ -1,11 +1,31 @@
-﻿import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, BadgeDollarSign, CalendarDays, ClipboardList, ExternalLink, FileText, FolderOpen, UserRound, Boxes, Home } from 'lucide-react';
-import { getExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
+﻿import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  BadgeDollarSign,
+  Boxes,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  Home,
+  LockKeyhole,
+  ReceiptText,
+  UserRound,
+} from 'lucide-react';
+import {
+  getExpedientesIndiceINMOVAL,
+  upsertExpedienteIndiceINMOVAL,
+} from './expedienteIndexStorage';
+import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
 import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
 import {
   formatMoneyINMOVAL,
   getModuloLabel,
 } from './expedienteUiUtils';
+import { nowISO, todayISO } from '@/shared/utils/dateUtils';
 
 function DetailItem({
   label,
@@ -26,12 +46,64 @@ function DetailItem({
   );
 }
 
+function ActionButton({
+  children,
+  onClick,
+  disabled,
+  tone = 'sky',
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: 'sky' | 'emerald' | 'amber' | 'rose' | 'slate';
+}) {
+  const classes = {
+    sky: 'border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20',
+    emerald:
+      'border-emerald-400/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20',
+    amber:
+      'border-amber-400/30 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20',
+    rose: 'border-rose-400/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20',
+    slate:
+      'border-slate-600 bg-slate-950/50 text-slate-200 hover:bg-slate-800',
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function ExpedienteDetalleINMOVALPage() {
   const { id } = useParams();
 
-  const expediente = getExpedientesIndiceINMOVAL().find(
-    (item) => item.id === id
+  const expedienteInicial = useMemo(
+    () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+    [id]
   );
+
+  const [expediente, setExpediente] = useState<
+    ExpedienteIndiceINMOVAL | undefined
+  >(expedienteInicial);
+
+  function guardarCambios(cambios: Partial<ExpedienteIndiceINMOVAL>) {
+    if (!expediente) return;
+
+    const actualizado: ExpedienteIndiceINMOVAL = {
+      ...expediente,
+      ...cambios,
+      actualizadoEn: nowISO(),
+    };
+
+    upsertExpedienteIndiceINMOVAL(actualizado);
+    setExpediente(actualizado);
+  }
 
   if (!expediente) {
     return (
@@ -61,6 +133,8 @@ export default function ExpedienteDetalleINMOVALPage() {
 
   const puedeCerrar =
     expediente.estadoPago === 'pagado' && expediente.facturaEmitida;
+
+  const estaCerrado = expediente.estado === 'cerrado';
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
@@ -112,9 +186,8 @@ export default function ExpedienteDetalleINMOVALPage() {
                 {expediente.titulo}
               </p>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Ficha administrativa del expediente. Aquí se concentran estado,
-                prioridad, módulo técnico, cliente, pago, facturación, revisión
-                activa y referencias de archivo o Drive.
+                Ficha administrativa del expediente. Desde aquí se controla pago,
+                facturación, cierre, estado operativo y referencias documentales.
               </p>
             </div>
 
@@ -128,6 +201,117 @@ export default function ExpedienteDetalleINMOVALPage() {
             </div>
           </div>
         </header>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                Acciones administrativas
+              </p>
+              <h2 className="text-lg font-semibold text-slate-100">
+                Control rápido del expediente
+              </h2>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <ActionButton
+              tone="sky"
+              disabled={estaCerrado}
+              onClick={() =>
+                guardarCambios({
+                  estado: 'en_elaboracion',
+                })
+              }
+            >
+              <ClipboardList className="h-4 w-4" />
+              En elaboración
+            </ActionButton>
+
+            <ActionButton
+              tone="amber"
+              disabled={estaCerrado}
+              onClick={() =>
+                guardarCambios({
+                  estado: 'en_revision',
+                })
+              }
+            >
+              <FileText className="h-4 w-4" />
+              En revisión
+            </ActionButton>
+
+            <ActionButton
+              tone="emerald"
+              disabled={estaCerrado}
+              onClick={() =>
+                guardarCambios({
+                  estado: 'entregado',
+                })
+              }
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Entregado
+            </ActionButton>
+
+            <ActionButton
+              tone="emerald"
+              disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+              onClick={() =>
+                guardarCambios({
+                  montoPagado: expediente.costoServicio,
+                  saldo: 0,
+                  estadoPago: 'pagado',
+                })
+              }
+            >
+              <BadgeDollarSign className="h-4 w-4" />
+              Marcar pagado
+            </ActionButton>
+
+            <ActionButton
+              tone="amber"
+              disabled={estaCerrado || expediente.facturaEmitida}
+              onClick={() =>
+                guardarCambios({
+                  facturaEmitida: true,
+                  numeroFactura:
+                    expediente.numeroFactura ||
+                    `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+                      -4
+                    )}`,
+                  estado: 'facturado',
+                })
+              }
+            >
+              <ReceiptText className="h-4 w-4" />
+              Emitir factura
+            </ActionButton>
+
+            <ActionButton
+              tone="rose"
+              disabled={estaCerrado || !puedeCerrar}
+              onClick={() =>
+                guardarCambios({
+                  estado: 'cerrado',
+                  fechaCierre: todayISO(),
+                })
+              }
+            >
+              <LockKeyhole className="h-4 w-4" />
+              Cerrar expediente
+            </ActionButton>
+          </div>
+
+          {!puedeCerrar && !estaCerrado ? (
+            <p className="mt-4 text-sm text-slate-400">
+              Para cerrar el expediente debe estar pagado y con factura emitida.
+            </p>
+          ) : null}
+        </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DetailItem label="Cliente" value={expediente.clienteNombre} />
@@ -205,7 +389,7 @@ export default function ExpedienteDetalleINMOVALPage() {
           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
-                <ClipboardList className="h-5 w-5" />
+                <ReceiptText className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
