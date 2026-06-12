@@ -8,15 +8,20 @@ import {
   XCircle,
 } from 'lucide-react';
 import { EstadoCotizacion } from '@/shared/types/inmovalCore';
-import { getCotizacionesIndiceINMOVAL, upsertCotizacionINMOVAL } from './cotizacionIndexStorage';
+import {
+  getCotizacionesIndiceINMOVAL,
+  upsertCotizacionINMOVAL,
+} from './cotizacionIndexStorage';
 import { CotizacionINMOVAL } from './cotizacionTypes';
-import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
 import { CotizacionEstadoBadge } from './components/CotizacionEstadoBadge';
 import { CotizacionResumenCard } from './components/CotizacionResumenCard';
 import {
   cotizacionCoincideConBusqueda,
   formatMoneyCotizacion,
 } from './cotizacionUiUtils';
+import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
+import { crearExpedienteDeCotizacionAprobada } from './cotizacionExpedienteBridge';
+import { nowISO } from '@/shared/utils/dateUtils';
 
 type CotizacionFiltroEstado = EstadoCotizacion | 'todos';
 
@@ -29,11 +34,56 @@ export default function CotizacionesINMOVALPage() {
     setCotizaciones(getCotizacionesIndiceINMOVAL());
   }, []);
 
+  function refrescarCotizaciones() {
+    setCotizaciones(getCotizacionesIndiceINMOVAL());
+  }
+
   function handleCrearCotizacionDemo() {
     const nuevaCotizacion = crearCotizacionDemoINMOVAL();
 
     upsertCotizacionINMOVAL(nuevaCotizacion);
-    setCotizaciones(getCotizacionesIndiceINMOVAL());
+    refrescarCotizaciones();
+  }
+
+  function handleCambiarEstadoCotizacion(
+    cotizacion: CotizacionINMOVAL,
+    nuevoEstado: EstadoCotizacion
+  ) {
+    const ahora = nowISO();
+
+    const actualizada: CotizacionINMOVAL = {
+      ...cotizacion,
+      estado: nuevoEstado,
+      enviadaEn:
+        nuevoEstado === 'enviada'
+          ? ahora
+          : cotizacion.enviadaEn,
+      aprobadaEn:
+        nuevoEstado === 'aprobada'
+          ? ahora
+          : cotizacion.aprobadaEn,
+      rechazadaEn:
+        nuevoEstado === 'rechazada'
+          ? ahora
+          : cotizacion.rechazadaEn,
+      actualizadoEn: ahora,
+    };
+
+    upsertCotizacionINMOVAL(actualizada);
+    refrescarCotizaciones();
+  }
+
+  function handleCrearExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
+    const expediente = crearExpedienteDeCotizacionAprobada(cotizacion);
+
+    const actualizada: CotizacionINMOVAL = {
+      ...cotizacion,
+      expedienteId: expediente.id,
+      actualizadoEn: nowISO(),
+    };
+
+    upsertCotizacionINMOVAL(actualizada);
+    refrescarCotizaciones();
   }
 
   const cotizacionesFiltradas = useMemo(() => {
@@ -82,8 +132,7 @@ export default function CotizacionesINMOVALPage() {
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
                 Vista administrativa para controlar cotizaciones, estados,
-                montos, clientes, vencimientos y relación futura con expedientes.
-                Esta pantalla usa el índice local de cotizaciones de Plataforma INMOVAL.
+                montos, clientes, vencimientos y conversión a expediente.
               </p>
             </div>
 
@@ -175,8 +224,7 @@ export default function CotizacionesINMOVALPage() {
                 No hay cotizaciones en el índice de Plataforma INMOVAL
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-                Esta pantalla ya está preparada. En los siguientes bloques vamos
-                a conectar la creación de cotizaciones y su conversión a expediente.
+                Creá una cotización demo para probar el flujo administrativo.
               </p>
             </div>
           ) : (
@@ -199,11 +247,11 @@ export default function CotizacionesINMOVALPage() {
                     <th className="px-5 py-4 text-left font-medium text-slate-400">
                       Fecha
                     </th>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Vence
-                    </th>
                     <th className="px-5 py-4 text-right font-medium text-slate-400">
                       Total
+                    </th>
+                    <th className="px-5 py-4 text-right font-medium text-slate-400">
+                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -217,7 +265,7 @@ export default function CotizacionesINMOVALPage() {
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
                           {cotizacion.expedienteId
-                            ? `Expediente: ${cotizacion.expedienteId}`
+                            ? `Expediente creado: ${cotizacion.expedienteId}`
                             : 'Sin expediente asociado'}
                         </p>
                       </td>
@@ -233,11 +281,69 @@ export default function CotizacionesINMOVALPage() {
                       <td className="px-5 py-4 text-slate-300">
                         {cotizacion.fecha}
                       </td>
-                      <td className="px-5 py-4 text-slate-300">
-                        {cotizacion.fechaVencimiento || '—'}
-                      </td>
                       <td className="px-5 py-4 text-right font-medium text-slate-100">
                         {formatMoneyCotizacion(cotizacion.total, cotizacion.moneda)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {cotizacion.estado === 'borrador' ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCambiarEstadoCotizacion(
+                                  cotizacion,
+                                  'enviada'
+                                )
+                              }
+                              className="rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
+                            >
+                              Enviar
+                            </button>
+                          ) : null}
+
+                          {cotizacion.estado !== 'aprobada' ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCambiarEstadoCotizacion(
+                                  cotizacion,
+                                  'aprobada'
+                                )
+                              }
+                              className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
+                            >
+                              Aprobar
+                            </button>
+                          ) : null}
+
+                          {cotizacion.estado !== 'rechazada' ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCambiarEstadoCotizacion(
+                                  cotizacion,
+                                  'rechazada'
+                                )
+                              }
+                              className="rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-medium text-rose-100 hover:bg-rose-400/20"
+                            >
+                              Rechazar
+                            </button>
+                          ) : null}
+
+                          {cotizacion.estado === 'aprobada' &&
+                          !cotizacion.expedienteId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCrearExpedienteDesdeCotizacion(cotizacion)
+                              }
+                              className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-100 hover:bg-amber-400/20"
+                            >
+                              Crear expediente
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
