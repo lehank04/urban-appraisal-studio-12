@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FilePlus2,
   FileText,
+  Image,
   Database,
   Gauge,
   Home,
@@ -104,6 +105,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/avaluos/demo/comparables',
     icon: Database,
     description: 'Selección técnica dentro del avalúo',
+    group: 'operacion',
+  },
+  {
+    label: 'Anexos testigos web',
+    to: '/avaluos/demo/anexos-testigos',
+    icon: Image,
+    description: 'Vista imprimible de respaldos web',
     group: 'operacion',
   },
   {

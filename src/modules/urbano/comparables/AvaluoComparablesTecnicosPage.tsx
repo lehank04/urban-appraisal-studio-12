@@ -170,6 +170,14 @@ export default function AvaluoComparablesTecnicosPage() {
                 <Database className="h-4 w-4" />
                 Base de comparables
               </Link>
+
+              <Link
+                to={`/avaluos/${avaluoId}/anexos-testigos`}
+                className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+              >
+                <FileImage className="h-4 w-4" />
+                Anexos testigos
+              </Link>
             </div>
           </div>
         </header>
