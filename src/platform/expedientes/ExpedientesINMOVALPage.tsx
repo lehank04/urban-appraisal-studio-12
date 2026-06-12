@@ -3,6 +3,7 @@ import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Archive, ClipboardList, DollarSign, FileText, Search,
   Settings,
+  Upload,
   PlusCircle, ArrowLeft, Boxes } from 'lucide-react';
 import { getExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
 import { sincronizarAvaluosLegacyConIndicePlataforma } from './legacyAvaluoIndexBridge';
@@ -112,6 +113,14 @@ export default function ExpedientesINMOVALPage() {
               >
                 <Boxes className="h-4 w-4" />
                 Módulos
+              </Link>
+
+              <Link
+                to="/expedientes-plataforma/importar"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+              >
+                <Upload className="h-4 w-4" />
+                Importar .imv
               </Link>
 
               <Link

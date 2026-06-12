@@ -12,6 +12,7 @@ import {
   Home,
   Menu,
   Settings,
+  Upload,
   SlidersHorizontal,
   Users,
   UserSquare2,
@@ -53,6 +54,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/expedientes-plataforma/nuevo',
     icon: FilePlus2,
     description: 'Crear expediente desde Plataforma',
+    group: 'plataforma',
+  },
+  {
+    label: 'Importar expediente .imv',
+    to: '/expedientes-plataforma/importar',
+    icon: Upload,
+    description: 'Reconstruir expediente desde archivo .imv',
     group: 'plataforma',
   },
   {

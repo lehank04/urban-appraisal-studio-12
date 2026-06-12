@@ -1,5 +1,6 @@
 import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
 import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
 ﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
