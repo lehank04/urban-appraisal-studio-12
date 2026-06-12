@@ -931,6 +931,15 @@ export default function ComparablesINMOVALPage() {
                         <div className="flex flex-wrap justify-end gap-2">
                           <button
                             type="button"
+                            onClick={() => handleEditarComparable(comparable)}
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
+                          >
+                            <PencilLine className="h-3 w-3" />
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => handleExportar(comparable)}
                             className="inline-flex items-center gap-1 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
                           >
