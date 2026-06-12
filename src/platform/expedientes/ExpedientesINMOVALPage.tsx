@@ -11,8 +11,8 @@ import { getExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
 import {
   ExpedienteIndiceFiltrosINMOVAL,
   ExpedienteIndiceINMOVAL,
-  filtrarExpedientesIndiceINMOVAL,
 } from './expedienteIndexTypes';
+import { filtrarExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
 import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
 import { ExpedienteResumenCard } from './components/ExpedienteResumenCard';
 import {

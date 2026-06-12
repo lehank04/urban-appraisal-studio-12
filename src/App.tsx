@@ -1,3 +1,4 @@
+import ExpedientesINMOVALPage from '@/platform/expedientes/ExpedientesINMOVALPage';
 ﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -35,6 +36,7 @@ const App = () => (
 
           <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
           <Route path="*" element={<NotFound />} />
+                  <Route path="/expedientes-plataforma" element={<ExpedientesINMOVALPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
