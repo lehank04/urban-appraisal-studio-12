@@ -14,17 +14,32 @@ export type RevisionComparableAvaluoINMOVAL =
   | 'Rev03'
   | 'Final';
 
+export type TipoMercadoAvaluoINMOVAL =
+  | 'construido'
+  | 'terreno';
+
+export type OrigenComparableAvaluoINMOVAL =
+  | 'manual'
+  | 'base_datos';
+
 export type ComparableAvaluoINMOVAL = {
   id: string;
   avaluoId: string;
   comparableId: string;
   comparableCodigo: string;
+
+  tipoMercado: TipoMercadoAvaluoINMOVAL;
+  origen: OrigenComparableAvaluoINMOVAL;
+
   estado: EstadoComparableAvaluoINMOVAL;
   revision: RevisionComparableAvaluoINMOVAL;
+
   snapshot: ComparableIndiceINMOVAL;
+
   justificacion?: string;
   ajusteResumen?: string;
   pesoTecnico?: number;
+
   congeladoEn?: string;
   creadoEn: string;
   actualizadoEn: string;
@@ -70,13 +85,27 @@ export function getAvaluoComparablesINMOVAL(avaluoId: string) {
   );
 }
 
+export function getAvaluoComparablesPorMercadoINMOVAL(
+  avaluoId: string,
+  tipoMercado: TipoMercadoAvaluoINMOVAL
+) {
+  return getAvaluoComparablesINMOVAL(avaluoId).filter(
+    (item) => item.tipoMercado === tipoMercado
+  );
+}
+
 export function addComparableToAvaluoINMOVAL(
   avaluoId: string,
-  comparable: ComparableIndiceINMOVAL
+  comparable: ComparableIndiceINMOVAL,
+  tipoMercado: TipoMercadoAvaluoINMOVAL,
+  origen: OrigenComparableAvaluoINMOVAL
 ) {
   const all = getAllAvaluoComparablesINMOVAL();
   const existente = all.find(
-    (item) => item.avaluoId === avaluoId && item.comparableId === comparable.id
+    (item) =>
+      item.avaluoId === avaluoId &&
+      item.comparableId === comparable.id &&
+      item.tipoMercado === tipoMercado
   );
 
   const ahora = nowISO();
@@ -84,6 +113,8 @@ export function addComparableToAvaluoINMOVAL(
   if (existente) {
     const actualizado: ComparableAvaluoINMOVAL = {
       ...existente,
+      tipoMercado,
+      origen,
       estado: 'preseleccionado',
       snapshot: comparable,
       actualizadoEn: ahora,
@@ -101,6 +132,8 @@ export function addComparableToAvaluoINMOVAL(
     avaluoId,
     comparableId: comparable.id,
     comparableCodigo: comparable.codigo,
+    tipoMercado,
+    origen,
     estado: 'preseleccionado',
     revision: 'Rev00',
     snapshot: comparable,
@@ -143,5 +176,25 @@ export function congelarComparableAvaluoINMOVAL(id: string) {
 export function removeComparableAvaluoINMOVAL(id: string) {
   saveAllAvaluoComparablesINMOVAL(
     getAllAvaluoComparablesINMOVAL().filter((item) => item.id !== id)
+  );
+}
+
+export function getComparablesParaSustentosINMOVAL(avaluoId: string) {
+  return getAvaluoComparablesINMOVAL(avaluoId).filter(
+    (item) => item.estado === 'usado' || item.estado === 'congelado'
+  );
+}
+
+
+export function addComparableManualToAvaluoINMOVAL(
+  avaluoId: string,
+  tipoMercado: TipoMercadoAvaluoINMOVAL,
+  comparable: ComparableIndiceINMOVAL
+) {
+  return addComparableToAvaluoINMOVAL(
+    avaluoId,
+    comparable,
+    tipoMercado,
+    'manual'
   );
 }

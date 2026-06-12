@@ -6,6 +6,8 @@ import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPag
 import PrepararModuloTecnicoINMOVALPage from '@/platform/expedientes/PrepararModuloTecnicoINMOVALPage';
 import AvaluoComparablesTecnicosPage from '@/modules/urbano/comparables/AvaluoComparablesTecnicosPage';
 import AvaluoAnexosTestigosPage from '@/modules/urbano/reportes/AvaluoAnexosTestigosPage';
+import AvaluoMercadoComparablesPage from '@/modules/urbano/mercado/AvaluoMercadoComparablesPage';
+import AvaluoMemoriaCalculoPage from '@/modules/urbano/memoria/AvaluoMemoriaCalculoPage';
 ﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -58,7 +60,10 @@ const App = () => (
 
             <Route path="/avaluos" element={<AvaluosList />} />
             <Route path="/avaluos/nuevo" element={<NuevoExpediente />} />
+            <Route path="/avaluos/:id/memoria-calculo" element={<AvaluoMemoriaCalculoPage />} />
             <Route path="/avaluos/:id" element={<AvaluoWizard />} />
+            <Route path="/avaluos/:id/mercado-construido" element={<AvaluoMercadoComparablesPage tipoMercado="construido" />} />
+            <Route path="/avaluos/:id/mercado-terreno" element={<AvaluoMercadoComparablesPage tipoMercado="terreno" />} />
             <Route path="/avaluos/:id/comparables" element={<AvaluoComparablesTecnicosPage />} />
             <Route path="/avaluos/:id/anexos-testigos" element={<AvaluoAnexosTestigosPage />} />
             <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
