@@ -10,6 +10,7 @@ import {
   Gauge,
   Home,
   Menu,
+  Settings,
   Users,
   UserSquare2,
   X,
@@ -57,6 +58,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/modulos',
     icon: Boxes,
     description: 'Cartuchos técnicos disponibles',
+    group: 'plataforma',
+  },
+  {
+    label: 'Configuración',
+    to: '/configuracion-plataforma',
+    icon: Settings,
+    description: 'Servidor, Drive y preferencias',
     group: 'plataforma',
   },
   {
