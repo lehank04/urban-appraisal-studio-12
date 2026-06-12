@@ -249,8 +249,7 @@ export default function ExpedienteDetalleINMOVALPage() {
     configExpedientes
   );
 
-  const puedeCerrar =
-    expediente.estadoPago === 'pagado' && expediente.facturaEmitida;
+  const puedeCerrar = puedeCerrarExpediente;
 
   const estaCerrado = expediente.estado === 'cerrado';
 
@@ -446,7 +445,7 @@ export default function ExpedienteDetalleINMOVALPage() {
 
             <ActionButton
               tone="rose"
-              disabled={estaCerrado || !puedeCerrar}
+              disabled={estaCerrado || !puedeCerrarExpediente}
               onClick={() =>
                 guardarCambios(
                   {
@@ -466,9 +465,9 @@ export default function ExpedienteDetalleINMOVALPage() {
             </ActionButton>
           </div>
 
-          {!puedeCerrar && !estaCerrado ? (
+          {!puedeCerrarExpediente && !estaCerrado ? (
             <p className="mt-4 text-sm text-slate-400">
-              Para cerrar el expediente debe estar pagado y con factura emitida.
+              {getMensajeReglaCierreExpediente(configExpedientes)}
             </p>
           ) : null}
         </section>
@@ -712,7 +711,7 @@ export default function ExpedienteDetalleINMOVALPage() {
               <DetailItem label="Número factura" value={expediente.numeroFactura} />
               <DetailItem
                 label="Puede cerrarse"
-                value={puedeCerrar ? 'Sí' : 'No'}
+                value={puedeCerrarExpediente ? 'Sí' : 'No'}
               />
             </div>
           </article>
