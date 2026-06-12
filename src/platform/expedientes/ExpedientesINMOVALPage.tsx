@@ -1,12 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import {
-  AlertTriangle,
-  Archive,
-  ClipboardList,
-  DollarSign,
-  FileText,
-  Search,
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, Archive, ClipboardList, DollarSign, FileText, Search, ArrowLeft, Boxes } from 'lucide-react';
 import { getExpedientesIndiceINMOVAL } from './expedienteIndexStorage';
 import { sincronizarAvaluosLegacyConIndicePlataforma } from './legacyAvaluoIndexBridge';
 import {
@@ -91,7 +85,31 @@ export default function ExpedientesINMOVALPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver al Dashboard
+              </Link>
+
+              <Link
+                to="/cotizaciones"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+              >
+                <FileText className="h-4 w-4" />
+                Cotizaciones
+              </Link>
+
+              <Link
+                to="/modulos"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+              >
+                <Boxes className="h-4 w-4" />
+                Módulos
+              </Link>
+
               <button
                 type="button"
                 onClick={handleSincronizarLegacy}
@@ -246,6 +264,9 @@ export default function ExpedientesINMOVALPage() {
                     <th className="px-5 py-4 text-right font-medium text-slate-400">
                       Saldo
                     </th>
+                    <th className="px-5 py-4 text-right font-medium text-slate-400">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
 
@@ -286,6 +307,14 @@ export default function ExpedientesINMOVALPage() {
                       </td>
                       <td className="px-5 py-4 text-right font-medium text-slate-100">
                         {formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <Link
+                          to={`/expedientes-plataforma/${expediente.id}`}
+                          className="inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
+                        >
+                          Abrir expediente
+                        </Link>
                       </td>
                     </tr>
                   ))}
