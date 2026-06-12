@@ -100,6 +100,13 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
+    label: 'Comparables técnicos',
+    to: '/avaluos/demo/comparables',
+    icon: Database,
+    description: 'Selección técnica dentro del avalúo',
+    group: 'operacion',
+  },
+  {
     label: 'Configuración',
     to: '/configuracion-plataforma',
     icon: Settings,
