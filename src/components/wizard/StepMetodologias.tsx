@@ -30,6 +30,126 @@ import {
 import { Plus, Trash2 , Database } from 'lucide-react';
 
 // Toggle visual reutilizable para cada memoria
+
+function inmovalTextoComparable(comparable: ComparableIndiceINMOVAL) {
+  return [
+    comparable.codigo,
+    comparable.titulo,
+    comparable.tipo,
+    comparable.aplicaMercado,
+    comparable.ubicacion,
+    comparable.barrio,
+    comparable.municipio,
+    comparable.departamento,
+    comparable.fuente,
+    comparable.observaciones,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function inmovalElegirComparableBase(tipoMercado: "construido" | "terreno") {
+  const termino = window.prompt(
+    tipoMercado === "construido"
+      ? "Buscar comparable CONSTRUIDO por municipio, departamento, ubicación, zona o palabra clave:"
+      : "Buscar comparable de TERRENO por municipio, departamento, ubicación, zona o palabra clave:",
+    ""
+  );
+
+  if (termino === null) return null;
+
+  const q = termino.trim().toLowerCase();
+
+  const candidatos = getComparablesIndiceINMOVAL()
+    .filter((c) => {
+      const aplica = c.aplicaMercado || "ambos";
+      if (tipoMercado === "construido") {
+        return aplica === "construido" || aplica === "ambos";
+      }
+      return aplica === "terreno" || aplica === "ambos";
+    })
+    .filter((c) => {
+      if (!q) return true;
+      return inmovalTextoComparable(c).includes(q);
+    })
+    .slice(0, 10);
+
+  if (candidatos.length === 0) {
+    window.alert("No encontré comparables en la base con ese filtro.");
+    return null;
+  }
+
+  const lista = candidatos
+    .map((c, i) => {
+      return [
+        String(i + 1) + ".",
+        c.codigo,
+        "-",
+        c.titulo,
+        "-",
+        c.ubicacion,
+        "-",
+        c.moneda,
+        Number(c.precio || 0).toLocaleString("en-US"),
+      ].join(" ");
+    })
+    .join("\n");
+
+  const seleccion = window.prompt("Elegí el número del comparable:\n\n" + lista, "1");
+
+  if (seleccion === null) return null;
+
+  const index = Number(seleccion) - 1;
+
+  if (!Number.isInteger(index) || index < 0 || index >= candidatos.length) {
+    window.alert("Selección inválida.");
+    return null;
+  }
+
+  return candidatos[index];
+}
+
+function inmovalComparableBaseAInmueble(comparable: ComparableIndiceINMOVAL) {
+  return {
+    ...emptyComparableInmueble(),
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : "comp-inm-" + Date.now(),
+    paginaWeb: comparable.fuente || "",
+    enlace: comparable.url || "",
+    contacto: comparable.contacto || "",
+    idAnuncio: comparable.codigo,
+    direccion: comparable.ubicacion,
+    precioVentaUSD: Number(comparable.precio || 0),
+    areaConstruccionM2: Number(comparable.areaConstruccion || 0),
+    areaTerrenoM2: Number(comparable.areaTerreno || 0),
+    fechaPublicacion: comparable.fecha || "",
+    diasAntiguedad: 0,
+  };
+}
+
+function inmovalComparableBaseATerreno(comparable: ComparableIndiceINMOVAL) {
+  return {
+    ...emptyComparableTerreno(),
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : "comp-ter-" + Date.now(),
+    paginaWeb: comparable.fuente || "",
+    enlace: comparable.url || "",
+    contacto: comparable.contacto || "",
+    idAnuncio: comparable.codigo,
+    direccion: comparable.ubicacion,
+    precioVentaUSD: Number(comparable.precio || 0),
+    areaTerrenoVr2: Number(comparable.areaTerreno || 0),
+    fechaPublicacion: comparable.fecha || "",
+    diasAntiguedad: 0,
+  };
+}
+
+
 function ApplyToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border bg-muted/20 mb-3">
@@ -230,9 +350,12 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Terreno</div>
           <div className="flex flex-wrap gap-2">
             {terrenos.map((t) => (
-              <Button key={t.id} size="sm"
+              <Button
+                key={t.id}
+                size="sm"
                 variant={t.id === currentTerrenoId ? 'default' : 'outline'}
-                onClick={() => setCurrentTerrenoId(t.id)}>
+                onClick={() => setCurrentTerrenoId(t.id)}
+              >
                 {t.titulo || 'Terreno'}
               </Button>
             ))}
@@ -338,6 +461,28 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
               <Button size="sm" onClick={() => setMT({ comparablesInmueble: [...mt.comparablesInmueble, emptyComparableInmueble()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
               </Button>
+
+              <div className="flex flex-wrap gap-2">
+<Button
+                size="sm"
+                variant="outline"
+                title="Base de datos inmueble construido"
+                onClick={() => {
+                  const comparable = inmovalElegirComparableBase("construido");
+
+                  if (!comparable) return;
+
+                  setMT({
+                    comparablesInmueble: [
+                      ...mt.comparablesInmueble,
+                      inmovalComparableBaseAInmueble(comparable),
+                    ],
+                  });
+                }}
+              >
+                <Database className="h-4 w-4 mr-1" />
+                Base de datos
+              </Button>
             </div>
             <div className="space-y-3">
               {mt.comparablesInmueble.map((c, idx) => (
@@ -383,6 +528,7 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                 </div>
               </div>
             )}
+            </div>
             <TextArea label="Notas del enfoque de mercado (inmueble)" value={mt.notasMercadoInmueble} onChange={(v) => setMT({ notasMercadoInmueble: v })} rows={2} />
           </Card>
         </TabsContent>
@@ -446,6 +592,27 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
               <div className="font-semibold">Comparables de terreno ({mt.comparablesTerreno.length})</div>
               <Button size="sm" onClick={() => setMT({ comparablesTerreno: [...mt.comparablesTerreno, emptyComparableTerreno()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                title="Base de datos terreno"
+                onClick={() => {
+                  const comparable = inmovalElegirComparableBase("terreno");
+
+                  if (!comparable) return;
+
+                  setMT({
+                    comparablesTerreno: [
+                      ...mt.comparablesTerreno,
+                      inmovalComparableBaseATerreno(comparable),
+                    ],
+                  });
+                }}
+              >
+                <Database className="h-4 w-4 mr-1" />
+                Base de datos
               </Button>
             </div>
             <div className="space-y-3">
