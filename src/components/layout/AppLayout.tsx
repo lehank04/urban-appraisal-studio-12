@@ -45,7 +45,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Expedientes Plataforma',
+    label: 'Expedientes',
     to: '/expedientes-plataforma',
     icon: ClipboardList,
     description: 'Control administrativo de expedientes',
@@ -73,7 +73,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Cotizaciones',
+    label: "__HIDDEN__Cotizaciones",
     to: '/cotizaciones',
     icon: FileText,
     description: 'Cotizaciones, aprobación y flujo a expediente',
@@ -94,7 +94,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Base de Comparables',
+    label: 'Base de comparables',
     to: '/comparables',
     icon: Database,
     description: 'Comparables locales y archivos .imc',
@@ -108,7 +108,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Expedientes técnicos',
+    label: "__HIDDEN__Expedientes técnicos",
     to: '/avaluos',
     icon: Building2,
     description: 'Lista técnica actual de avalúos',
@@ -268,7 +268,7 @@ export function AppLayout() {
                           </p>
 
                           <div className="grid gap-2">
-                            {groupedItems[group].map((item) => {
+                            {groupedItems[group].filter((item) => !item.label.startsWith('__HIDDEN__')).map((item) => {
                               const Icon = item.icon;
 
                               return (
