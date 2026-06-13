@@ -452,8 +452,12 @@ export default function NuevoExpedienteINMOVALPage() {
     if (!cotizacionPrecarga || precargaAplicada) return;
 
     // Precargar datos desde cotización
-    setClienteModo(cotizacionPrecarga.clienteId ? 'base' : 'nuevo');
-    setClienteId(cotizacionPrecarga.clienteId || '');
+    const clienteExisteEnBase =
+      cotizacionPrecarga.clienteId &&
+      clientes.some((cliente) => cliente.id === cotizacionPrecarga.clienteId);
+
+    setClienteModo(clienteExisteEnBase ? 'base' : 'nuevo');
+    setClienteId(clienteExisteEnBase ? cotizacionPrecarga.clienteId || '' : '');
     setClienteNombre(cotizacionPrecarga.clienteNombre || '');
     setClienteEmail(cotizacionPrecarga.clienteEmail || '');
     setClienteTelefono(cotizacionPrecarga.clienteTelefono || '');
@@ -512,7 +516,7 @@ export default function NuevoExpedienteINMOVALPage() {
     );
 
     setPrecargaAplicada(true);
-  }, [cotizacionPrecarga, precargaAplicada]);
+  }, [cotizacionPrecarga, precargaAplicada, clientes]);
 
   function handleCrearExpediente() {
     const costo = Number(costoServicio || 0);
