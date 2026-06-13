@@ -1276,18 +1276,7 @@ export default function CotizacionesINMOVALPage() {
                       <td className="px-5 py-4 text-right">
                         <button
                           type="button"
-                          onMouseEnter={(event) => {
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            setMenuCotizacionId(cotizacion.id);
-                            setMenuPosition(getMenuFloatingPosition(rect));
-                          }}
-                          onClick={(event) => {
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            setMenuCotizacionId((actual) =>
-                              actual === cotizacion.id ? null : cotizacion.id
-                            );
-                            setMenuPosition(getMenuFloatingPosition(rect));
-                          }}
+                          onClick={() => setMenuCotizacionId(cotizacion.id)}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
                           aria-label="Acciones de cotización"
                         >
@@ -1303,124 +1292,148 @@ export default function CotizacionesINMOVALPage() {
         </section>
       </div>
 
-      {cotizacionMenuActiva && menuPosition ? (
-        <div
-          className="fixed z-50 max-h-[calc(100vh-32px)] w-72 overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-          }}
-          onMouseEnter={() => setMenuCotizacionId(cotizacionMenuActiva.id)}
-          onMouseLeave={() => {
-            setMenuCotizacionId(null);
-            setMenuPosition(null);
-          }}
-        >
-          {/* Panel flotante de acciones de cotización */}
-          <div className="border-b border-slate-800 px-3 pb-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Acciones
-            </p>
-            <p className="mt-1 truncate text-sm font-semibold text-slate-100">
-              {cotizacionMenuActiva.numero}
-            </p>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              {cotizacionMenuActiva.clienteNombre}
-            </p>
-          </div>
+      {cotizacionMenuActiva ? (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Cerrar acciones"
+            className="absolute inset-0 bg-black/30"
+            onClick={() => {
+              setMenuCotizacionId(null);
+              setMenuPosition(null);
+            }}
+          />
 
-          <div className="mt-2 grid gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                cargarCotizacionParaEditar(cotizacionMenuActiva);
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <FileText className="h-4 w-4" />
-              Editar cotización
-            </button>
+          <aside className="absolute bottom-0 right-0 top-0 w-full max-w-md overflow-y-auto border-l border-slate-800 bg-slate-950 p-5 shadow-2xl shadow-black/70">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                  Acciones de cotización
+                </p>
+                <p className="mt-2 text-base font-semibold text-slate-100">
+                  {cotizacionMenuActiva.numero}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {cotizacionMenuActiva.clienteNombre}
+                </p>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                crearRevisionCotizacion(cotizacionMenuActiva);
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <FilePlus2 className="h-4 w-4" />
-              Crear nueva revisión
-            </button>
-
-            <div className="my-2 border-t border-slate-800" />
-
-            {cotizacionMenuActiva.estado === 'borrador' ? (
               <button
                 type="button"
                 onClick={() => {
-                  actualizarCotizacion(cotizacionMenuActiva, { estado: 'enviada' });
                   setMenuCotizacionId(null);
                   setMenuPosition(null);
                 }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
               >
-                <Send className="h-4 w-4" />
-                Marcar como enviada
+                Cerrar
               </button>
-            ) : null}
+            </div>
 
-            {cotizacionMenuActiva.estado === 'enviada' ? (
+            <div className="mt-5 grid gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+                  cargarCotizacionParaEditar(cotizacionMenuActiva);
                   setMenuCotizacionId(null);
                   setMenuPosition(null);
                 }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                Aprobar
+                <FileText className="h-4 w-4" />
+                Editar cotización
               </button>
-            ) : null}
 
-            {cotizacionMenuActiva.estado === 'aprobada' ? (
               <button
                 type="button"
                 onClick={() => {
-                  convertirEnExpediente(cotizacionMenuActiva);
+                  crearRevisionCotizacion(cotizacionMenuActiva);
                   setMenuCotizacionId(null);
                   setMenuPosition(null);
                 }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
               >
-                <ClipboardList className="h-4 w-4" />
-                Crear expediente
+                <FilePlus2 className="h-4 w-4" />
+                Crear nueva revisión
               </button>
-            ) : null}
 
-            <div className="my-2 border-t border-slate-800" />
+              <div className="my-3 border-t border-slate-800" />
 
-            <button
-              type="button"
-              onClick={() => {
-                eliminarCotizacion(cotizacionMenuActiva);
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </button>
-          </div>
+              {cotizacionMenuActiva.estado === 'borrador' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    actualizarCotizacion(cotizacionMenuActiva, { estado: 'enviada' });
+                    setMenuCotizacionId(null);
+                    setMenuPosition(null);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+                >
+                  <Send className="h-4 w-4" />
+                  Marcar como enviada
+                </button>
+              ) : null}
+
+              {cotizacionMenuActiva.estado === 'enviada' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+                    setMenuCotizacionId(null);
+                    setMenuPosition(null);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-left text-sm text-emerald-100 hover:bg-emerald-400/20"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Aprobar
+                </button>
+              ) : null}
+
+              {cotizacionMenuActiva.estado === 'aprobada' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    convertirEnExpediente(cotizacionMenuActiva);
+                    setMenuCotizacionId(null);
+                    setMenuPosition(null);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left text-sm text-sky-100 hover:bg-sky-400/20"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Crear expediente
+                </button>
+              ) : null}
+
+              <div className="my-3 border-t border-slate-800" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  eliminarCotizacion(cotizacionMenuActiva);
+                  setMenuCotizacionId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-left text-sm text-rose-100 hover:bg-rose-400/20"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Estado actual
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-100">
+                {estadoLabel(cotizacionMenuActiva.estado)}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Las acciones de avance cambian según el estado de la cotización.
+              </p>
+            </div>
+          </aside>
         </div>
       ) : null}
-
     </div>
   );
 }
