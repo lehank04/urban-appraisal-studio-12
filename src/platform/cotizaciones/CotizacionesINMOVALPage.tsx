@@ -386,14 +386,17 @@ function estadoClass(estado: EstadoCotizacionINMOVAL) {
 
 function getMenuFloatingPosition(rect: DOMRect) {
   const menuWidth = 320;
-  const menuHeight = 360;
+  const menuHeight = 245;
   const margin = 16;
+  const gap = 8;
 
-  const hasSpaceBelow = rect.bottom + menuHeight + margin < window.innerHeight;
+  const preferredTop = rect.bottom + gap;
+  const maxTop = window.innerHeight - menuHeight - margin;
 
-  const top = hasSpaceBelow
-    ? rect.bottom + 8
-    : Math.max(margin, rect.top - menuHeight - 8);
+  const top = Math.max(
+    margin,
+    Math.min(preferredTop, maxTop)
+  );
 
   const left = Math.min(
     Math.max(margin, rect.right - menuWidth),
@@ -1302,7 +1305,7 @@ export default function CotizacionesINMOVALPage() {
 
       {cotizacionMenuActiva && menuPosition ? (
         <div
-          className="fixed z-50 max-h-[calc(100vh-32px)] w-80 overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
+          className="fixed z-50 max-h-[calc(100vh-32px)] w-72 overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
           style={{
             top: menuPosition.top,
             left: menuPosition.left,
