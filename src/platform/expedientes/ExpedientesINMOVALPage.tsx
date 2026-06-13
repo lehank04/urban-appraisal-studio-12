@@ -74,7 +74,7 @@ export default function ExpedientesINMOVALPage() {
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+        <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
@@ -85,7 +85,7 @@ export default function ExpedientesINMOVALPage() {
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
                 Vista operativa para controlar expedientes, estados,
-                prioridades, pagos, facturación, revisiones y módulos técnicos.
+                prioridades, pagos, facturación, revisiones y avalúos técnicos.
                 Esta pantalla usa el índice local de INMOVAL.
               </p>
             </div>
@@ -109,32 +109,32 @@ export default function ExpedientesINMOVALPage() {
           <ExpedienteResumenCard
             titulo="Abiertos"
             valor={resumen.abiertos}
-            descripcion="En proceso operativo"
+            descripcion="Expedientes en curso"
             icono={<ClipboardList className="h-5 w-5" />}
           />
           <ExpedienteResumenCard
             titulo="Urgentes"
             valor={resumen.urgentes}
-            descripcion="Prioridad crítica"
+            descripcion="Prioridad urgente"
             icono={<AlertTriangle className="h-5 w-5" />}
           />
           <ExpedienteResumenCard
             titulo="Saldo"
             valor={formatMoneyINMOVAL(resumen.saldoPendiente, 'US$')}
-            descripcion="Pendiente estimado"
+            descripcion="Saldo pendiente"
             icono={<DollarSign className="h-5 w-5" />}
           />
         </section>
 
         {/* Acciones principales de expedientes */}
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/20">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 Acciones
               </p>
               <p className="mt-1 text-sm text-slate-400">
-                Crear o importar expedientes para iniciar el flujo operativo.
+                Acciones principales para iniciar o reconstruir expedientes.
               </p>
             </div>
 
@@ -153,7 +153,7 @@ export default function ExpedientesINMOVALPage() {
 
                 <div className="absolute right-0 z-30 mt-2 min-w-56 rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/40">
                   <p className="px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                    Más opciones
+                    Opciones
                   </p>
 
                   <a
@@ -168,7 +168,7 @@ export default function ExpedientesINMOVALPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/20">
           <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -180,7 +180,7 @@ export default function ExpedientesINMOVALPage() {
                     busqueda: event.target.value,
                   }))
                 }
-                placeholder="Buscar por código, cliente, perito o factura..."
+                placeholder="Buscar por código, cliente, ubicación, perito o factura..."
                 className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-sky-400"
               />
             </label>
@@ -195,7 +195,7 @@ export default function ExpedientesINMOVALPage() {
               }
               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
             >
-              <option value="todos">Todos los módulos</option>
+              <option value="todos">Todos los tipos</option>
               <option value="urbano">Urbano</option>
               <option value="rural">Rural</option>
               <option value="maquinaria">Maquinaria</option>
