@@ -38,6 +38,13 @@ type CodigoOption = {
   nombre: string;
 };
 
+type TerminoCondicionCotizacion = {
+  id: string;
+  incluido: boolean;
+  titulo: string;
+  texto: string;
+};
+
 type CotizacionINMOVALLocal = {
   id: string;
   numero: string;
@@ -72,12 +79,50 @@ type CotizacionINMOVALLocal = {
 
 const STORAGE_KEY = 'inmoval_cotizaciones_v1';
 
-const TERMINOS_BASE = `1. La presente cotización corresponde al servicio profesional de avalúo indicado.
-2. El costo no incluye gastos registrales, certificaciones, traslados extraordinarios ni trámites de terceros, salvo que se indique expresamente.
-3. La programación de inspección queda sujeta a confirmación del cliente y disponibilidad del perito.
-4. La entrega estimada se calculará a partir de la inspección realizada y la recepción completa de la documentación necesaria.
-5. La cotización tendrá validez hasta la fecha indicada en este documento.
-6. La aprobación de esta cotización permite iniciar la apertura del expediente correspondiente.`;
+const TERMINOS_BASE: TerminoCondicionCotizacion[] = [
+  {
+    id: 'vigencia-propuesta',
+    incluido: true,
+    titulo: 'VIGENCIA DE LA PROPUESTA',
+    texto:
+      'Esta cotización tiene una validez de quince (15) días calendario. Transcurrido este tiempo, agradeceremos solicitar una actualización de los términos para garantizar la disponibilidad y vigencia de los costos presentados.',
+  },
+  {
+    id: 'compromiso-pago',
+    incluido: true,
+    titulo: 'COMPROMISO DE PAGO',
+    texto:
+      'Para dar inicio formal a las gestiones técnicas, se requiere un anticipo correspondiente al 50% del monto total. El 50% restante se cancelará al momento de la entrega del informe final. Los pagos podrán realizarse mediante transferencia o depósito bancario en las cuentas autorizadas adjuntas a este documento.',
+  },
+  {
+    id: 'alcance-servicios',
+    incluido: true,
+    titulo: 'ALCANCE Y SERVICIOS COMPLEMENTARIOS',
+    texto:
+      'Los honorarios propuestos cubren exclusivamente los servicios detallados en el desglose de esta proforma. En caso de requerir servicios adicionales, modificaciones estructurales al proyecto original o visitas técnicas extra, estas serán evaluadas y presupuestadas de forma independiente para su aprobación previa.',
+  },
+  {
+    id: 'colaboracion-cliente',
+    incluido: true,
+    titulo: 'COLABORACIÓN DEL CLIENTE',
+    texto:
+      'Con el fin de asegurar la calidad y exactitud de los resultados, solicitamos amablemente el apoyo del cliente para proporcionar el acceso seguro al inmueble y la documentación legal o técnica necesaria (escrituras, planos, antecedentes, etc.). La entrega oportuna de estos insumos es clave para el cumplimiento de los cronogramas pactados.',
+  },
+  {
+    id: 'compromiso-entrega',
+    incluido: true,
+    titulo: 'COMPROMISO DE ENTREGA',
+    texto:
+      'Nuestro compromiso es entregar el informe de avalúo en un plazo de dos (02) días hábiles. El conteo de este tiempo iniciará una vez se completen los siguientes tres pasos:\n\n- Confirmación de la recepción del anticipo del 50%.\n- Recepción de la documentación técnica y legal requerida.\n- Realización efectiva de la inspección física del inmueble.',
+  },
+  {
+    id: 'resguardo-informacion',
+    incluido: true,
+    titulo: 'RESGUARDO DE LA INFORMACIÓN',
+    texto:
+      'Toda la documentación, planos y reportes generados son tratados bajo estrictos estándares de confidencialidad para uso exclusivo del cliente o la entidad solicitante. INMOVAL garantiza el manejo ético y el resguardo de su información profesional y personal.',
+  },
+];
 
 const TIPOS_INMUEBLE: CodigoOption[] = [
   { codigo: 'IU', nombre: 'CASA DE HABITACIÓN' },
@@ -176,8 +221,64 @@ function parseTipoInmuebleValue(value: string) {
   };
 }
 
+function normalizeCatalogItem(item: any): CatalogOption | null {
+  const nombre =
+    item?.nombre ||
+    item?.name ||
+    item?.clienteNombre ||
+    item?.razonSocial ||
+    item?.displayName;
+
+  if (!nombre) return null;
+
+  return {
+    id: String(item.id || item.codigo || nombre),
+    nombre: String(nombre),
+    email: item.email || item.correo || item.correoElectronico,
+    telefono: item.telefono || item.phone || item.celular,
+    direccion: item.direccion || item.address,
+  };
+}
+
+function extractClientesFromParsedStorage(parsed: any): CatalogOption[] {
+  const possibleArrays = [
+    parsed,
+    parsed?.clientes,
+    parsed?.items,
+    parsed?.state?.clientes,
+    parsed?.state?.items,
+    parsed?.data?.clientes,
+  ];
+
+  for (const value of possibleArrays) {
+    if (Array.isArray(value)) {
+      const normalized = value
+        .map((item) => normalizeCatalogItem(item))
+        .filter(Boolean) as CatalogOption[];
+
+      if (normalized.length > 0) return normalized;
+    }
+  }
+
+  return [];
+}
+
 function readCatalogOptions(keys: string[]): CatalogOption[] {
   if (typeof window === 'undefined') return [];
+
+  const encontrados: CatalogOption[] = [];
+
+  const pushUnique = (items: CatalogOption[]) => {
+    for (const item of items) {
+      const exists = encontrados.some(
+        (actual) =>
+          actual.id === item.id ||
+          actual.nombre.trim().toLowerCase() === item.nombre.trim().toLowerCase()
+      );
+
+      if (!exists) encontrados.push(item);
+    }
+  };
 
   for (const key of keys) {
     const raw = window.localStorage.getItem(key);
@@ -185,37 +286,27 @@ function readCatalogOptions(keys: string[]): CatalogOption[] {
     if (!raw) continue;
 
     try {
-      const parsed = JSON.parse(raw);
-      const array = Array.isArray(parsed) ? parsed : parsed?.items;
-
-      if (!Array.isArray(array)) continue;
-
-      return array
-        .map((item: any): CatalogOption | null => {
-          const nombre =
-            item.nombre ||
-            item.name ||
-            item.clienteNombre ||
-            item.razonSocial ||
-            item.displayName;
-
-          if (!nombre) return null;
-
-          return {
-            id: String(item.id || item.codigo || nombre),
-            nombre: String(nombre),
-            email: item.email || item.correo || item.correoElectronico,
-            telefono: item.telefono || item.phone || item.celular,
-            direccion: item.direccion || item.address,
-          };
-        })
-        .filter(Boolean) as CatalogOption[];
+      pushUnique(extractClientesFromParsedStorage(JSON.parse(raw)));
     } catch {
       // Ignorar datos inválidos
     }
   }
 
-  return [];
+  // Respaldo: buscar clientes en cualquier storage del app.
+  for (const key of Object.keys(window.localStorage)) {
+    if (!/cliente|clientes|avaluo|inmoval|store|storage/i.test(key)) continue;
+
+    const raw = window.localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      pushUnique(extractClientesFromParsedStorage(JSON.parse(raw)));
+    } catch {
+      // Ignorar datos inválidos
+    }
+  }
+
+  return encontrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
 function getCotizaciones() {
@@ -359,7 +450,9 @@ export default function CotizacionesINMOVALPage() {
   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
-  const [terminosCondiciones, setTerminosCondiciones] = useState(TERMINOS_BASE);
+  const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+    TERMINOS_BASE
+  );
 
   const total = cotizaciones.length;
   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
@@ -391,7 +484,7 @@ export default function CotizacionesINMOVALPage() {
     setMoneda('US$');
     setFechaCotizacion(todayISO());
     setFechaValidez(addDaysISO(todayISO(), 15));
-    setTerminosCondiciones(TERMINOS_BASE);
+    setTerminosItems(TERMINOS_BASE);
   }
 
   function handleClienteBaseChange(id: string) {
@@ -405,6 +498,22 @@ export default function CotizacionesINMOVALPage() {
     setClienteEmail(cliente.email || '');
     setClienteTelefono(cliente.telefono || '');
     setClienteDireccion(cliente.direccion || '');
+  }
+
+  function actualizarTerminoCotizacion(
+    id: string,
+    patch: Partial<TerminoCondicionCotizacion>
+  ) {
+    setTerminosItems((items) =>
+      items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+  }
+
+  function buildTerminosSeleccionados() {
+    return terminosItems
+      .filter((item) => item.incluido)
+      .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+      .join('\n\n');
   }
 
   function handleTipoInmuebleChange(value: string) {
@@ -472,7 +581,7 @@ export default function CotizacionesINMOVALPage() {
       descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
       costoServicio: costo,
       moneda,
-      terminosCondiciones: terminosCondiciones.trim(),
+      terminosCondiciones: buildTerminosSeleccionados(),
 
       fechaCotizacion,
       fechaValidez,
