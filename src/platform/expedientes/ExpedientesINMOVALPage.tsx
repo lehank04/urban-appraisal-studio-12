@@ -78,7 +78,7 @@ export default function ExpedientesINMOVALPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Plataforma INMOVAL
+                INMOVAL
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
                 Expedientes
@@ -86,7 +86,7 @@ export default function ExpedientesINMOVALPage() {
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
                 Vista administrativa para controlar expedientes, estados,
                 prioridades, pagos, facturación, revisiones y módulos técnicos.
-                Esta pantalla usa el índice local de Plataforma INMOVAL.
+                Esta pantalla usa el índice local de INMOVAL.
               </p>
             </div>
 
@@ -261,7 +261,7 @@ export default function ExpedientesINMOVALPage() {
                 <FileText className="h-7 w-7 text-slate-400" />
               </div>
               <h2 className="mt-4 text-lg font-semibold text-slate-100">
-                No hay expedientes en el índice de Plataforma INMOVAL
+                No hay expedientes en el índice de INMOVAL
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
                 Esta pantalla ya está preparada. En los siguientes bloques vamos
