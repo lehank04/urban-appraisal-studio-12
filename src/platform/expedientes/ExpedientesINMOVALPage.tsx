@@ -184,6 +184,7 @@ export default function ExpedientesINMOVALPage() {
   const [tipoModulo, setTipoModulo] = useState<TipoModuloFiltro>('todos');
   const [prioridad, setPrioridad] = useState<PrioridadExpedienteINMOVAL | 'todos'>('todos');
   const [estadoPago, setEstadoPago] = useState<EstadoPagoFiltro>('todos');
+  const [menuExpedienteId, setMenuExpedienteId] = useState<string | null>(null);
 
   const expedientes = useMemo(() => getExpedientesIndiceINMOVAL(), [refreshKey]);
 
@@ -196,6 +197,10 @@ export default function ExpedientesINMOVALPage() {
         estadoPago: estadoPago as any,
       }),
     [expedientes, busqueda, tipoModulo, prioridad, estadoPago]
+  );
+
+  const expedienteMenuActivo = expedientes.find(
+    (item) => item.id === menuExpedienteId
   );
 
   const total = expedientes.length;
@@ -612,82 +617,18 @@ export default function ExpedientesINMOVALPage() {
                       </td>
 
                       <td className="px-5 py-4 text-right">
-                        <div className="group relative inline-flex justify-end">
-                          <button
-                            type="button"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
-                            aria-label="Acciones del expediente"
-                          >
-                            <MoreHorizontal className="h-5 w-5" />
-                          </button>
-
-                          <div className="invisible absolute right-0 top-11 z-30 w-64 rounded-2xl border border-slate-800 bg-slate-950 p-2 text-left opacity-0 shadow-2xl shadow-black/50 transition group-hover:visible group-hover:opacity-100">
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/expedientes-plataforma/\${expediente.id}`)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            >
-                              <FileText className="h-4 w-4" />
-                              Abrir expediente
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/expedientes-plataforma/\${expediente.id}?modo=editar`)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              Editar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleCambiarEstado(expediente)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            >
-                              <Archive className="h-4 w-4" />
-                              Cambiar estado
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleCambiarPrioridad(expediente)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            >
-                              <AlertTriangle className="h-4 w-4" />
-                              Cambiar prioridad
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleExportarImv(expediente)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            >
-                              <Download className="h-4 w-4" />
-                              Exportar .imv
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleExportarPlantilla(expediente)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-violet-100 hover:bg-violet-400/10"
-                            >
-                              <FileText className="h-4 w-4" />
-                              Crear plantilla técnica
-                            </button>
-
-                            <div className="my-2 border-t border-slate-800" />
-
-                            <button
-                              type="button"
-                              onClick={() => handleEliminar(expediente)}
-                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setMenuExpedienteId((actual) =>
+                              actual === expediente.id ? null : expediente.id
+                            )
+                          }
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
+                          aria-label="Acciones del expediente"
+                        >
+                          <MoreHorizontal className="h-5 w-5" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -697,6 +638,124 @@ export default function ExpedientesINMOVALPage() {
           )}
         </section>
       </div>
+
+      {expedienteMenuActivo ? (
+        <div className="fixed inset-0 z-50 bg-black/20" onClick={() => setMenuExpedienteId(null)}>
+          <div
+            className="fixed right-6 top-24 w-80 rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {/* Panel flotante de acciones por expediente */}
+            <div className="border-b border-slate-800 px-3 pb-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Acciones
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold text-slate-100">
+                {expedienteMenuActivo.codigo}
+              </p>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                {expedienteMenuActivo.clienteNombre}
+              </p>
+            </div>
+
+            <div className="mt-2 grid gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuExpedienteId(null);
+                  navigate(`/expedientes-plataforma/${expedienteMenuActivo.id}`);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <FileText className="h-4 w-4" />
+                Abrir expediente
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuExpedienteId(null);
+                  navigate(`/expedientes-plataforma/${expedienteMenuActivo.id}?modo=editar`);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Pencil className="h-4 w-4" />
+                Editar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleCambiarEstado(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Archive className="h-4 w-4" />
+                Cambiar estado
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleCambiarPrioridad(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Cambiar prioridad
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleExportarImv(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Download className="h-4 w-4" />
+                Exportar .imv
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleExportarPlantilla(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-violet-100 hover:bg-violet-400/10"
+              >
+                <FileText className="h-4 w-4" />
+                Crear plantilla técnica
+              </button>
+
+              <div className="my-2 border-t border-slate-800" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleEliminar(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMenuExpedienteId(null)}
+              className="mt-3 w-full rounded-xl border border-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-900"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
