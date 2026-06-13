@@ -648,7 +648,7 @@ export default function NuevoExpedienteINMOVALPage() {
       creadoEn: ahora,
     });
 
-    navigate(`/expedientes-plataforma/${id}`);
+    navigate('/expedientes-plataforma');
   }
 
   return (

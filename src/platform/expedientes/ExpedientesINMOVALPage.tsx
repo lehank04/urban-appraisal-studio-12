@@ -639,18 +639,7 @@ export default function ExpedientesINMOVALPage() {
                       <td className="px-5 py-4 text-right">
                         <button
                           type="button"
-                          onMouseEnter={(event) => {
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            setMenuExpedienteId(expediente.id);
-                            setMenuPosition(getMenuFloatingPosition(rect));
-                          }}
-                          onClick={(event) => {
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            setMenuExpedienteId((actual) =>
-                              actual === expediente.id ? null : expediente.id
-                            );
-                            setMenuPosition(getMenuFloatingPosition(rect));
-                          }}
+                          onClick={() => setMenuExpedienteId(expediente.id)}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
                           aria-label="Acciones del expediente"
                         >
@@ -665,125 +654,155 @@ export default function ExpedientesINMOVALPage() {
           )}
         </section>
       </div>
-      {expedienteMenuActivo && menuPosition ? (
-        <div
-          className="fixed z-50 max-h-[calc(100vh-32px)] w-80 overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-          }}
-          onMouseEnter={() => setMenuExpedienteId(expedienteMenuActivo.id)}
-          onMouseLeave={() => {
-            setMenuExpedienteId(null);
-            setMenuPosition(null);
-          }}
-        >
-          <div className="border-b border-slate-800 px-3 pb-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-              Acciones
-            </p>
-            <p className="mt-1 truncate text-sm font-semibold text-slate-100">
-              {expedienteMenuActivo.codigo}
-            </p>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              {expedienteMenuActivo.clienteNombre}
-            </p>
-          </div>
+      {expedienteMenuActivo ? (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Cerrar acciones"
+            className="absolute inset-0 bg-black/30"
+            onClick={() => {
+              setMenuExpedienteId(null);
+              setMenuPosition(null);
+            }}
+          />
 
-          <div className="mt-2 grid gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-                navigate('/expedientes-plataforma/' + expedienteMenuActivo.id);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <FileText className="h-4 w-4" />
-              Abrir expediente
-            </button>
+          <aside className="absolute bottom-0 right-0 top-0 w-full max-w-md overflow-y-auto border-l border-slate-800 bg-slate-950 p-5 shadow-2xl shadow-black/70">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                  Acciones de expediente
+                </p>
+                <p className="mt-2 text-base font-semibold text-slate-100">
+                  {expedienteMenuActivo.codigo}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {expedienteMenuActivo.clienteNombre}
+                </p>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-                navigate('/expedientes-plataforma/' + expedienteMenuActivo.id + '?modo=editar');
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <Pencil className="h-4 w-4" />
-              Editar
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              >
+                Cerrar
+              </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleCambiarEstado(expedienteMenuActivo);
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <Archive className="h-4 w-4" />
-              Cambiar estado
-            </button>
+            <div className="mt-5 grid gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                  navigate('/expedientes-plataforma/' + expedienteMenuActivo.id);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <FileText className="h-4 w-4" />
+                Abrir expediente
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleCambiarPrioridad(expedienteMenuActivo);
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Cambiar prioridad
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                  navigate('/expedientes-plataforma/' + expedienteMenuActivo.id + '?modo=editar');
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Pencil className="h-4 w-4" />
+                Editar expediente
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleExportarImv(expedienteMenuActivo);
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <Download className="h-4 w-4" />
-              Exportar .imv
-            </button>
+              <div className="my-3 border-t border-slate-800" />
 
-            <button
-              type="button"
-              onClick={() => {
-                handleExportarPlantilla(expedienteMenuActivo);
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-violet-100 hover:bg-violet-400/10"
-            >
-              <FileText className="h-4 w-4" />
-              Crear plantilla técnica
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleCambiarEstado(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Archive className="h-4 w-4" />
+                Cambiar estado
+              </button>
 
-            <div className="my-2 border-t border-slate-800" />
+              <button
+                type="button"
+                onClick={() => {
+                  handleCambiarPrioridad(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Cambiar prioridad
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleEliminar(expedienteMenuActivo);
-                setMenuExpedienteId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </button>
-          </div>
+              <div className="my-3 border-t border-slate-800" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleExportarImv(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Download className="h-4 w-4" />
+                Exportar .imv
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleExportarPlantilla(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-violet-400/30 bg-violet-400/10 px-4 py-3 text-left text-sm text-violet-100 hover:bg-violet-400/20"
+              >
+                <FileText className="h-4 w-4" />
+                Crear plantilla técnica
+              </button>
+
+              <div className="my-3 border-t border-slate-800" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleEliminar(expedienteMenuActivo);
+                  setMenuExpedienteId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-left text-sm text-rose-100 hover:bg-rose-400/20"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                Estado actual
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-100">
+                {labelFromValue(String(expedienteMenuActivo.estado))}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Desde este panel se gestionan las acciones principales del expediente.
+              </p>
+            </div>
+          </aside>
         </div>
       ) : null}
     </div>
