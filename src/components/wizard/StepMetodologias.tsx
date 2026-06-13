@@ -27,7 +27,7 @@ import {
   memoriaReposicion, rossHeidecke, depAjustado,
   fmtMoney, fmtNum, fmtPct, valorNetoInfra,
 } from '@/lib/calculations';
-import { Plus, Trash2 , Database } from 'lucide-react';
+import { Plus, Trash2, Database } from 'lucide-react';
 
 // Toggle visual reutilizable para cada memoria
 
@@ -150,6 +150,81 @@ function inmovalComparableBaseATerreno(comparable: ComparableIndiceINMOVAL) {
 }
 
 
+
+function inmovalNormalizarTexto(valor: unknown) {
+  return String(valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function inmovalTokensBusqueda(valor: string) {
+  return inmovalNormalizarTexto(valor)
+    .split(/\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.length >= 3);
+}
+
+function inmovalTextoComparableLista(comparable: ComparableIndiceINMOVAL) {
+  return inmovalNormalizarTexto([
+    comparable.codigo,
+    comparable.titulo,
+    comparable.tipo,
+    comparable.aplicaMercado,
+    comparable.ubicacion,
+    comparable.barrio,
+    comparable.municipio,
+    comparable.departamento,
+    comparable.fuente,
+    comparable.observaciones,
+  ].filter(Boolean).join(" "));
+}
+
+function inmovalBuscarComparablesBase(
+  tipoMercado: "construido" | "terreno",
+  busqueda: string,
+  direccionSujeto: string
+) {
+  const tokensDireccion = inmovalTokensBusqueda(direccionSujeto);
+  const tokensBusqueda = inmovalTokensBusqueda(busqueda);
+  const tokens = tokensBusqueda.length > 0 ? tokensBusqueda : tokensDireccion;
+
+  return getComparablesIndiceINMOVAL()
+    .filter((comparable) => {
+      const aplica = comparable.aplicaMercado || "ambos";
+
+      if (tipoMercado === "construido") {
+        return aplica === "construido" || aplica === "ambos";
+      }
+
+      return aplica === "terreno" || aplica === "ambos";
+    })
+    .map((comparable) => {
+      const texto = inmovalTextoComparableLista(comparable);
+
+      const score =
+        tokens.length === 0
+          ? 1
+          : tokens.reduce((total, token) => {
+              return total + (texto.includes(token) ? 1 : 0);
+            }, 0);
+
+      return { comparable, score };
+    })
+    .filter((item) => {
+      if (tokens.length === 0) return true;
+      return item.score > 0;
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return Number(b.comparable.precio || 0) - Number(a.comparable.precio || 0);
+    })
+    .slice(0, 12)
+    .map((item) => item.comparable);
+}
+
+
 function ApplyToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border bg-muted/20 mb-3">
@@ -173,6 +248,8 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
   // ---- Selección de terreno ----
   const terrenos = avaluo.terrenos ?? [];
   const [currentTerrenoId, setCurrentTerrenoId] = useState<string>(terrenos[0]?.id ?? '');
+  const [basePickerTipo, setBasePickerTipo] = useState<"construido" | "terreno" | null>(null);
+  const [basePickerBusqueda, setBasePickerBusqueda] = useState("");
   useEffect(() => {
     if (!terrenos.find((t) => t.id === currentTerrenoId)) {
       setCurrentTerrenoId(terrenos[0]?.id ?? '');
@@ -456,7 +533,7 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
 
 
           <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between mb-3">
               <div className="font-semibold">Comparables de inmueble construido ({mt.comparablesInmueble.length})</div>
               <Button size="sm" onClick={() => setMT({ comparablesInmueble: [...mt.comparablesInmueble, emptyComparableInmueble()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
@@ -468,23 +545,120 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                 variant="outline"
                 title="Base de datos inmueble construido"
                 onClick={() => {
-                  const comparable = inmovalElegirComparableBase("construido");
+                    const direccion =
+                      mt.sujetoInmueble.direccion ||
+                      derivedDireccion ||
+                      currentTerreno?.ubicacionExacta ||
+                      "";
 
-                  if (!comparable) return;
-
-                  setMT({
-                    comparablesInmueble: [
-                      ...mt.comparablesInmueble,
-                      inmovalComparableBaseAInmueble(comparable),
-                    ],
-                  });
-                }}
+                    setBasePickerTipo("construido");
+                    setBasePickerBusqueda(direccion);
+                  }}
               >
                 <Database className="h-4 w-4 mr-1" />
                 Base de datos
               </Button>
             </div>
-            <div className="space-y-3">
+            {/* Selector base construido INMOVAL */}
+            {basePickerTipo === "construido" && (
+              <div className="mb-4 rounded-xl border border-sky-400/30 bg-sky-950/20 p-3">
+                <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-sky-100">
+                      Comparables sugeridos por dirección del sujeto
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Se filtra por mercado construido/ambos y coincidencias con la dirección.
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setBasePickerTipo(null)}
+                  >
+                    Cerrar
+                  </Button>
+                </div>
+
+                <Input
+                  value={basePickerBusqueda}
+                  onChange={(event) => setBasePickerBusqueda(event.target.value)}
+                  placeholder="Buscar por dirección, municipio, departamento, barrio, fuente..."
+                  className="mb-3"
+                />
+
+                <div className="grid gap-2">
+                  {inmovalBuscarComparablesBase(
+                    "construido",
+                    basePickerBusqueda,
+                    mt.sujetoInmueble.direccion || derivedDireccion
+                  ).map((comparable) => (
+                    <div
+                      key={comparable.id}
+                      className="flex flex-col gap-2 rounded-lg border border-border bg-background/60 p-3 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">
+                          {comparable.codigo} · {comparable.titulo}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {comparable.ubicacion}
+                          {comparable.municipio ? " · " + comparable.municipio : ""}
+                          {comparable.departamento ? " · " + comparable.departamento : ""}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Aplica: {comparable.aplicaMercado || "ambos"} · Fuente: {comparable.fuente || "sin fuente"}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 md:justify-end">
+                        <div className="text-right text-xs">
+                          <div className="font-semibold">
+                            {comparable.moneda} {Number(comparable.precio || 0).toLocaleString("en-US")}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {comparable.areaConstruccion
+                              ? comparable.areaConstruccion + " m² const."
+                              : comparable.areaTerreno
+                                ? comparable.areaTerreno + " m² terreno"
+                                : "sin área"}
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setMT({
+                              comparablesInmueble: [
+                                ...mt.comparablesInmueble,
+                                inmovalComparableBaseAInmueble(comparable),
+                              ],
+                            });
+
+                            setBasePickerTipo(null);
+                          }}
+                        >
+                          Cargar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {inmovalBuscarComparablesBase(
+                    "construido",
+                    basePickerBusqueda,
+                    mt.sujetoInmueble.direccion || derivedDireccion
+                  ).length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                      No hay coincidencias. Ajustá la búsqueda o revisá que el comparable tenga “Aplica para: construido” o “ambos”.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4 w-full min-w-0">
               {mt.comparablesInmueble.map((c, idx) => (
                 <CompInmuebleRow key={c.id} comp={c} idx={idx}
                   onChange={(p) => setMT({ comparablesInmueble: mt.comparablesInmueble.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
@@ -588,7 +762,7 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between mb-3">
               <div className="font-semibold">Comparables de terreno ({mt.comparablesTerreno.length})</div>
               <Button size="sm" onClick={() => setMT({ comparablesTerreno: [...mt.comparablesTerreno, emptyComparableTerreno()] })}>
                 <Plus className="h-4 w-4 mr-1" />Comparable
@@ -599,23 +773,119 @@ export function StepMetodologias({ avaluo }: { avaluo: Avaluo }) {
                 variant="outline"
                 title="Base de datos terreno"
                 onClick={() => {
-                  const comparable = inmovalElegirComparableBase("terreno");
+                    const direccion =
+                      mt.sujetoTerreno.direccion ||
+                      mt.sujetoInmueble.direccion ||
+                      derivedDireccion ||
+                      currentTerreno?.ubicacionExacta ||
+                      "";
 
-                  if (!comparable) return;
-
-                  setMT({
-                    comparablesTerreno: [
-                      ...mt.comparablesTerreno,
-                      inmovalComparableBaseATerreno(comparable),
-                    ],
-                  });
-                }}
+                    setBasePickerTipo("terreno");
+                    setBasePickerBusqueda(direccion);
+                  }}
               >
                 <Database className="h-4 w-4 mr-1" />
                 Base de datos
               </Button>
             </div>
-            <div className="space-y-3">
+            {/* Selector base terreno INMOVAL */}
+            {basePickerTipo === "terreno" && (
+              <div className="mb-4 rounded-xl border border-sky-400/30 bg-sky-950/20 p-3">
+                <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-sky-100">
+                      Comparables sugeridos por dirección del sujeto
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Se filtra por mercado terreno/ambos y coincidencias con la dirección.
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setBasePickerTipo(null)}
+                  >
+                    Cerrar
+                  </Button>
+                </div>
+
+                <Input
+                  value={basePickerBusqueda}
+                  onChange={(event) => setBasePickerBusqueda(event.target.value)}
+                  placeholder="Buscar por dirección, municipio, departamento, barrio, fuente..."
+                  className="mb-3"
+                />
+
+                <div className="grid gap-2">
+                  {inmovalBuscarComparablesBase(
+                    "terreno",
+                    basePickerBusqueda,
+                    mt.sujetoTerreno.direccion || mt.sujetoInmueble.direccion || derivedDireccion
+                  ).map((comparable) => (
+                    <div
+                      key={comparable.id}
+                      className="flex flex-col gap-2 rounded-lg border border-border bg-background/60 p-3 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">
+                          {comparable.codigo} · {comparable.titulo}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {comparable.ubicacion}
+                          {comparable.municipio ? " · " + comparable.municipio : ""}
+                          {comparable.departamento ? " · " + comparable.departamento : ""}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Aplica: {comparable.aplicaMercado || "ambos"} · Fuente: {comparable.fuente || "sin fuente"}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 md:justify-end">
+                        <div className="text-right text-xs">
+                          <div className="font-semibold">
+                            {comparable.moneda} {Number(comparable.precio || 0).toLocaleString("en-US")}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {comparable.areaTerreno
+                              ? comparable.areaTerreno + " m² terreno"
+                              : "sin área"}
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setMT({
+                              comparablesTerreno: [
+                                ...mt.comparablesTerreno,
+                                inmovalComparableBaseATerreno(comparable),
+                              ],
+                            });
+
+                            setBasePickerTipo(null);
+                          }}
+                        >
+                          Cargar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {inmovalBuscarComparablesBase(
+                    "terreno",
+                    basePickerBusqueda,
+                    mt.sujetoTerreno.direccion || mt.sujetoInmueble.direccion || derivedDireccion
+                  ).length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                      No hay coincidencias. Ajustá la búsqueda o revisá que el comparable tenga “Aplica para: terreno” o “ambos”.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4 w-full min-w-0">
               {mt.comparablesTerreno.map((c, idx) => (
                 <CompTerrenoRow key={c.id} comp={c} idx={idx}
                   onChange={(p) => setMT({ comparablesTerreno: mt.comparablesTerreno.map((x) => x.id === c.id ? { ...x, ...p } : x) })}
