@@ -17,8 +17,30 @@ export type ExpedienteIndiceINMOVAL = {
   estado: EstadoExpedienteINMOVAL;
   prioridad: PrioridadExpedienteINMOVAL;
 
+  clienteId?: string;
   clienteNombre: string;
+  clienteEmail?: string;
+  clienteTelefono?: string;
+  clienteDireccion?: string;
+
+  peritoId?: string;
   peritoNombre?: string;
+
+  correoElectronico?: string;
+  institucionSolicitante?: string;
+  nombreSolicitante?: string;
+  informacionContacto?: string;
+
+  direccionInmueble?: string;
+  tipoInmuebleCodigo?: string;
+  tipoInmuebleNombre?: string;
+  clasificacionInmuebleCodigo?: string;
+  clasificacionInmuebleNombre?: string;
+  propositoAvaluoCodigo?: string;
+  propositoAvaluoNombre?: string;
+
+  fechaInspeccion?: string;
+  notas?: string;
 
   fechaSolicitud: string;
   fechaEntregaEstimada?: string;
@@ -73,7 +95,16 @@ export function expedienteIndiceCoincideConBusqueda(
     expediente.codigo,
     expediente.titulo,
     expediente.clienteNombre,
+    expediente.clienteEmail,
+    expediente.clienteTelefono,
     expediente.peritoNombre,
+    expediente.institucionSolicitante,
+    expediente.nombreSolicitante,
+    expediente.informacionContacto,
+    expediente.direccionInmueble,
+    expediente.tipoInmuebleNombre,
+    expediente.clasificacionInmuebleNombre,
+    expediente.propositoAvaluoNombre,
     expediente.revisionActivaCodigo,
     expediente.numeroFactura,
   ]
