@@ -31,63 +31,35 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: "__HIDDEN__Centro INMOVAL",
-    to: '/',
-    icon: Gauge,
-    description: 'Dashboard de coordinación',
-    group: 'plataforma',
-  },
-  {
-    label: "__HIDDEN__Centro INMOVAL",
+    label: 'Centro INMOVAL',
     to: '/plataforma',
     icon: Gauge,
-    description: 'Centro de control administrativo',
+    description: 'Centro de coordinación operativa',
     group: 'plataforma',
   },
   {
     label: 'Expedientes',
     to: '/expedientes-plataforma',
     icon: ClipboardList,
-    description: 'Control administrativo de expedientes',
+    description: 'Gestión de expedientes',
     group: 'plataforma',
   },
   {
-    label: "__HIDDEN__Nuevo expediente",
-    to: '/expedientes-plataforma/nuevo',
-    icon: FilePlus2,
-    description: 'Crear expediente desde Plataforma',
+    label: 'Clientes',
+    to: '/clientes',
+    icon: Users,
+    description: 'Clientes registrados',
     group: 'plataforma',
   },
   {
-    label: "__HIDDEN__Importar expediente .imv",
-    to: '/expedientes-plataforma/importar',
-    icon: Upload,
-    description: 'Reconstruir expediente desde archivo .imv',
+    label: 'Peritos',
+    to: '/peritos',
+    icon: UserSquare2,
+    description: 'Peritos registrados',
     group: 'plataforma',
   },
   {
-    label: "__HIDDEN__Config. Expedientes",
-    to: '/expedientes-plataforma/configuracion',
-    icon: SlidersHorizontal,
-    description: 'Reglas propias del área de expedientes',
-    group: 'plataforma',
-  },
-  {
-    label: "__HIDDEN__Cotizaciones",
-    to: '/cotizaciones',
-    icon: FileText,
-    description: 'Cotizaciones, aprobación y flujo a expediente',
-    group: 'plataforma',
-  },
-  {
-    label: "__HIDDEN__Config. Cotizaciones",
-    to: '/cotizaciones/configuracion',
-    icon: SlidersHorizontal,
-    description: 'Reglas propias del área de cotizaciones',
-    group: 'plataforma',
-  },
-  {
-    label: 'Módulos',
+    label: 'Módulos técnicos',
     to: '/modulos',
     icon: Boxes,
     description: 'Módulos técnicos disponibles',
@@ -107,40 +79,12 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Preferencias generales',
     group: 'plataforma',
   },
-  {
-    label: "__HIDDEN__Avalúos técnicos",
-    to: '/avaluos',
-    icon: Building2,
-    description: 'Lista técnica actual de avalúos',
-    group: 'operacion',
-  },
-  {
-    label: "__HIDDEN__Nuevo expediente",
-    to: '/avaluos/nuevo',
-    icon: FilePlus2,
-    description: 'Crear avalúo técnico urbano',
-    group: 'operacion',
-  },
-  {
-    label: 'Clientes',
-    to: '/clientes',
-    icon: Users,
-    description: 'Catálogo de clientes',
-    group: 'catalogos',
-  },
-  {
-    label: 'Peritos',
-    to: '/peritos',
-    icon: UserSquare2,
-    description: 'Catálogo de peritos',
-    group: 'catalogos',
-  },
 ];
 
 const GROUP_LABELS: Record<NavItem['group'], string> = {
   plataforma: 'Plataforma INMOVAL',
-  operacion: 'Operación técnica',
-  catalogos: 'Catálogos',
+  operacion: '',
+  catalogos: '',
 };
 
 function getCurrentPage(pathname: string) {
