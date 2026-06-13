@@ -12,7 +12,7 @@ La Fase 3 conectó la plataforma administrativa con la operación técnica inici
 
 Construir el puente funcional entre:
 
-- Expediente administrativo
+- Expediente
 - Módulo técnico urbano
 - Base de comparables
 - Selección técnica de comparables
@@ -21,16 +21,16 @@ Construir el puente funcional entre:
 
 ---
 
-## Parte 1 - Puente expediente administrativo a módulo técnico urbano
+## Parte 1 - Puente expediente a módulo técnico urbano
 
 Se implementó:
 
-- Preparación técnica desde expediente administrativo
+- Preparación técnica desde expediente
 - Pantalla de preparación técnica
 - Registro de preparación técnica
-- Vínculo manual con expediente técnico urbano existente
+- Vínculo manual con avalúo técnico urbano existente
 - Botón para abrir módulo técnico
-- Botón para crear expediente técnico urbano
+- Botón para crear avalúo técnico urbano
 - Registro de actividad del vínculo técnico
 
 Ruta:
@@ -77,7 +77,7 @@ Ruta:
 
 ## Regla definitiva de comparables
 
-Base de Comparables:
+Base de comparables:
 
 - Crea comparables
 - Importa .imc
@@ -87,7 +87,7 @@ Base de Comparables:
 - Guarda testigo web
 - Guarda respaldo documental
 
-Expediente Plataforma:
+Expediente:
 
 - Visualiza la base como referencia administrativa
 - No decide técnicamente los comparables
@@ -141,7 +141,7 @@ La Fase 4 debe enfocarse en integrar estos datos al reporte y al flujo técnico 
 4. Mejorar homologación
 5. Generar resumen automático de comparables usados
 6. Crear estructura de revisión completa Rev00 / Rev01 / Final
-7. Conectar expediente administrativo con técnico sin copiar IDs manualmente
+7. Conectar expediente con técnico sin copiar IDs manualmente
 8. Preparar exportación final .imv con selección técnica usada
 9. Preparar PDF con anexos
 10. Mejorar auditoría técnica

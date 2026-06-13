@@ -37,7 +37,7 @@ export function ExpedienteModuloTecnicoPanel({
     const cleanId = avaluoTecnicoId.trim();
 
     if (!cleanId) {
-      window.alert('Ingresá el ID del expediente técnico urbano.');
+      window.alert('Ingresá el ID del avalúo técnico urbano.');
       return;
     }
 
@@ -58,7 +58,7 @@ export function ExpedienteModuloTecnicoPanel({
       expedienteId: expediente.id,
       tipo: 'nota',
       titulo: 'Módulo técnico vinculado',
-      descripcion: `Se vinculó el expediente administrativo con el módulo técnico ${expediente.tipoModulo}: ${cleanId}.`,
+      descripcion: `Se vinculó el expediente con el módulo técnico ${expediente.tipoModulo}: ${cleanId}.`,
       creadoEn: ahora,
     });
 
@@ -79,11 +79,11 @@ export function ExpedienteModuloTecnicoPanel({
               Módulo técnico
             </p>
             <h2 className="text-lg font-semibold text-slate-100">
-              Conexión con expediente técnico urbano
+              Conexión con avalúo técnico urbano
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              Esta sección prepara el puente entre el expediente administrativo
-              de Plataforma y el expediente técnico donde se desarrolla el
+              Esta sección prepara el puente entre el expediente
+              de Plataforma y el avalúo técnico donde se desarrolla el
               avalúo. El vínculo queda guardado dentro del índice administrativo
               y dentro del archivo .imv exportado.
             </p>
@@ -175,7 +175,7 @@ export function ExpedienteModuloTecnicoPanel({
               <input
                 value={avaluoTecnicoId}
                 onChange={(event) => setAvaluoTecnicoId(event.target.value)}
-                placeholder="ID del expediente técnico existente"
+                placeholder="ID del avalúo técnico existente"
                 className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
               />
             </label>
@@ -192,7 +192,7 @@ export function ExpedienteModuloTecnicoPanel({
 
           <p className="mt-3 text-sm leading-6 text-amber-100/80">
             Por ahora el vínculo es manual por ID. En la siguiente evolución,
-            este puente podrá crear automáticamente el expediente técnico urbano
+            este puente podrá crear automáticamente el avalúo técnico urbano
             desde la ficha administrativa.
           </p>
         </div>

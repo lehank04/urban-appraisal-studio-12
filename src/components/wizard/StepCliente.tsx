@@ -93,7 +93,7 @@ export function StepCliente({ avaluo }: { avaluo: Avaluo }) {
     <div className="space-y-5 max-w-5xl">
       <header>
         <div className="text-xs uppercase tracking-widest text-primary">
-          Módulo urbano · Expediente técnico
+          Módulo urbano · Avalúo técnico
         </div>
         <h2 className="text-xl font-semibold">
           Cliente, solicitante y propietario
@@ -249,7 +249,7 @@ export function StepCliente({ avaluo }: { avaluo: Avaluo }) {
                 {clienteActual ? 'Cambiar cliente asignado' : 'Seleccionar cliente'}
               </h3>
               <p className="text-xs text-muted-foreground">
-                El cliente seleccionado queda vinculado al expediente administrativo.
+                El cliente seleccionado queda vinculado al expediente.
               </p>
             </div>
 

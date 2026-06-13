@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -72,7 +72,7 @@ export default function ConfiguracionExpedientesINMOVALPage() {
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
                 Parámetros propios del área de expedientes. Esta configuración
                 controla valores predeterminados, reglas de cierre y comportamiento
-                visible dentro de Expedientes Plataforma.
+                visible dentro de Expedientes.
               </p>
             </div>
 

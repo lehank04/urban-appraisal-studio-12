@@ -18,7 +18,7 @@ Convertir la plataforma local en una base operativa portable, capaz de:
 - Exportar comparables como archivos .imc
 - Importar comparables desde archivos .imc
 - Guardar testigos web como respaldo del comparable
-- Preparar el vínculo entre expediente administrativo y módulo técnico urbano
+- Preparar el vínculo entre expediente y módulo técnico urbano
 
 ---
 
@@ -26,7 +26,7 @@ Convertir la plataforma local en una base operativa portable, capaz de:
 
 Se implementó:
 
-- Formato de archivo .imv para expediente administrativo
+- Formato de archivo .imv para expediente
 - Exportación .imv desde ficha individual
 - Importación .imv desde pantalla dedicada
 - Validación básica de formato
@@ -87,14 +87,14 @@ Este respaldo queda dentro del archivo .imc y podrá ser usado luego en:
 
 Se preparó el puente entre:
 
-- Expediente administrativo de Plataforma
-- Expediente técnico urbano
+- Expediente de Plataforma
+- Avalúo técnico urbano
 - Módulo de avalúo urbano
 
 La ficha administrativa ahora puede guardar:
 
-- ID del expediente técnico
-- Ruta del expediente técnico
+- ID del avalúo técnico
+- Ruta del avalúo técnico
 - Tipo de módulo vinculado
 - Fecha de vinculación
 
@@ -120,7 +120,7 @@ Servidor coordinará.
 
 La Fase 3 debe enfocarse en operación técnica real e integración profunda:
 
-1. Crear expediente técnico urbano automáticamente desde expediente administrativo
+1. Crear avalúo técnico urbano automáticamente desde expediente
 2. Sincronizar datos administrativos hacia el módulo urbano
 3. Consumir comparables .imc dentro del avalúo
 4. Insertar testigos web en el reporte de avalúo

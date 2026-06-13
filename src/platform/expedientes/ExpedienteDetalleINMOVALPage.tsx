@@ -301,7 +301,7 @@ export default function ExpedienteDetalleINMOVALPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Expediente Plataforma INMOVAL
+                Expediente INMOVAL
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
                 {expediente.codigo}
@@ -633,7 +633,7 @@ export default function ExpedienteDetalleINMOVALPage() {
                   Preparación para módulo técnico
                 </h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  Prepará este expediente administrativo para iniciar o vincular
+                  Prepará este expediente para iniciar o vincular
                   el avalúo técnico urbano.
                 </p>
               </div>

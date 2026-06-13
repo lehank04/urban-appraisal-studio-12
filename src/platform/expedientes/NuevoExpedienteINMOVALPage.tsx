@@ -148,7 +148,7 @@ export default function NuevoExpedienteINMOVALPage() {
                 Plataforma INMOVAL
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
-                Nuevo expediente administrativo
+                Nuevo expediente
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
                 Crea un expediente directamente desde la plataforma. Los valores

@@ -24,7 +24,7 @@ const mainItems = [
     icon: ClipboardList,
   },
   {
-    title: 'Expedientes Plataforma',
+    title: 'Expedientes',
     url: '/expedientes-plataforma',
     icon: ClipboardList,
   },

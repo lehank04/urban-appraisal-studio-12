@@ -52,7 +52,7 @@ export function StepPerito({ avaluo }: { avaluo: Avaluo }) {
     <div className="space-y-5 max-w-5xl">
       <header>
         <div className="text-xs uppercase tracking-widest text-primary">
-          Módulo urbano · Expediente técnico
+          Módulo urbano · Avalúo técnico
         </div>
         <h2 className="text-xl font-semibold">
           Perito y plantilla documental

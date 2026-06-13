@@ -112,7 +112,7 @@ export function ExpedienteAdminPanel({ avaluo }: { avaluo: Avaluo }) {
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-primary">
-            Expediente administrativo
+            Expediente
           </div>
 
           <h2 className="text-lg font-semibold">

@@ -52,7 +52,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Nuevo expediente administrativo',
+    label: 'Nuevo expediente',
     to: '/expedientes-plataforma/nuevo',
     icon: FilePlus2,
     description: 'Crear expediente desde Plataforma',
@@ -108,7 +108,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: "__HIDDEN__Expedientes técnicos",
+    label: "__HIDDEN__Avalúos técnicos",
     to: '/avaluos',
     icon: Building2,
     description: 'Lista técnica actual de avalúos',
@@ -118,7 +118,7 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Nuevo expediente',
     to: '/avaluos/nuevo',
     icon: FilePlus2,
-    description: 'Crear expediente técnico urbano',
+    description: 'Crear avalúo técnico urbano',
     group: 'operacion',
   },
   {

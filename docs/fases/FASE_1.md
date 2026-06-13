@@ -1,4 +1,4 @@
-﻿# INMOVAL - Cierre de Fase 1
+# INMOVAL - Cierre de Fase 1
 
 ## Estado
 
@@ -13,7 +13,7 @@ La Fase 1 consolidó la base operativa de la Plataforma INMOVAL como centro admi
 Construir una plataforma funcional que permitiera operar INMOVAL desde una capa administrativa central, separando:
 
 - Plataforma general
-- Expedientes administrativos
+- Expedientes
 - Cotizaciones
 - Configuraciones por área
 - Módulos técnicos
@@ -38,15 +38,15 @@ Pantallas incluidas en el menú:
 
 - Dashboard
 - Centro INMOVAL
-- Expedientes Plataforma
-- Nuevo expediente administrativo
+- Expedientes
+- Nuevo expediente
 - Configuración de Expedientes
 - Cotizaciones
 - Configuración de Cotizaciones
 - Módulos
 - Configuración General
-- Expedientes técnicos
-- Nuevo expediente técnico
+- Avalúos técnicos
+- Nuevo avalúo técnico
 - Clientes
 - Peritos
 
@@ -72,7 +72,7 @@ Ruta:
 
 ---
 
-### 3. Expedientes Plataforma
+### 3. Expedientes
 
 Se creó la pantalla administrativa de expedientes.
 
@@ -85,7 +85,7 @@ Incluye:
 - Estado de pago
 - Acceso a ficha individual
 - Sincronización de avalúos técnicos actuales
-- Botón de nuevo expediente administrativo
+- Botón de nuevo expediente
 - Botón de configuración de expedientes
 
 Ruta:
@@ -94,7 +94,7 @@ Ruta:
 
 ---
 
-### 4. Nuevo expediente administrativo
+### 4. Nuevo expediente
 
 Se creó la pantalla para generar expedientes directamente desde Plataforma.
 
@@ -294,7 +294,7 @@ Pendientes recomendados:
 1. Exportar expediente .imv desde ficha
 2. Importar expediente .imv
 3. Crear estructura formal de comparables .imc
-4. Conectar expedientes administrativos con expedientes técnicos urbanos
+4. Conectar expedientes con avalúos técnicos urbanos
 5. Mejorar flujo de revisión Rev00, Rev01, Final
 6. Crear pantalla de usuarios y roles
 7. Aplicar permisos por rol

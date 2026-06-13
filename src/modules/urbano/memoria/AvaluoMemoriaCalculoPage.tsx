@@ -476,7 +476,7 @@ function MercadoSection({
           <div className="mt-4 grid gap-3">
             {comparablesBaseFiltrados.length === 0 ? (
               <div className="rounded-2xl border border-slate-700 bg-slate-950/50 p-5 text-sm text-slate-400">
-                No hay comparables disponibles con ese filtro. Primero crea o importa comparables en la Base de Comparables.
+                No hay comparables disponibles con ese filtro. Primero crea o importa comparables en la Base de comparables.
               </div>
             ) : (
               comparablesBaseFiltrados.map((comparable) => (

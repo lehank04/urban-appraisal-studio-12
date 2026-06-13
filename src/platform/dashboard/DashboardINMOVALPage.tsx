@@ -392,7 +392,7 @@ export default function DashboardINMOVALPage() {
             className="rounded-3xl border border-slate-700 bg-slate-900 p-5 text-slate-100 hover:bg-slate-800"
           >
             <ClipboardList className="h-6 w-6" />
-            <p className="mt-3 font-semibold">Expedientes técnicos</p>
+            <p className="mt-3 font-semibold">Avalúos técnicos</p>
             <p className="mt-1 text-sm text-slate-400">
               Acceso a la operación técnica actual.
             </p>

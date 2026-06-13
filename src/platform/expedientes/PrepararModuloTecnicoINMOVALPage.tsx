@@ -114,7 +114,7 @@ export default function PrepararModuloTecnicoINMOVALPage() {
     const cleanId = avaluoTecnicoId.trim();
 
     if (!cleanId) {
-      window.alert('Ingresá el ID del expediente técnico.');
+      window.alert('Ingresá el ID del avalúo técnico.');
       return;
     }
 
@@ -133,8 +133,8 @@ export default function PrepararModuloTecnicoINMOVALPage() {
     registrarActividadExpedienteINMOVAL({
       expedienteId: expediente.id,
       tipo: 'nota',
-      titulo: 'Expediente técnico vinculado',
-      descripcion: `Se vinculó el expediente técnico ${cleanId} desde preparación técnica.`,
+      titulo: 'Avalúo técnico vinculado',
+      descripcion: `Se vinculó el avalúo técnico ${cleanId} desde preparación técnica.`,
       creadoEn: ahora,
     });
 
@@ -204,7 +204,7 @@ export default function PrepararModuloTecnicoINMOVALPage() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                  Expediente administrativo
+                  Expediente
                 </p>
                 <h2 className="text-lg font-semibold text-slate-100">
                   Datos que se enviarán al módulo técnico
@@ -248,12 +248,12 @@ export default function PrepararModuloTecnicoINMOVALPage() {
             </div>
 
             <h2 className="mt-4 text-lg font-semibold text-slate-100">
-              Vincular expediente técnico existente
+              Vincular avalúo técnico existente
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Después de crear el expediente técnico urbano, copiá su ID aquí
-              para dejar el expediente administrativo conectado.
+              Después de crear el avalúo técnico urbano, copiá su ID aquí
+              para dejar el expediente conectado.
             </p>
 
             <div className="mt-5 grid gap-3">
@@ -262,7 +262,7 @@ export default function PrepararModuloTecnicoINMOVALPage() {
                 <input
                   value={avaluoTecnicoId}
                   onChange={(event) => setAvaluoTecnicoId(event.target.value)}
-                  placeholder="ID del expediente técnico"
+                  placeholder="ID del avalúo técnico"
                   className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
                 />
               </label>
