@@ -84,70 +84,13 @@ export default function ExpedientesINMOVALPage() {
                 Expedientes
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Vista administrativa para controlar expedientes, estados,
+                Vista operativa para controlar expedientes, estados,
                 prioridades, pagos, facturación, revisiones y módulos técnicos.
                 Esta pantalla usa el índice local de INMOVAL.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-600 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver al Dashboard
-              </Link>
-
-              <Link
-                to="/cotizaciones"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
-              >
-                <FileText className="h-4 w-4" />
-                Cotizaciones
-              </Link>
-
-              <Link
-                to="/modulos"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
-              >
-                <Boxes className="h-4 w-4" />
-                Módulos
-              </Link>
-
-              <Link
-                to="/expedientes-plataforma/importar"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
-              >
-                <Upload className="h-4 w-4" />
-                Importar .imv
-              </Link>
-
-              <Link
-                to="/expedientes-plataforma/nuevo"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Nuevo expediente
-              </Link>
-
-              <Link
-                to="/expedientes-plataforma/configuracion"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
-              >
-                <Settings className="h-4 w-4" />
-                Configurar expedientes
-              </Link>
-
-              {configExpedientes.mostrarSincronizacionLegacy ? (
-<button
-                type="button"
-                onClick={handleSincronizarLegacy}
-                className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
-              >
-                Sincronizar avalúos actuales
-              </button>
-              ) : null}
 
               <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
                 {expedientesFiltrados.length} expediente(s) visibles
@@ -261,12 +204,12 @@ export default function ExpedientesINMOVALPage() {
                 <FileText className="h-7 w-7 text-slate-400" />
               </div>
               <h2 className="mt-4 text-lg font-semibold text-slate-100">
-                No hay expedientes en el índice de INMOVAL
+                No hay expedientes registrados
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
                 Esta pantalla ya está preparada. En los siguientes bloques vamos
                 a conectar la creación de expedientes, cotizaciones y sincronización
-                con el índice administrativo.
+                con el índice de expedientes.
               </p>
             </div>
           ) : (
