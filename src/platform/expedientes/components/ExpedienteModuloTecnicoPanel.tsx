@@ -37,7 +37,7 @@ export function ExpedienteModuloTecnicoPanel({
     const cleanId = avaluoTecnicoId.trim();
 
     if (!cleanId) {
-      window.alert('Ingresá el ID del avalúo técnico urbano.');
+      window.alert('Ingresá el ID del avalúo urbano.');
       return;
     }
 
@@ -57,8 +57,8 @@ export function ExpedienteModuloTecnicoPanel({
     registrarActividadExpedienteINMOVAL({
       expedienteId: expediente.id,
       tipo: 'nota',
-      titulo: 'Módulo técnico vinculado',
-      descripcion: `Se vinculó el expediente con el módulo técnico ${expediente.tipoModulo}: ${cleanId}.`,
+      titulo: 'Avalúo técnico vinculado',
+      descripcion: `Se vinculó el expediente con el avalúo técnico ${expediente.tipoModulo}: ${cleanId}.`,
       creadoEn: ahora,
     });
 
@@ -76,16 +76,13 @@ export function ExpedienteModuloTecnicoPanel({
 
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Módulo técnico
+              Avalúo técnico
             </p>
             <h2 className="text-lg font-semibold text-slate-100">
-              Conexión con avalúo técnico urbano
+              Avalúo técnico del expediente
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              Esta sección prepara el puente entre el expediente
-              de Plataforma y el avalúo técnico donde se desarrolla el
-              avalúo. El vínculo queda guardado dentro del índice administrativo
-              y dentro del archivo .imv exportado.
+              Esta sección conecta este expediente con su avalúo técnico. El avalúo forma parte del expediente único y queda incluido dentro del archivo .imv exportado.
             </p>
           </div>
         </div>
@@ -97,7 +94,7 @@ export function ExpedienteModuloTecnicoPanel({
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
             >
               <ExternalLink className="h-4 w-4" />
-              Abrir módulo técnico
+              Abrir avalúo técnico
             </Link>
           ) : null}
 
@@ -115,7 +112,7 @@ export function ExpedienteModuloTecnicoPanel({
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
           >
             <PlusCircle className="h-4 w-4" />
-            Crear técnico urbano
+            Crear avalúo urbano
           </Link>
 
           <button
@@ -141,7 +138,7 @@ export function ExpedienteModuloTecnicoPanel({
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-            ID técnico
+            ID del avalúo
           </p>
           <p className="mt-2 break-all text-sm font-semibold text-slate-100">
             {expediente.avaluoTecnicoId || 'No vinculado'}
@@ -175,7 +172,7 @@ export function ExpedienteModuloTecnicoPanel({
               <input
                 value={avaluoTecnicoId}
                 onChange={(event) => setAvaluoTecnicoId(event.target.value)}
-                placeholder="ID del avalúo técnico existente"
+                placeholder="ID del avalúo existente"
                 className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
               />
             </label>
@@ -191,9 +188,7 @@ export function ExpedienteModuloTecnicoPanel({
           </div>
 
           <p className="mt-3 text-sm leading-6 text-amber-100/80">
-            Por ahora el vínculo es manual por ID. En la siguiente evolución,
-            este puente podrá crear automáticamente el avalúo técnico urbano
-            desde la ficha administrativa.
+            Por ahora el vínculo puede hacerse manualmente por ID. En la siguiente evolución, el expediente podrá crear automáticamente su avalúo urbano y precargar datos del cliente, sujeto, inspección y plantilla técnica.
           </p>
         </div>
       ) : null}
