@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -36,6 +36,31 @@ type CatalogOption = {
 type CodigoOption = {
   codigo: string;
   nombre: string;
+};
+
+type CotizacionPrecargaINMOVAL = {
+  id: string;
+  numero: string;
+  estado?: string;
+
+  clienteId?: string;
+  clienteNombre?: string;
+  clienteEmail?: string;
+  clienteTelefono?: string;
+  clienteDireccion?: string;
+
+  direccionInmueble?: string;
+  tipoInmuebleCodigo?: string;
+  tipoInmuebleNombre?: string;
+  clasificacionInmuebleCodigo?: string;
+  clasificacionInmuebleNombre?: string;
+  propositoAvaluoCodigo?: string;
+  propositoAvaluoNombre?: string;
+
+  descripcionServicio?: string;
+  costoServicio?: number;
+  moneda?: string;
+  terminosCondiciones?: string;
 };
 
 const INSTITUCIONES_SOLICITANTES = [
@@ -106,6 +131,63 @@ const PROPOSITOS_AVALUO: CodigoOption[] = [
   { codigo: 'PV', nombre: 'PARTICULAR / VENTA' },
   { codigo: 'RV', nombre: 'REFERENCIA DE VALORES' },
 ];
+
+function getCotizacionPrecargaINMOVAL(): CotizacionPrecargaINMOVAL | null {
+  if (typeof window === 'undefined') return null;
+
+  const cotizacionId = new URLSearchParams(window.location.search).get('cotizacionId');
+
+  if (!cotizacionId) return null;
+
+  const raw = window.localStorage.getItem('inmoval_cotizaciones_v1');
+
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) return null;
+
+    return (
+      parsed.find((item: CotizacionPrecargaINMOVAL) => item.id === cotizacionId) ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function marcarCotizacionComoConvertidaINMOVAL(cotizacionId: string, expedienteId: string) {
+  if (typeof window === 'undefined') return;
+
+  const raw = window.localStorage.getItem('inmoval_cotizaciones_v1');
+
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) return;
+
+    const actualizadas = parsed.map((item: CotizacionPrecargaINMOVAL) =>
+      item.id === cotizacionId
+        ? {
+            ...item,
+            estado: 'convertida',
+            expedienteId,
+            actualizadoEn: nowISO(),
+          }
+        : item
+    );
+
+    window.localStorage.setItem(
+      'inmoval_cotizaciones_v1',
+      JSON.stringify(actualizadas)
+    );
+  } catch {
+    // No bloquear creación del expediente por error al actualizar cotización.
+  }
+}
 
 function createId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -252,6 +334,7 @@ function FieldLabel({ children }: { children: ReactNode }) {
 export default function NuevoExpedienteINMOVALPage() {
   const navigate = useNavigate();
   const config = useMemo(() => getConfiguracionExpedientesINMOVAL(), []);
+  const cotizacionPrecarga = useMemo(() => getCotizacionPrecargaINMOVAL(), []);
 
   const clientes = useMemo(
     () => readCatalogOptions(['inmoval_clientes_v1', 'inmoval_clientes', 'clientes']),
@@ -303,6 +386,7 @@ export default function NuevoExpedienteINMOVALPage() {
   );
 
   const [notas, setNotas] = useState('');
+  const [precargaAplicada, setPrecargaAplicada] = useState(false);
 
   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
   const clasificacion = CLASIFICACIONES_INMUEBLE.find(
@@ -363,6 +447,72 @@ export default function NuevoExpedienteINMOVALPage() {
     setFechaInspeccion(value);
     setFechaEntregaEstimada(addDaysISO(value, 5));
   }
+
+  useEffect(() => {
+    if (!cotizacionPrecarga || precargaAplicada) return;
+
+    // Precargar datos desde cotización
+    setClienteModo(cotizacionPrecarga.clienteId ? 'base' : 'nuevo');
+    setClienteId(cotizacionPrecarga.clienteId || '');
+    setClienteNombre(cotizacionPrecarga.clienteNombre || '');
+    setClienteEmail(cotizacionPrecarga.clienteEmail || '');
+    setClienteTelefono(cotizacionPrecarga.clienteTelefono || '');
+    setClienteDireccion(cotizacionPrecarga.clienteDireccion || '');
+
+    setCorreoElectronico(cotizacionPrecarga.clienteEmail || '');
+    setInformacionContacto(
+      cotizacionPrecarga.clienteTelefono ||
+        cotizacionPrecarga.clienteEmail ||
+        ''
+    );
+
+    setDireccionInmueble(cotizacionPrecarga.direccionInmueble || '');
+
+    if (
+      cotizacionPrecarga.tipoInmuebleCodigo &&
+      cotizacionPrecarga.tipoInmuebleNombre
+    ) {
+      setTipoInmuebleValue(
+        cotizacionPrecarga.tipoInmuebleCodigo +
+          '::' +
+          cotizacionPrecarga.tipoInmuebleNombre
+      );
+    }
+
+    const clasificacionDesdeCotizacion =
+      cotizacionPrecarga.clasificacionInmuebleCodigo ||
+      cotizacionPrecarga.tipoInmuebleCodigo ||
+      '';
+
+    setClasificacionCodigo(clasificacionDesdeCotizacion);
+    setPropositoCodigo(cotizacionPrecarga.propositoAvaluoCodigo || '');
+    setTipoModulo(moduloFromClasificacion(clasificacionDesdeCotizacion));
+
+    setCostoServicio(String(cotizacionPrecarga.costoServicio || 0));
+
+    const monedaCotizacion = cotizacionPrecarga.moneda;
+
+    if (monedaCotizacion === 'C' + '$' || monedaCotizacion === 'US' + '$') {
+      setMoneda(monedaCotizacion as MonedaINMOVAL);
+    }
+
+    setNotas(
+      [
+        'Origen: cotización ' + cotizacionPrecarga.numero,
+        cotizacionPrecarga.descripcionServicio
+          ? 'Servicio cotizado: ' + cotizacionPrecarga.descripcionServicio
+          : '',
+        cotizacionPrecarga.terminosCondiciones
+          ? 'Términos y condiciones aprobados:\n' +
+            cotizacionPrecarga.terminosCondiciones
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+    );
+
+    setPrecargaAplicada(true);
+  }, [cotizacionPrecarga, precargaAplicada]);
 
   function handleCrearExpediente() {
     const costo = Number(costoServicio || 0);
