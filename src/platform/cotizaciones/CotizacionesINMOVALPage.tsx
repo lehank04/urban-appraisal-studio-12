@@ -45,6 +45,21 @@ type TerminoCondicionCotizacion = {
   texto: string;
 };
 
+type CotizacionRevisionHistorial = {
+  id: string;
+  numero: string;
+  estado: EstadoCotizacionINMOVAL;
+  clienteNombre: string;
+  direccionInmueble: string;
+  tipoInmuebleNombre: string;
+  costoServicio: number;
+  moneda: MonedaCotizacionINMOVAL;
+  terminosCondiciones: string;
+  terminosItems?: TerminoCondicionCotizacion[];
+  creadoEn: string;
+  guardadoEn: string;
+};
+
 type CotizacionINMOVALLocal = {
   id: string;
   numero: string;
@@ -77,6 +92,7 @@ type CotizacionINMOVALLocal = {
   revisionNumero?: number;
   cotizacionOrigenId?: string;
   cotizacionOrigenNumero?: string;
+  historialRevisiones?: CotizacionRevisionHistorial[];
 
   creadoEn: string;
   actualizadoEn: string;
@@ -442,6 +458,7 @@ export default function CotizacionesINMOVALPage() {
     const query = busqueda.trim().toLowerCase();
 
     return cotizaciones.filter((cotizacion) => {
+      if (cotizacion.cotizacionOrigenId && !cotizacion.historialRevisiones) return false;
       if (filtroEstado !== 'todos' && cotizacion.estado !== filtroEstado) return false;
 
       if (!query) return true;
@@ -719,30 +736,58 @@ export default function CotizacionesINMOVALPage() {
   }
 
   function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
-    const origenId = cotizacion.cotizacionOrigenId || cotizacion.id;
-    const origenNumero = cotizacion.cotizacionOrigenNumero || cotizacion.numero;
-
-    const revisionesExistentes = cotizaciones.filter(
-      (item) => item.cotizacionOrigenId === origenId
+    const confirmar = window.confirm(
+      'Se creará una nueva revisión sobre esta misma cotización. La versión actual quedará guardada en el historial. ¿Continuar?'
     );
 
-    const revisionNumero = revisionesExistentes.length + 1;
+    if (!confirmar) return;
+
     const ahora = nowISO();
 
-    const revision: CotizacionINMOVALLocal = {
-      ...cotizacion,
+    const baseNumero =
+      cotizacion.cotizacionOrigenNumero ||
+      cotizacion.numero.replace(/-R\d+$/i, '');
+
+    const siguienteRevision = Number(cotizacion.revisionNumero || 0) + 1;
+
+    const versionAnterior: CotizacionRevisionHistorial = {
       id: createId(),
-      numero: origenNumero + '-R' + revisionNumero,
+      numero: cotizacion.numero,
+      estado: cotizacion.estado,
+      clienteNombre: cotizacion.clienteNombre,
+      direccionInmueble: cotizacion.direccionInmueble,
+      tipoInmuebleNombre: cotizacion.tipoInmuebleNombre,
+      costoServicio: cotizacion.costoServicio,
+      moneda: cotizacion.moneda,
+      terminosCondiciones: cotizacion.terminosCondiciones,
+      terminosItems: cotizacion.terminosItems
+        ? cloneTerminos(cotizacion.terminosItems)
+        : undefined,
+      creadoEn: cotizacion.creadoEn,
+      guardadoEn: ahora,
+    };
+
+    const actualizada: CotizacionINMOVALLocal = {
+      ...cotizacion,
+      numero: baseNumero + '-R' + siguienteRevision,
       estado: 'borrador',
       expedienteId: undefined,
-      revisionNumero,
-      cotizacionOrigenId: origenId,
-      cotizacionOrigenNumero: origenNumero,
-      creadoEn: ahora,
+      revisionNumero: siguienteRevision,
+      cotizacionOrigenId: cotizacion.cotizacionOrigenId || cotizacion.id,
+      cotizacionOrigenNumero: baseNumero,
+      historialRevisiones: [
+        ...(cotizacion.historialRevisiones || []),
+        versionAnterior,
+      ],
       actualizadoEn: ahora,
     };
 
-    saveCotizaciones([revision, ...cotizaciones]);
+    saveCotizaciones(
+      cotizaciones.map((item) =>
+        item.id === cotizacion.id ? actualizada : item
+      )
+    );
+
     refrescar();
   }
 
@@ -1310,44 +1355,50 @@ export default function CotizacionesINMOVALPage() {
 
             <div className="my-2 border-t border-slate-800" />
 
-            <button
-              type="button"
-              onClick={() => {
-                actualizarCotizacion(cotizacionMenuActiva, { estado: 'enviada' });
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              <Send className="h-4 w-4" />
-              Marcar enviada
-            </button>
+            {cotizacionMenuActiva.estado === 'borrador' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  actualizarCotizacion(cotizacionMenuActiva, { estado: 'enviada' });
+                  setMenuCotizacionId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Send className="h-4 w-4" />
+                Marcar como enviada
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={() => {
-                actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Aprobar
-            </button>
+            {cotizacionMenuActiva.estado === 'enviada' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+                  setMenuCotizacionId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Aprobar
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={() => {
-                convertirEnExpediente(cotizacionMenuActiva);
-                setMenuCotizacionId(null);
-                setMenuPosition(null);
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Crear expediente
-            </button>
+            {cotizacionMenuActiva.estado === 'aprobada' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  convertirEnExpediente(cotizacionMenuActiva);
+                  setMenuCotizacionId(null);
+                  setMenuPosition(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Crear expediente
+              </button>
+            ) : null}
 
             <div className="my-2 border-t border-slate-800" />
 
