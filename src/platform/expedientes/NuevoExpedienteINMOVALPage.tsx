@@ -58,6 +58,7 @@ const TIPOS_INMUEBLE: CodigoOption[] = [
   { codigo: 'IU', nombre: 'BODEGA' },
   { codigo: 'IU', nombre: 'OFICINAS' },
   { codigo: 'IU', nombre: 'AVANCE DE OBRA' },
+
   { codigo: 'IR', nombre: 'TERRENO RURAL (CON O SIN ESTRUCTURAS)' },
   { codigo: 'IR', nombre: 'VIVIENDAS RURALES' },
   { codigo: 'IR', nombre: 'EDIFICIOS RURALES' },
@@ -69,6 +70,7 @@ const TIPOS_INMUEBLE: CodigoOption[] = [
   { codigo: 'IR', nombre: 'POZOS' },
   { codigo: 'IR', nombre: 'CULTIVOS Y PLANTACIONES AGRÍCOLAS' },
   { codigo: 'IR', nombre: 'EXPLOTACIÓN AGRÍCOLA' },
+
   { codigo: 'IE', nombre: 'EDIFICIOS' },
   { codigo: 'IE', nombre: 'CENTROS COMERCIALES' },
   { codigo: 'IE', nombre: 'HOTELES' },
@@ -84,6 +86,7 @@ const TIPOS_INMUEBLE: CodigoOption[] = [
   { codigo: 'IE', nombre: 'ACUEDUCTOS Y CONDUCCIONES' },
   { codigo: 'IE', nombre: 'EDIFICIOS DE CONSERVACIÓN ARQUITECTÓNICA' },
   { codigo: 'IE', nombre: 'MONUMENTOS HISTÓRICOS' },
+
   { codigo: 'IO', nombre: 'OTRO' },
 ];
 
@@ -225,16 +228,17 @@ function parseTipoInmuebleValue(value: string) {
   const [codigo, ...nombreParts] = value.split('::');
 
   return {
-    codigo,
-    nombre: nombreParts.join('::'),
+    codigo: codigo || '',
+    nombre: nombreParts.join('::') || '',
   };
 }
 
 function moduloFromClasificacion(codigo: string): TipoModuloTecnico {
   if (codigo === 'IU') return 'urbano';
   if (codigo === 'IR') return 'rural';
+  if (codigo === 'IE') return 'especiales';
 
-  return 'especiales';
+  return 'urbano';
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
@@ -496,7 +500,7 @@ export default function NuevoExpedienteINMOVALPage() {
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+        <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
@@ -518,7 +522,7 @@ export default function NuevoExpedienteINMOVALPage() {
         </header>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
-          <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <article className="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
                 <ClipboardList className="h-5 w-5" />
@@ -763,7 +767,7 @@ export default function NuevoExpedienteINMOVALPage() {
                 </label>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-5">
                 <label className="grid gap-2">
                   <FieldLabel>Prioridad</FieldLabel>
                   <select
@@ -862,7 +866,7 @@ export default function NuevoExpedienteINMOVALPage() {
             </div>
           </article>
 
-          <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <aside className="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
               <ArrowRight className="h-5 w-5" />
             </div>
