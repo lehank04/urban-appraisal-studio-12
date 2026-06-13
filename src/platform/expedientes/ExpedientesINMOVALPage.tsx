@@ -129,6 +129,25 @@ function pagoBadgeClass(estadoPago?: string) {
   return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
 }
 
+function getMenuFloatingPosition(rect: DOMRect) {
+  const menuWidth = 320;
+  const menuHeight = 360;
+  const margin = 16;
+
+  const hasSpaceBelow = rect.bottom + menuHeight + margin < window.innerHeight;
+
+  const top = hasSpaceBelow
+    ? rect.bottom + 8
+    : Math.max(margin, rect.top - menuHeight - 8);
+
+  const left = Math.min(
+    Math.max(margin, rect.right - menuWidth),
+    window.innerWidth - menuWidth - margin
+  );
+
+  return { top, left };
+}
+
 function downloadJSON(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json;charset=utf-8',
@@ -623,20 +642,14 @@ export default function ExpedientesINMOVALPage() {
                           onMouseEnter={(event) => {
                             const rect = event.currentTarget.getBoundingClientRect();
                             setMenuExpedienteId(expediente.id);
-                            setMenuPosition({
-                              top: rect.bottom + 8,
-                              left: Math.max(16, rect.right - 320),
-                            });
+                            setMenuPosition(getMenuFloatingPosition(rect));
                           }}
                           onClick={(event) => {
                             const rect = event.currentTarget.getBoundingClientRect();
                             setMenuExpedienteId((actual) =>
                               actual === expediente.id ? null : expediente.id
                             );
-                            setMenuPosition({
-                              top: rect.bottom + 8,
-                              left: Math.max(16, rect.right - 320),
-                            });
+                            setMenuPosition(getMenuFloatingPosition(rect));
                           }}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
                           aria-label="Acciones del expediente"
@@ -654,7 +667,7 @@ export default function ExpedientesINMOVALPage() {
       </div>
       {expedienteMenuActivo && menuPosition ? (
         <div
-          className="fixed z-50 w-80 rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
+          className="fixed z-50 max-h-[calc(100vh-32px)] w-80 overflow-y-auto rounded-3xl border border-slate-800 bg-slate-950 p-3 text-left shadow-2xl shadow-black/60"
           style={{
             top: menuPosition.top,
             left: menuPosition.left,
