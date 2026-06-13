@@ -126,6 +126,48 @@ export default function ExpedientesINMOVALPage() {
           />
         </section>
 
+        {/* Acciones principales de expedientes */}
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                Acciones
+              </p>
+              <p className="mt-1 text-sm text-slate-400">
+                Crear o importar expedientes para iniciar el flujo operativo.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/expedientes-plataforma/nuevo"
+                className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+              >
+                Nuevo expediente
+              </a>
+
+              <details className="relative">
+                <summary className="inline-flex cursor-pointer list-none items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm font-bold text-slate-100 transition hover:bg-slate-800">
+                  ...
+                </summary>
+
+                <div className="absolute right-0 z-30 mt-2 min-w-56 rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/40">
+                  <p className="px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                    Más opciones
+                  </p>
+
+                  <a
+                    href="/expedientes-plataforma/importar"
+                    className="flex w-full items-center rounded-xl px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                  >
+                    Importar .imv
+                  </a>
+                </div>
+              </details>
+            </div>
+          </div>
+        </section>
+
         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
           <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
             <label className="relative block">
