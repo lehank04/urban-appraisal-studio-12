@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { ReactNode, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Archive,
@@ -68,10 +68,15 @@ type CotizacionINMOVALLocal = {
   costoServicio: number;
   moneda: MonedaCotizacionINMOVAL;
   terminosCondiciones: string;
+  terminosItems?: TerminoCondicionCotizacion[];
 
   fechaCotizacion: string;
   fechaValidez: string;
   expedienteId?: string;
+
+  revisionNumero?: number;
+  cotizacionOrigenId?: string;
+  cotizacionOrigenNumero?: string;
 
   creadoEn: string;
   actualizadoEn: string;
@@ -198,7 +203,7 @@ function createId() {
     return crypto.randomUUID();
   }
 
-  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
 }
 
 function buildNumeroCotizacion() {
@@ -209,7 +214,7 @@ function buildNumeroCotizacion() {
   const hh = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
 
-  return `COT-${yyyy}${mm}${dd}-${hh}${min}`;
+  return 'COT-' + yyyy + mm + dd + '-' + hh + min;
 }
 
 function parseTipoInmuebleValue(value: string) {
@@ -219,6 +224,10 @@ function parseTipoInmuebleValue(value: string) {
     codigo: codigo || '',
     nombre: nombreParts.join('::') || '',
   };
+}
+
+function cloneTerminos(items: TerminoCondicionCotizacion[]) {
+  return items.map((item) => ({ ...item }));
 }
 
 function normalizeCatalogItem(item: any): CatalogOption | null {
@@ -263,10 +272,11 @@ function extractClientesFromParsedStorage(parsed: any): CatalogOption[] {
   return [];
 }
 
-function readCatalogOptions(keys: string[]): CatalogOption[] {
+function readClientes(): CatalogOption[] {
   if (typeof window === 'undefined') return [];
 
   const encontrados: CatalogOption[] = [];
+  const keys = Object.keys(window.localStorage);
 
   const pushUnique = (items: CatalogOption[]) => {
     for (const item of items) {
@@ -281,19 +291,6 @@ function readCatalogOptions(keys: string[]): CatalogOption[] {
   };
 
   for (const key of keys) {
-    const raw = window.localStorage.getItem(key);
-
-    if (!raw) continue;
-
-    try {
-      pushUnique(extractClientesFromParsedStorage(JSON.parse(raw)));
-    } catch {
-      // Ignorar datos inválidos
-    }
-  }
-
-  // Respaldo: buscar clientes en cualquier storage del app.
-  for (const key of Object.keys(window.localStorage)) {
     if (!/cliente|clientes|avaluo|inmoval|store|storage/i.test(key)) continue;
 
     const raw = window.localStorage.getItem(key);
@@ -302,7 +299,7 @@ function readCatalogOptions(keys: string[]): CatalogOption[] {
     try {
       pushUnique(extractClientesFromParsedStorage(JSON.parse(raw)));
     } catch {
-      // Ignorar datos inválidos
+      // Ignorar storage inválido
     }
   }
 
@@ -329,10 +326,14 @@ function saveCotizaciones(cotizaciones: CotizacionINMOVALLocal[]) {
 }
 
 function formatMoney(value: number, moneda: MonedaCotizacionINMOVAL) {
-  return `${moneda} ${Number(value || 0).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return (
+    moneda +
+    ' ' +
+    Number(value || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 function estadoLabel(estado: EstadoCotizacionINMOVAL) {
@@ -348,10 +349,21 @@ function estadoLabel(estado: EstadoCotizacionINMOVAL) {
 }
 
 function estadoClass(estado: EstadoCotizacionINMOVAL) {
-  if (estado === 'aprobada') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100';
-  if (estado === 'convertida') return 'border-sky-400/30 bg-sky-400/10 text-sky-100';
-  if (estado === 'enviada') return 'border-amber-400/30 bg-amber-400/10 text-amber-100';
-  if (estado === 'rechazada') return 'border-rose-400/30 bg-rose-400/10 text-rose-100';
+  if (estado === 'aprobada') {
+    return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100';
+  }
+
+  if (estado === 'convertida') {
+    return 'border-sky-400/30 bg-sky-400/10 text-sky-100';
+  }
+
+  if (estado === 'enviada') {
+    return 'border-amber-400/30 bg-amber-400/10 text-amber-100';
+  }
+
+  if (estado === 'rechazada') {
+    return 'border-rose-400/30 bg-rose-400/10 text-rose-100';
+  }
 
   return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
 }
@@ -365,7 +377,7 @@ function MetricCard({
   label: string;
   value: string | number;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <article className="rounded-3xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/20">
@@ -386,7 +398,7 @@ function MetricCard({
   );
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
       {children}
@@ -397,10 +409,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function CotizacionesINMOVALPage() {
   const navigate = useNavigate();
 
-  const clientes = useMemo(
-    () => readCatalogOptions(['inmoval_clientes_v1', 'inmoval_clientes', 'clientes']),
-    []
-  );
+  const clientes = useMemo(() => readClientes(), []);
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [busqueda, setBusqueda] = useState('');
@@ -430,10 +439,11 @@ export default function CotizacionesINMOVALPage() {
   }, [cotizaciones, busqueda, filtroEstado]);
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [cotizacionEditandoId, setCotizacionEditandoId] = useState<string | null>(null);
+
   const [clienteModo, setClienteModo] = useState<'base' | 'nuevo'>(
     clientes.length > 0 ? 'base' : 'nuevo'
   );
-
   const [clienteId, setClienteId] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
   const [clienteEmail, setClienteEmail] = useState('');
@@ -450,25 +460,34 @@ export default function CotizacionesINMOVALPage() {
   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
-  const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
-    TERMINOS_BASE
-  );
+  const [terminosItems, setTerminosItems] =
+    useState<TerminoCondicionCotizacion[]>(cloneTerminos(TERMINOS_BASE));
 
   const total = cotizaciones.length;
   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
-  const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
-  const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+  const pendientesExpediente = cotizaciones.filter(
+    (item) => item.estado === 'aprobada' && !item.expedienteId
+  ).length;
+  const montoTotal = cotizaciones.reduce(
+    (sum, item) => sum + Number(item.costoServicio || 0),
+    0
+  );
 
   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
-  const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
-  const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+  const clasificacion = CLASIFICACIONES_INMUEBLE.find(
+    (item) => item.codigo === clasificacionCodigo
+  );
+  const proposito = PROPOSITOS_AVALUO.find(
+    (item) => item.codigo === propositoCodigo
+  );
 
   function refrescar() {
     setRefreshKey((value) => value + 1);
   }
 
   function limpiarFormulario() {
+    setCotizacionEditandoId(null);
     setClienteModo(clientes.length > 0 ? 'base' : 'nuevo');
     setClienteId('');
     setClienteNombre('');
@@ -484,7 +503,7 @@ export default function CotizacionesINMOVALPage() {
     setMoneda('US$');
     setFechaCotizacion(todayISO());
     setFechaValidez(addDaysISO(todayISO(), 15));
-    setTerminosItems(TERMINOS_BASE);
+    setTerminosItems(cloneTerminos(TERMINOS_BASE));
   }
 
   function handleClienteBaseChange(id: string) {
@@ -500,6 +519,13 @@ export default function CotizacionesINMOVALPage() {
     setClienteDireccion(cliente.direccion || '');
   }
 
+  function handleTipoInmuebleChange(value: string) {
+    setTipoInmuebleValue(value);
+
+    const parsed = parseTipoInmuebleValue(value);
+    setClasificacionCodigo(parsed.codigo);
+  }
+
   function actualizarTerminoCotizacion(
     id: string,
     patch: Partial<TerminoCondicionCotizacion>
@@ -512,16 +538,8 @@ export default function CotizacionesINMOVALPage() {
   function buildTerminosSeleccionados() {
     return terminosItems
       .filter((item) => item.incluido)
-      .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+      .map((item, index) => String(index + 1) + '. ' + item.titulo + '\n' + item.texto.trim())
       .join('\n\n');
-  }
-
-  function handleTipoInmuebleChange(value: string) {
-    setTipoInmuebleValue(value);
-
-    const parsed = parseTipoInmuebleValue(value);
-
-    setClasificacionCodigo(parsed.codigo);
   }
 
   function guardarCotizacion() {
@@ -558,45 +576,78 @@ export default function CotizacionesINMOVALPage() {
     }
 
     const ahora = nowISO();
+    const cotizacionEditando = cotizaciones.find(
+      (item) => item.id === cotizacionEditandoId
+    );
 
-    const cotizacion: CotizacionINMOVALLocal = {
-      id: createId(),
-      numero: buildNumeroCotizacion(),
-      estado: 'borrador',
+    if (cotizacionEditando) {
+      const actualizada: CotizacionINMOVALLocal = {
+        ...cotizacionEditando,
+        clienteId: clienteId || undefined,
+        clienteNombre: clienteNombre.trim(),
+        clienteEmail: clienteEmail.trim() || undefined,
+        clienteTelefono: clienteTelefono.trim() || undefined,
+        clienteDireccion: clienteDireccion.trim() || undefined,
+        direccionInmueble: direccionInmueble.trim(),
+        tipoInmuebleCodigo: tipoInmueble.codigo,
+        tipoInmuebleNombre: tipoInmueble.nombre,
+        clasificacionInmuebleCodigo: clasificacion.codigo,
+        clasificacionInmuebleNombre: clasificacion.nombre,
+        propositoAvaluoCodigo: proposito.codigo,
+        propositoAvaluoNombre: proposito.nombre,
+        descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
+        costoServicio: costo,
+        moneda,
+        terminosCondiciones: buildTerminosSeleccionados(),
+        terminosItems: cloneTerminos(terminosItems),
+        fechaCotizacion,
+        fechaValidez,
+        actualizadoEn: ahora,
+      };
 
-      clienteId: clienteId || undefined,
-      clienteNombre: clienteNombre.trim(),
-      clienteEmail: clienteEmail.trim() || undefined,
-      clienteTelefono: clienteTelefono.trim() || undefined,
-      clienteDireccion: clienteDireccion.trim() || undefined,
+      saveCotizaciones(
+        cotizaciones.map((item) => (item.id === actualizada.id ? actualizada : item))
+      );
+    } else {
+      const nueva: CotizacionINMOVALLocal = {
+        id: createId(),
+        numero: buildNumeroCotizacion(),
+        estado: 'borrador',
+        clienteId: clienteId || undefined,
+        clienteNombre: clienteNombre.trim(),
+        clienteEmail: clienteEmail.trim() || undefined,
+        clienteTelefono: clienteTelefono.trim() || undefined,
+        clienteDireccion: clienteDireccion.trim() || undefined,
+        direccionInmueble: direccionInmueble.trim(),
+        tipoInmuebleCodigo: tipoInmueble.codigo,
+        tipoInmuebleNombre: tipoInmueble.nombre,
+        clasificacionInmuebleCodigo: clasificacion.codigo,
+        clasificacionInmuebleNombre: clasificacion.nombre,
+        propositoAvaluoCodigo: proposito.codigo,
+        propositoAvaluoNombre: proposito.nombre,
+        descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
+        costoServicio: costo,
+        moneda,
+        terminosCondiciones: buildTerminosSeleccionados(),
+        terminosItems: cloneTerminos(terminosItems),
+        fechaCotizacion,
+        fechaValidez,
+        creadoEn: ahora,
+        actualizadoEn: ahora,
+      };
 
-      direccionInmueble: direccionInmueble.trim(),
-      tipoInmuebleCodigo: tipoInmueble.codigo,
-      tipoInmuebleNombre: tipoInmueble.nombre,
-      clasificacionInmuebleCodigo: clasificacion.codigo,
-      clasificacionInmuebleNombre: clasificacion.nombre,
-      propositoAvaluoCodigo: proposito.codigo,
-      propositoAvaluoNombre: proposito.nombre,
+      saveCotizaciones([nueva, ...cotizaciones]);
+    }
 
-      descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
-      costoServicio: costo,
-      moneda,
-      terminosCondiciones: buildTerminosSeleccionados(),
-
-      fechaCotizacion,
-      fechaValidez,
-
-      creadoEn: ahora,
-      actualizadoEn: ahora,
-    };
-
-    saveCotizaciones([cotizacion, ...cotizaciones]);
     refrescar();
     limpiarFormulario();
     setMostrarFormulario(false);
   }
 
-  function actualizarCotizacion(cotizacion: CotizacionINMOVALLocal, patch: Partial<CotizacionINMOVALLocal>) {
+  function actualizarCotizacion(
+    cotizacion: CotizacionINMOVALLocal,
+    patch: Partial<CotizacionINMOVALLocal>
+  ) {
     saveCotizaciones(
       cotizaciones.map((item) =>
         item.id === cotizacion.id
@@ -612,8 +663,66 @@ export default function CotizacionesINMOVALPage() {
     refrescar();
   }
 
+  function cargarCotizacionParaEditar(cotizacion: CotizacionINMOVALLocal) {
+    setCotizacionEditandoId(cotizacion.id);
+    setMostrarFormulario(true);
+
+    setClienteModo(cotizacion.clienteId ? 'base' : 'nuevo');
+    setClienteId(cotizacion.clienteId || '');
+    setClienteNombre(cotizacion.clienteNombre || '');
+    setClienteEmail(cotizacion.clienteEmail || '');
+    setClienteTelefono(cotizacion.clienteTelefono || '');
+    setClienteDireccion(cotizacion.clienteDireccion || '');
+
+    setDireccionInmueble(cotizacion.direccionInmueble || '');
+    setTipoInmuebleValue(
+      cotizacion.tipoInmuebleCodigo && cotizacion.tipoInmuebleNombre
+        ? cotizacion.tipoInmuebleCodigo + '::' + cotizacion.tipoInmuebleNombre
+        : ''
+    );
+    setClasificacionCodigo(cotizacion.clasificacionInmuebleCodigo || '');
+    setPropositoCodigo(cotizacion.propositoAvaluoCodigo || '');
+
+    setDescripcionServicio(cotizacion.descripcionServicio || 'Avalúo de inmueble');
+    setCostoServicio(String(cotizacion.costoServicio || 0));
+    setMoneda(cotizacion.moneda || 'US$');
+    setFechaCotizacion(cotizacion.fechaCotizacion || todayISO());
+    setFechaValidez(cotizacion.fechaValidez || addDaysISO(todayISO(), 15));
+    setTerminosItems(cloneTerminos(cotizacion.terminosItems || TERMINOS_BASE));
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
+    const origenId = cotizacion.cotizacionOrigenId || cotizacion.id;
+    const origenNumero = cotizacion.cotizacionOrigenNumero || cotizacion.numero;
+
+    const revisionesExistentes = cotizaciones.filter(
+      (item) => item.cotizacionOrigenId === origenId
+    );
+
+    const revisionNumero = revisionesExistentes.length + 1;
+    const ahora = nowISO();
+
+    const revision: CotizacionINMOVALLocal = {
+      ...cotizacion,
+      id: createId(),
+      numero: origenNumero + '-R' + revisionNumero,
+      estado: 'borrador',
+      expedienteId: undefined,
+      revisionNumero,
+      cotizacionOrigenId: origenId,
+      cotizacionOrigenNumero: origenNumero,
+      creadoEn: ahora,
+      actualizadoEn: ahora,
+    };
+
+    saveCotizaciones([revision, ...cotizaciones]);
+    refrescar();
+  }
+
   function eliminarCotizacion(cotizacion: CotizacionINMOVALLocal) {
-    const confirmar = window.confirm(`¿Eliminar la cotización ${cotizacion.numero}?`);
+    const confirmar = window.confirm('¿Eliminar la cotización ' + cotizacion.numero + '?');
 
     if (!confirmar) return;
 
@@ -632,7 +741,7 @@ export default function CotizacionesINMOVALPage() {
       actualizarCotizacion(cotizacion, { estado: 'aprobada' });
     }
 
-    navigate(`/expedientes-plataforma/nuevo?cotizacionId=${cotizacion.id}`);
+    navigate('/expedientes-plataforma/nuevo?cotizacionId=' + cotizacion.id);
   }
 
   return (
@@ -655,7 +764,10 @@ export default function CotizacionesINMOVALPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => setMostrarFormulario((value) => !value)}
+                onClick={() => {
+                  if (!mostrarFormulario) limpiarFormulario();
+                  setMostrarFormulario((value) => !value);
+                }}
                 className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
               >
                 <Plus className="h-4 w-4" />
@@ -687,10 +799,10 @@ export default function CotizacionesINMOVALPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                  Nueva cotización
+                  {cotizacionEditandoId ? 'Editar cotización' : 'Nueva cotización'}
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-slate-100">
-                  Datos de propuesta
+                  {cotizacionEditandoId ? 'Actualizar datos de propuesta' : 'Datos de propuesta'}
                 </h2>
               </div>
 
@@ -789,7 +901,7 @@ export default function CotizacionesINMOVALPage() {
                   >
                     <option value="">Seleccionar tipo</option>
                     {TIPOS_INMUEBLE.map((item) => (
-                      <option key={`${item.codigo}-${item.nombre}`} value={`${item.codigo}::${item.nombre}`}>
+                      <option key={item.codigo + '-' + item.nombre} value={item.codigo + '::' + item.nombre}>
                         {item.nombre} - {item.codigo}
                       </option>
                     ))}
@@ -856,7 +968,9 @@ export default function CotizacionesINMOVALPage() {
                   <FieldLabel>Moneda</FieldLabel>
                   <select
                     value={moneda}
-                    onChange={(event) => setMoneda(event.target.value as MonedaCotizacionINMOVAL)}
+                    onChange={(event) =>
+                      setMoneda(event.target.value as MonedaCotizacionINMOVAL)
+                    }
                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
                   >
                     <option value="US$">US$</option>
@@ -885,15 +999,78 @@ export default function CotizacionesINMOVALPage() {
                 </label>
               </div>
 
-              <label className="grid gap-2">
-                <FieldLabel>Términos y condiciones</FieldLabel>
-                <textarea
-                  value={buildTerminosSeleccionados()}
-                  onChange={(event) => setTerminosCondiciones(event.target.value)}
-                  rows={7}
-                  className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-                />
-              </label>
+              <div className="grid gap-3">
+                <div>
+                  <FieldLabel>Términos y condiciones</FieldLabel>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Marcá los puntos que deben aparecer en la cotización. Cada punto puede editarse.
+                  </p>
+                </div>
+
+                <div className="grid gap-3">
+                  {terminosItems.map((termino, index) => (
+                    <div
+                      key={termino.id}
+                      className={
+                        'rounded-2xl border p-4 transition ' +
+                        (termino.incluido
+                          ? 'border-emerald-400/30 bg-emerald-400/5'
+                          : 'border-slate-800 bg-slate-950/40 opacity-70')
+                      }
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={termino.incluido}
+                          onChange={(event) =>
+                            actualizarTerminoCotizacion(termino.id, {
+                              incluido: event.target.checked,
+                            })
+                          }
+                          className="mt-3 h-4 w-4 rounded border-slate-600 bg-slate-950 accent-emerald-400"
+                        />
+
+                        <div className="grid flex-1 gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-xs font-semibold text-slate-400">
+                              {index + 1}
+                            </span>
+
+                            <input
+                              value={termino.titulo}
+                              onChange={(event) =>
+                                actualizarTerminoCotizacion(termino.id, {
+                                  titulo: event.target.value,
+                                })
+                              }
+                              className="h-10 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm font-semibold uppercase tracking-[0.08em] text-slate-100 outline-none transition focus:border-emerald-400"
+                              placeholder={'Título del punto ' + String(index + 1)}
+                            />
+                          </div>
+
+                          <textarea
+                            value={termino.texto}
+                            onChange={(event) =>
+                              actualizarTerminoCotizacion(termino.id, {
+                                texto: event.target.value,
+                              })
+                            }
+                            rows={4}
+                            className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm leading-6 text-slate-100 outline-none transition focus:border-emerald-400"
+                            placeholder="Texto del término o condición..."
+                          />
+
+                          <p className="text-xs text-slate-500">
+                            {termino.incluido
+                              ? 'Este punto aparecerá en la cotización.'
+                              : 'Este punto no aparecerá en la cotización.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-3">
                 <button
@@ -902,7 +1079,7 @@ export default function CotizacionesINMOVALPage() {
                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
                 >
                   <FilePlus2 className="h-4 w-4" />
-                  Guardar cotización
+                  {cotizacionEditandoId ? 'Actualizar cotización' : 'Guardar cotización'}
                 </button>
 
                 <button
@@ -931,7 +1108,9 @@ export default function CotizacionesINMOVALPage() {
 
             <select
               value={filtroEstado}
-              onChange={(event) => setFiltroEstado(event.target.value as EstadoCotizacionINMOVAL | 'todos')}
+              onChange={(event) =>
+                setFiltroEstado(event.target.value as EstadoCotizacionINMOVAL | 'todos')
+              }
               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
             >
               <option value="todos">Todos los estados</option>
@@ -971,15 +1150,26 @@ export default function CotizacionesINMOVALPage() {
 
                 <tbody>
                   {cotizacionesFiltradas.map((cotizacion) => (
-                    <tr key={cotizacion.id} className="border-b border-slate-800/80 align-top last:border-0 hover:bg-slate-950/30">
+                    <tr
+                      key={cotizacion.id}
+                      className="border-b border-slate-800/80 align-top last:border-0 hover:bg-slate-950/30"
+                    >
                       <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-50">{cotizacion.numero}</p>
-                        <p className="mt-1 text-xs text-slate-500">{cotizacion.descripcionServicio}</p>
+                        <p className="font-semibold text-slate-50">
+                          {cotizacion.numero}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {cotizacion.descripcionServicio}
+                        </p>
                       </td>
 
                       <td className="px-5 py-4">
                         <p className="text-slate-100">{cotizacion.clienteNombre}</p>
-                        <p className="mt-1 text-xs text-slate-500">{cotizacion.clienteTelefono || cotizacion.clienteEmail || 'Sin contacto'}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {cotizacion.clienteTelefono ||
+                            cotizacion.clienteEmail ||
+                            'Sin contacto'}
+                        </p>
                       </td>
 
                       <td className="px-5 py-4">
@@ -996,7 +1186,12 @@ export default function CotizacionesINMOVALPage() {
                       </td>
 
                       <td className="px-5 py-4">
-                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${estadoClass(cotizacion.estado)}`}>
+                        <span
+                          className={
+                            'inline-flex rounded-full border px-3 py-1 text-xs font-medium ' +
+                            estadoClass(cotizacion.estado)
+                          }
+                        >
                           {estadoLabel(cotizacion.estado)}
                         </span>
                       </td>
@@ -1005,40 +1200,79 @@ export default function CotizacionesINMOVALPage() {
                         {cotizacion.fechaValidez}
                       </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap justify-end gap-2">
+                      <td className="px-5 py-4 text-right">
+                        <div className="group relative inline-flex justify-end">
                           <button
                             type="button"
-                            onClick={() => actualizarCotizacion(cotizacion, { estado: 'enviada' })}
-                            className="rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
+                            aria-label="Acciones de cotización"
                           >
-                            Enviada
+                            <MoreHorizontal className="h-5 w-5" />
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => actualizarCotizacion(cotizacion, { estado: 'aprobada' })}
-                            className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
-                          >
-                            Aprobar
-                          </button>
+                          <div className="invisible absolute right-0 top-11 z-40 w-64 rounded-2xl border border-slate-800 bg-slate-950 p-2 text-left opacity-0 shadow-2xl shadow-black/60 transition group-hover:visible group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => cargarCotizacionParaEditar(cotizacion)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            >
+                              <FileText className="h-4 w-4" />
+                              Editar cotización
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => convertirEnExpediente(cotizacion)}
-                            className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
-                          >
-                            Crear expediente
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => crearRevisionCotizacion(cotizacion)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            >
+                              <FilePlus2 className="h-4 w-4" />
+                              Crear nueva revisión
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => eliminarCotizacion(cotizacion)}
-                            className="inline-flex items-center gap-1 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-100 hover:bg-rose-400/20"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Eliminar
-                          </button>
+                            <div className="my-2 border-t border-slate-800" />
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                actualizarCotizacion(cotizacion, { estado: 'enviada' })
+                              }
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            >
+                              <Send className="h-4 w-4" />
+                              Marcar enviada
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                actualizarCotizacion(cotizacion, { estado: 'aprobada' })
+                              }
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Aprobar
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => convertirEnExpediente(cotizacion)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                              Crear expediente
+                            </button>
+
+                            <div className="my-2 border-t border-slate-800" />
+
+                            <button
+                              type="button"
+                              onClick={() => eliminarCotizacion(cotizacion)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
