@@ -888,7 +888,7 @@ export default function CotizacionesINMOVALPage() {
               <label className="grid gap-2">
                 <FieldLabel>Términos y condiciones</FieldLabel>
                 <textarea
-                  value={terminosCondiciones}
+                  value={buildTerminosSeleccionados()}
                   onChange={(event) => setTerminosCondiciones(event.target.value)}
                   rows={7}
                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
