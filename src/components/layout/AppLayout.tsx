@@ -1,5 +1,9 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import {
+  useState } from 'react';
+import { NavLink,
+  Outlet,
+  useLocation,
+  useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Boxes,
@@ -35,6 +39,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/plataforma',
     icon: Gauge,
     description: 'Centro de coordinación operativa',
+    group: 'plataforma',
+  },
+  {
+    label: 'Cotizaciones',
+    to: '/cotizaciones',
+    icon: FileText,
+    description: 'Propuestas y aprobaciones',
     group: 'plataforma',
   },
   {

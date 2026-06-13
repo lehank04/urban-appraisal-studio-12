@@ -1,4 +1,4 @@
-﻿import { INMOVAL_STORAGE_KEYS } from '@/platform/configuracion/inmovalStorageKeys';
+import { INMOVAL_STORAGE_KEYS } from '@/platform/configuracion/inmovalStorageKeys';
 import {
   readLocalStorageJSON,
   writeLocalStorageJSON,
