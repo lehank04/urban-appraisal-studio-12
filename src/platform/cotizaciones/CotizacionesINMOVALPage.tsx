@@ -1,46 +1,152 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Archive,
   CheckCircle2,
-  ExternalLink,
+  ClipboardList,
+  DollarSign,
+  FilePlus2,
   FileText,
-  PlusCircle,
-  RotateCcw,
+  MoreHorizontal,
+  Plus,
   Search,
   Send,
   Settings,
-  Wallet,
-  XCircle,
+  Trash2,
+  User,
 } from 'lucide-react';
-import { EstadoCotizacion } from '@/shared/types/inmovalCore';
-import { addDaysISO, nowISO, todayISO } from '@/shared/utils/dateUtils';
-import {
-  ConfiguracionCotizacionesINMOVAL,
-  getConfiguracionCotizacionesINMOVAL,
-  resetConfiguracionCotizacionesINMOVAL,
-  saveConfiguracionCotizacionesINMOVAL,
-} from './cotizacionConfigStorage';
-import {
-  getCotizacionesIndiceINMOVAL,
-  upsertCotizacionINMOVAL,
-} from './cotizacionIndexStorage';
-import {
-  calcularSubtotalCotizacion,
-  calcularTotalCotizacion,
-  CotizacionINMOVAL,
-} from './cotizacionTypes';
-import { crearCotizacionINMOVALBase } from './cotizacionDefaults';
-import { crearCotizacionDemoINMOVAL } from './cotizacionDemoFactory';
-import { crearExpedienteDeCotizacionAprobada } from './cotizacionExpedienteBridge';
-import { CotizacionEstadoBadge } from './components/CotizacionEstadoBadge';
-import { CotizacionResumenCard } from './components/CotizacionResumenCard';
-import {
-  cotizacionCoincideConBusqueda,
-  formatMoneyCotizacion,
-} from './cotizacionUiUtils';
 
-type CotizacionFiltroEstado = EstadoCotizacion | 'todos';
+type EstadoCotizacionINMOVAL =
+  | 'borrador'
+  | 'enviada'
+  | 'aprobada'
+  | 'rechazada'
+  | 'convertida';
+
+type MonedaCotizacionINMOVAL = 'US$' | 'C$';
+
+type CatalogOption = {
+  id: string;
+  nombre: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+};
+
+type CodigoOption = {
+  codigo: string;
+  nombre: string;
+};
+
+type CotizacionINMOVALLocal = {
+  id: string;
+  numero: string;
+  estado: EstadoCotizacionINMOVAL;
+
+  clienteId?: string;
+  clienteNombre: string;
+  clienteEmail?: string;
+  clienteTelefono?: string;
+  clienteDireccion?: string;
+
+  direccionInmueble: string;
+  tipoInmuebleCodigo: string;
+  tipoInmuebleNombre: string;
+  clasificacionInmuebleCodigo: string;
+  clasificacionInmuebleNombre: string;
+  propositoAvaluoCodigo: string;
+  propositoAvaluoNombre: string;
+
+  descripcionServicio: string;
+  costoServicio: number;
+  moneda: MonedaCotizacionINMOVAL;
+  terminosCondiciones: string;
+
+  fechaCotizacion: string;
+  fechaValidez: string;
+  expedienteId?: string;
+
+  creadoEn: string;
+  actualizadoEn: string;
+};
+
+const STORAGE_KEY = 'inmoval_cotizaciones_v1';
+
+const TERMINOS_BASE = `1. La presente cotización corresponde al servicio profesional de avalúo indicado.
+2. El costo no incluye gastos registrales, certificaciones, traslados extraordinarios ni trámites de terceros, salvo que se indique expresamente.
+3. La programación de inspección queda sujeta a confirmación del cliente y disponibilidad del perito.
+4. La entrega estimada se calculará a partir de la inspección realizada y la recepción completa de la documentación necesaria.
+5. La cotización tendrá validez hasta la fecha indicada en este documento.
+6. La aprobación de esta cotización permite iniciar la apertura del expediente correspondiente.`;
+
+const TIPOS_INMUEBLE: CodigoOption[] = [
+  { codigo: 'IU', nombre: 'CASA DE HABITACIÓN' },
+  { codigo: 'IU', nombre: 'APARTAMENTOS' },
+  { codigo: 'IU', nombre: 'LOTE DE TERRENO VACÍO' },
+  { codigo: 'IU', nombre: 'LOTE DE TERRENO CON MEJORAS' },
+  { codigo: 'IU', nombre: 'LOCAL COMERCIAL' },
+  { codigo: 'IU', nombre: 'BODEGA' },
+  { codigo: 'IU', nombre: 'OFICINAS' },
+  { codigo: 'IU', nombre: 'AVANCE DE OBRA' },
+  { codigo: 'IR', nombre: 'TERRENO RURAL (CON O SIN ESTRUCTURAS)' },
+  { codigo: 'IR', nombre: 'VIVIENDAS RURALES' },
+  { codigo: 'IR', nombre: 'EDIFICIOS RURALES' },
+  { codigo: 'IR', nombre: 'GALPONES' },
+  { codigo: 'IR', nombre: 'CERCAS' },
+  { codigo: 'IR', nombre: 'SISTEMAS DE RIEGO Y DRENAJE' },
+  { codigo: 'IR', nombre: 'VÍAS' },
+  { codigo: 'IR', nombre: 'ADECUACIONES DE SUELOS' },
+  { codigo: 'IR', nombre: 'POZOS' },
+  { codigo: 'IR', nombre: 'CULTIVOS Y PLANTACIONES AGRÍCOLAS' },
+  { codigo: 'IR', nombre: 'EXPLOTACIÓN AGRÍCOLA' },
+  { codigo: 'IE', nombre: 'EDIFICIOS' },
+  { codigo: 'IE', nombre: 'CENTROS COMERCIALES' },
+  { codigo: 'IE', nombre: 'HOTELES' },
+  { codigo: 'IE', nombre: 'COLEGIOS' },
+  { codigo: 'IE', nombre: 'HOSPITALES' },
+  { codigo: 'IE', nombre: 'CLÍNICAS' },
+  { codigo: 'IE', nombre: 'RESTAURANTES' },
+  { codigo: 'IE', nombre: 'AVANCE DE OBRAS (EDIFICIOS EN CONSTRUCCIÓN)' },
+  { codigo: 'IE', nombre: 'ESTRUCTURAS ESPECIALES PARA PROCESOS' },
+  { codigo: 'IE', nombre: 'AEROPUERTOS' },
+  { codigo: 'IE', nombre: 'MUELLES' },
+  { codigo: 'IE', nombre: 'PUENTES' },
+  { codigo: 'IE', nombre: 'ACUEDUCTOS Y CONDUCCIONES' },
+  { codigo: 'IE', nombre: 'EDIFICIOS DE CONSERVACIÓN ARQUITECTÓNICA' },
+  { codigo: 'IE', nombre: 'MONUMENTOS HISTÓRICOS' },
+  { codigo: 'IO', nombre: 'OTRO' },
+];
+
+const CLASIFICACIONES_INMUEBLE: CodigoOption[] = [
+  { codigo: 'IU', nombre: 'INMUEBLE URBANO' },
+  { codigo: 'IR', nombre: 'INMUEBLE RURAL' },
+  { codigo: 'IE', nombre: 'INMUEBLE ESPECIAL' },
+  { codigo: 'IO', nombre: 'OTROS INMUEBLES' },
+];
+
+const PROPOSITOS_AVALUO: CodigoOption[] = [
+  { codigo: 'OC', nombre: 'OTORGAMIENTO DE CRÉDITO' },
+  { codigo: 'RC', nombre: 'REESTRUCTURACIÓN DE CRÉDITO' },
+  { codigo: 'BU', nombre: 'BIENES EN USO' },
+  { codigo: 'BA', nombre: 'BIENES ADJUDICADOS' },
+  { codigo: 'PS', nombre: 'PÓLIZA DE SEGURO' },
+  { codigo: 'PV', nombre: 'PARTICULAR / VENTA' },
+  { codigo: 'RV', nombre: 'REFERENCIA DE VALORES' },
+];
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDaysISO(dateISO: string, days: number) {
+  const date = new Date(dateISO + 'T00:00:00');
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function nowISO() {
+  return new Date().toISOString();
+}
 
 function createId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -50,584 +156,673 @@ function createId() {
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function buildNumeroCotizacion(prefijo: string) {
+function buildNumeroCotizacion() {
   const date = new Date();
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   const hh = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
-  const ss = String(date.getSeconds()).padStart(2, '0');
 
-  return `${prefijo || 'COT'}-${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+  return `COT-${yyyy}${mm}${dd}-${hh}${min}`;
+}
+
+function parseTipoInmuebleValue(value: string) {
+  const [codigo, ...nombreParts] = value.split('::');
+
+  return {
+    codigo: codigo || '',
+    nombre: nombreParts.join('::') || '',
+  };
+}
+
+function readCatalogOptions(keys: string[]): CatalogOption[] {
+  if (typeof window === 'undefined') return [];
+
+  for (const key of keys) {
+    const raw = window.localStorage.getItem(key);
+
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      const array = Array.isArray(parsed) ? parsed : parsed?.items;
+
+      if (!Array.isArray(array)) continue;
+
+      return array
+        .map((item: any): CatalogOption | null => {
+          const nombre =
+            item.nombre ||
+            item.name ||
+            item.clienteNombre ||
+            item.razonSocial ||
+            item.displayName;
+
+          if (!nombre) return null;
+
+          return {
+            id: String(item.id || item.codigo || nombre),
+            nombre: String(nombre),
+            email: item.email || item.correo || item.correoElectronico,
+            telefono: item.telefono || item.phone || item.celular,
+            direccion: item.direccion || item.address,
+          };
+        })
+        .filter(Boolean) as CatalogOption[];
+    } catch {
+      // Ignorar datos inválidos
+    }
+  }
+
+  return [];
+}
+
+function getCotizaciones() {
+  if (typeof window === 'undefined') return [];
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CotizacionINMOVALLocal[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCotizaciones(cotizaciones: CotizacionINMOVALLocal[]) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cotizaciones));
+}
+
+function formatMoney(value: number, moneda: MonedaCotizacionINMOVAL) {
+  return `${moneda} ${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function estadoLabel(estado: EstadoCotizacionINMOVAL) {
+  const labels: Record<EstadoCotizacionINMOVAL, string> = {
+    borrador: 'Borrador',
+    enviada: 'Enviada',
+    aprobada: 'Aprobada',
+    rechazada: 'Rechazada',
+    convertida: 'Convertida',
+  };
+
+  return labels[estado];
+}
+
+function estadoClass(estado: EstadoCotizacionINMOVAL) {
+  if (estado === 'aprobada') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100';
+  if (estado === 'convertida') return 'border-sky-400/30 bg-sky-400/10 text-sky-100';
+  if (estado === 'enviada') return 'border-amber-400/30 bg-amber-400/10 text-amber-100';
+  if (estado === 'rechazada') return 'border-rose-400/30 bg-rose-400/10 text-rose-100';
+
+  return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
+}
+
+function MetricCard({
+  label,
+  value,
+  description,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  description: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <article className="rounded-3xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/20">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+            {label}
+          </p>
+          <p className="mt-3 text-3xl font-bold text-slate-50">{value}</p>
+          <p className="mt-3 text-sm text-slate-400">{description}</p>
+        </div>
+
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+          {icon}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+      {children}
+    </span>
+  );
 }
 
 export default function CotizacionesINMOVALPage() {
-  const configuracionInicial = getConfiguracionCotizacionesINMOVAL();
+  const navigate = useNavigate();
 
-  const [cotizaciones, setCotizaciones] = useState<CotizacionINMOVAL[]>([]);
+  const clientes = useMemo(
+    () => readCatalogOptions(['inmoval_clientes_v1', 'inmoval_clientes', 'clientes']),
+    []
+  );
+
+  const [refreshKey, setRefreshKey] = useState(0);
   const [busqueda, setBusqueda] = useState('');
-  const [estado, setEstado] = useState<CotizacionFiltroEstado>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<EstadoCotizacionINMOVAL | 'todos'>('todos');
+
+  const cotizaciones = useMemo(() => getCotizaciones(), [refreshKey]);
+
+  const cotizacionesFiltradas = useMemo(() => {
+    const query = busqueda.trim().toLowerCase();
+
+    return cotizaciones.filter((cotizacion) => {
+      if (filtroEstado !== 'todos' && cotizacion.estado !== filtroEstado) return false;
+
+      if (!query) return true;
+
+      return [
+        cotizacion.numero,
+        cotizacion.clienteNombre,
+        cotizacion.direccionInmueble,
+        cotizacion.tipoInmuebleNombre,
+        cotizacion.propositoAvaluoNombre,
+        cotizacion.descripcionServicio,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
+  }, [cotizaciones, busqueda, filtroEstado]);
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [mostrarConfiguracion, setMostrarConfiguracion] = useState(false);
+  const [clienteModo, setClienteModo] = useState<'base' | 'nuevo'>(
+    clientes.length > 0 ? 'base' : 'nuevo'
+  );
 
-  const [configCotizaciones, setConfigCotizaciones] =
-    useState<ConfiguracionCotizacionesINMOVAL>(configuracionInicial);
-
-  const [configDraft, setConfigDraft] =
-    useState<ConfiguracionCotizacionesINMOVAL>(configuracionInicial);
-
+  const [clienteId, setClienteId] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
-  const [servicio, setServicio] = useState(configuracionInicial.servicioPredeterminado);
-  const [monto, setMonto] = useState(String(configuracionInicial.montoPredeterminado));
-  const [moneda, setMoneda] = useState<'US$' | 'C$'>(
-    configuracionInicial.monedaPredeterminada
-  );
-  const [fechaVencimiento, setFechaVencimiento] = useState(
-    addDaysISO(todayISO(), configuracionInicial.diasValidez)
-  );
+  const [clienteEmail, setClienteEmail] = useState('');
+  const [clienteTelefono, setClienteTelefono] = useState('');
+  const [clienteDireccion, setClienteDireccion] = useState('');
 
-  useEffect(() => {
-    setCotizaciones(getCotizacionesIndiceINMOVAL());
-  }, []);
+  const [direccionInmueble, setDireccionInmueble] = useState('');
+  const [tipoInmuebleValue, setTipoInmuebleValue] = useState('');
+  const [clasificacionCodigo, setClasificacionCodigo] = useState('');
+  const [propositoCodigo, setPropositoCodigo] = useState('');
 
-  function refrescarCotizaciones() {
-    setCotizaciones(getCotizacionesIndiceINMOVAL());
+  const [descripcionServicio, setDescripcionServicio] = useState('Avalúo de inmueble');
+  const [costoServicio, setCostoServicio] = useState('0');
+  const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+  const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+  const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+  const [terminosCondiciones, setTerminosCondiciones] = useState(TERMINOS_BASE);
+
+  const total = cotizaciones.length;
+  const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+  const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+  const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+  const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+
+  const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
+  const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+  const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+
+  function refrescar() {
+    setRefreshKey((value) => value + 1);
   }
 
-  function limpiarFormulario(config = configCotizaciones) {
+  function limpiarFormulario() {
+    setClienteModo(clientes.length > 0 ? 'base' : 'nuevo');
+    setClienteId('');
     setClienteNombre('');
-    setServicio(config.servicioPredeterminado);
-    setMonto(String(config.montoPredeterminado));
-    setMoneda(config.monedaPredeterminada);
-    setFechaVencimiento(addDaysISO(todayISO(), config.diasValidez));
+    setClienteEmail('');
+    setClienteTelefono('');
+    setClienteDireccion('');
+    setDireccionInmueble('');
+    setTipoInmuebleValue('');
+    setClasificacionCodigo('');
+    setPropositoCodigo('');
+    setDescripcionServicio('Avalúo de inmueble');
+    setCostoServicio('0');
+    setMoneda('US$');
+    setFechaCotizacion(todayISO());
+    setFechaValidez(addDaysISO(todayISO(), 15));
+    setTerminosCondiciones(TERMINOS_BASE);
   }
 
-  function updateConfigDraft(cambios: Partial<ConfiguracionCotizacionesINMOVAL>) {
-    setConfigDraft((current) => ({
-      ...current,
-      ...cambios,
-    }));
+  function handleClienteBaseChange(id: string) {
+    setClienteId(id);
+
+    const cliente = clientes.find((item) => item.id === id);
+
+    if (!cliente) return;
+
+    setClienteNombre(cliente.nombre);
+    setClienteEmail(cliente.email || '');
+    setClienteTelefono(cliente.telefono || '');
+    setClienteDireccion(cliente.direccion || '');
   }
 
-  function handleGuardarConfiguracion() {
-    saveConfiguracionCotizacionesINMOVAL(configDraft);
+  function handleTipoInmuebleChange(value: string) {
+    setTipoInmuebleValue(value);
 
-    const nuevaConfig = getConfiguracionCotizacionesINMOVAL();
+    const parsed = parseTipoInmuebleValue(value);
 
-    setConfigCotizaciones(nuevaConfig);
-    setConfigDraft(nuevaConfig);
-    limpiarFormulario(nuevaConfig);
-    setMostrarConfiguracion(false);
+    setClasificacionCodigo(parsed.codigo);
   }
 
-  function handleResetConfiguracion() {
-    const reset = resetConfiguracionCotizacionesINMOVAL();
-
-    setConfigCotizaciones(reset);
-    setConfigDraft(reset);
-    limpiarFormulario(reset);
-  }
-
-  function handleCrearCotizacionReal() {
-    const total = Number(monto || 0);
+  function guardarCotizacion() {
+    const costo = Number(costoServicio || 0);
 
     if (!clienteNombre.trim()) {
-      window.alert('Ingresá el nombre del cliente.');
+      window.alert('Seleccioná o creá un cliente.');
       return;
     }
 
-    if (!servicio.trim()) {
-      window.alert('Ingresá el servicio.');
+    if (!direccionInmueble.trim()) {
+      window.alert('Ingresá la dirección del inmueble a valuar.');
       return;
     }
 
-    if (!Number.isFinite(total) || total <= 0) {
-      window.alert('Ingresá un monto válido.');
+    if (!tipoInmueble.codigo || !tipoInmueble.nombre) {
+      window.alert('Seleccioná el tipo de inmueble.');
       return;
     }
 
-    const item = {
+    if (!clasificacionCodigo || !clasificacion) {
+      window.alert('Seleccioná la clasificación del inmueble.');
+      return;
+    }
+
+    if (!propositoCodigo || !proposito) {
+      window.alert('Seleccioná el propósito del avalúo.');
+      return;
+    }
+
+    if (!Number.isFinite(costo) || costo < 0) {
+      window.alert('Ingresá un costo válido.');
+      return;
+    }
+
+    const ahora = nowISO();
+
+    const cotizacion: CotizacionINMOVALLocal = {
       id: createId(),
-      descripcion: servicio.trim(),
-      cantidad: 1,
-      precioUnitario: total,
-      subtotal: total,
-    };
-
-    const subtotal = calcularSubtotalCotizacion([item]);
-
-    const cotizacionBase = crearCotizacionINMOVALBase({
-      id: createId(),
-      numero: buildNumeroCotizacion(configCotizaciones.prefijoCotizacion),
-      clienteNombre: clienteNombre.trim(),
-    });
-
-    const nuevaCotizacion: CotizacionINMOVAL = {
-      ...cotizacionBase,
-      servicio: servicio.trim(),
-      descripcionServicio: servicio.trim(),
-      items: [item],
-      subtotal,
-      descuento: 0,
-      impuestos: 0,
-      total: calcularTotalCotizacion({
-        subtotal,
-        descuento: 0,
-        impuestos: 0,
-      }),
-      moneda,
-      fecha: todayISO(),
-      fechaVencimiento:
-        fechaVencimiento || addDaysISO(todayISO(), configCotizaciones.diasValidez),
+      numero: buildNumeroCotizacion(),
       estado: 'borrador',
-      actualizadoEn: nowISO(),
+
+      clienteId: clienteId || undefined,
+      clienteNombre: clienteNombre.trim(),
+      clienteEmail: clienteEmail.trim() || undefined,
+      clienteTelefono: clienteTelefono.trim() || undefined,
+      clienteDireccion: clienteDireccion.trim() || undefined,
+
+      direccionInmueble: direccionInmueble.trim(),
+      tipoInmuebleCodigo: tipoInmueble.codigo,
+      tipoInmuebleNombre: tipoInmueble.nombre,
+      clasificacionInmuebleCodigo: clasificacion.codigo,
+      clasificacionInmuebleNombre: clasificacion.nombre,
+      propositoAvaluoCodigo: proposito.codigo,
+      propositoAvaluoNombre: proposito.nombre,
+
+      descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
+      costoServicio: costo,
+      moneda,
+      terminosCondiciones: terminosCondiciones.trim(),
+
+      fechaCotizacion,
+      fechaValidez,
+
+      creadoEn: ahora,
+      actualizadoEn: ahora,
     };
 
-    upsertCotizacionINMOVAL(nuevaCotizacion);
-    refrescarCotizaciones();
+    saveCotizaciones([cotizacion, ...cotizaciones]);
+    refrescar();
     limpiarFormulario();
     setMostrarFormulario(false);
   }
 
-  function handleCrearCotizacionDemo() {
-    const nuevaCotizacion = crearCotizacionDemoINMOVAL({
-      servicio: configCotizaciones.servicioPredeterminado,
-      total: configCotizaciones.montoPredeterminado,
-    });
-
-    const ajustada: CotizacionINMOVAL = {
-      ...nuevaCotizacion,
-      numero: buildNumeroCotizacion(configCotizaciones.prefijoCotizacion),
-      moneda: configCotizaciones.monedaPredeterminada,
-      fechaVencimiento: addDaysISO(todayISO(), configCotizaciones.diasValidez),
-      actualizadoEn: nowISO(),
-    };
-
-    upsertCotizacionINMOVAL(ajustada);
-    refrescarCotizaciones();
-  }
-
-  function handleCambiarEstadoCotizacion(
-    cotizacion: CotizacionINMOVAL,
-    nuevoEstado: EstadoCotizacion
-  ) {
-    const ahora = nowISO();
-
-    const actualizada: CotizacionINMOVAL = {
-      ...cotizacion,
-      estado: nuevoEstado,
-      enviadaEn: nuevoEstado === 'enviada' ? ahora : cotizacion.enviadaEn,
-      aprobadaEn: nuevoEstado === 'aprobada' ? ahora : cotizacion.aprobadaEn,
-      rechazadaEn: nuevoEstado === 'rechazada' ? ahora : cotizacion.rechazadaEn,
-      actualizadoEn: ahora,
-    };
-
-    upsertCotizacionINMOVAL(actualizada);
-    refrescarCotizaciones();
-  }
-
-  function handleCrearExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
-    const expediente = crearExpedienteDeCotizacionAprobada(cotizacion);
-
-    const actualizada: CotizacionINMOVAL = {
-      ...cotizacion,
-      expedienteId: expediente.id,
-      actualizadoEn: nowISO(),
-    };
-
-    upsertCotizacionINMOVAL(actualizada);
-    refrescarCotizaciones();
-  }
-
-  function puedeCrearExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
-    if (cotizacion.expedienteId) return false;
-
-    if (!configCotizaciones.requiereAprobacionParaExpediente) {
-      return true;
-    }
-
-    return cotizacion.estado === 'aprobada';
-  }
-
-  const cotizacionesFiltradas = useMemo(() => {
-    return cotizaciones.filter((cotizacion) => {
-      if (estado !== 'todos' && cotizacion.estado !== estado) return false;
-
-      return cotizacionCoincideConBusqueda({
-        numero: cotizacion.numero,
-        clienteNombre: cotizacion.cliente?.nombre,
-        servicio: cotizacion.servicio,
-        busqueda,
-      });
-    });
-  }, [cotizaciones, busqueda, estado]);
-
-  const resumen = useMemo(() => {
-    const total = cotizaciones.length;
-    const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
-    const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
-    const rechazadas = cotizaciones.filter((item) => item.estado === 'rechazada').length;
-    const montoTotal = cotizaciones.reduce(
-      (totalMonto, cotizacion) => totalMonto + Number(cotizacion.total || 0),
-      0
+  function actualizarCotizacion(cotizacion: CotizacionINMOVALLocal, patch: Partial<CotizacionINMOVALLocal>) {
+    saveCotizaciones(
+      cotizaciones.map((item) =>
+        item.id === cotizacion.id
+          ? {
+              ...item,
+              ...patch,
+              actualizadoEn: nowISO(),
+            }
+          : item
+      )
     );
 
-    return {
-      total,
-      enviadas,
-      aprobadas,
-      rechazadas,
-      montoTotal,
-    };
-  }, [cotizaciones]);
+    refrescar();
+  }
+
+  function eliminarCotizacion(cotizacion: CotizacionINMOVALLocal) {
+    const confirmar = window.confirm(`¿Eliminar la cotización ${cotizacion.numero}?`);
+
+    if (!confirmar) return;
+
+    saveCotizaciones(cotizaciones.filter((item) => item.id !== cotizacion.id));
+    refrescar();
+  }
+
+  function convertirEnExpediente(cotizacion: CotizacionINMOVALLocal) {
+    if (cotizacion.estado !== 'aprobada') {
+      const confirmar = window.confirm(
+        'Esta cotización todavía no está aprobada. ¿Querés aprobarla y continuar con el expediente?'
+      );
+
+      if (!confirmar) return;
+
+      actualizarCotizacion(cotizacion, { estado: 'aprobada' });
+    }
+
+    navigate(`/expedientes-plataforma/nuevo?cotizacionId=${cotizacion.id}`);
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+        <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Plataforma INMOVAL
+                INMOVAL
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
                 Cotizaciones
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Vista administrativa para controlar cotizaciones, estados,
-                montos, clientes, vencimientos y conversión a expediente.
+                Gestión de propuestas, aprobación comercial y apertura posterior de expediente.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <Link
-                to="/expedientes-plataforma"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
-              >
-                <Archive className="h-4 w-4" />
-                Expedientes
-              </Link>
-
-              <Link
-                to="/cotizaciones/configuracion"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
-              >
-                <Settings className="h-4 w-4" />
-                Configurar cotizaciones
-              </Link>
-
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setMostrarFormulario((value) => !value)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
               >
-                <PlusCircle className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 Nueva cotización
               </button>
 
               <button
                 type="button"
-                onClick={handleCrearCotizacionDemo}
-                className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+                onClick={() => navigate('/cotizaciones/configuracion')}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/50 text-slate-200 transition hover:bg-slate-800"
+                title="Configuración"
               >
-                Crear demo
+                <MoreHorizontal className="h-5 w-5" />
               </button>
-
-              <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
-                {cotizacionesFiltradas.length} cotización(es) visibles
-              </div>
             </div>
           </div>
         </header>
 
-        {mostrarConfiguracion ? (
-          <section className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-5 shadow-xl shadow-black/20">
-            <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
+        <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <MetricCard label="Total" value={total} description="Cotizaciones registradas" icon={<Archive className="h-5 w-5" />} />
+          <MetricCard label="Enviadas" value={enviadas} description="Pendientes de respuesta" icon={<Send className="h-5 w-5" />} />
+          <MetricCard label="Aprobadas" value={aprobadas} description="Listas para expediente" icon={<CheckCircle2 className="h-5 w-5" />} />
+          <MetricCard label="Pendientes" value={pendientesExpediente} description="Aprobadas sin expediente" icon={<ClipboardList className="h-5 w-5" />} />
+          <MetricCard label="Monto" value={formatMoney(montoTotal, 'US$')} description="Monto cotizado" icon={<DollarSign className="h-5 w-5" />} />
+        </section>
+
+        {mostrarFormulario ? (
+          <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-300">
-                  Configuración de cotizaciones
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                  Nueva cotización
                 </p>
-                <h2 className="mt-1 text-xl font-semibold text-slate-50">
-                  Parámetros propios del área
+                <h2 className="mt-1 text-lg font-semibold text-slate-100">
+                  Datos de propuesta
                 </h2>
-                <p className="mt-2 text-sm text-slate-400">
-                  Estos valores aplican solo a nuevas cotizaciones.
-                </p>
               </div>
 
-              <div className="rounded-2xl border border-amber-400/20 bg-slate-950/50 px-4 py-3 text-sm text-amber-100">
-                Actualizado: {configDraft.actualizadoEn}
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <label className="grid gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  Prefijo
-                </span>
-                <input
-                  value={configDraft.prefijoCotizacion}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      prefijoCotizacion: event.target.value.toUpperCase(),
-                    })
-                  }
-                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  Servicio predeterminado
-                </span>
-                <input
-                  value={configDraft.servicioPredeterminado}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      servicioPredeterminado: event.target.value,
-                    })
-                  }
-                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  Monto predeterminado
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={configDraft.montoPredeterminado}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      montoPredeterminado: Number(event.target.value || 0),
-                    })
-                  }
-                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  Moneda predeterminada
-                </span>
-                <select
-                  value={configDraft.monedaPredeterminada}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      monedaPredeterminada: event.target.value as 'US$' | 'C$',
-                    })
-                  }
-                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
-                >
-                  <option value="US$">US$</option>
-                  <option value="C$">C$</option>
-                </select>
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                  Días de validez
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  value={configDraft.diasValidez}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      diasValidez: Number(event.target.value || 1),
-                    })
-                  }
-                  className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-amber-400"
-                />
-              </label>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={configDraft.requiereAprobacionParaExpediente}
-                  onChange={(event) =>
-                    updateConfigDraft({
-                      requiereAprobacionParaExpediente: event.target.checked,
-                    })
-                  }
-                  className="h-4 w-4"
-                />
-                <span className="text-sm text-slate-200">
-                  Requiere aprobación para crear expediente
-                </span>
-              </label>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={handleGuardarConfiguracion}
-                className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
-              >
-                Guardar configuración
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResetConfiguracion}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Restaurar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMostrarConfiguracion(false)}
-                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                onClick={() => setMostrarFormulario(false)}
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
               >
                 Cerrar
               </button>
             </div>
+
+            <div className="mt-6 grid gap-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2">
+                  <FieldLabel>Cliente</FieldLabel>
+                  <select
+                    value={clienteModo === 'nuevo' ? '__nuevo__' : clienteId}
+                    onChange={(event) => {
+                      if (event.target.value === '__nuevo__') {
+                        setClienteModo('nuevo');
+                        setClienteId('');
+                        setClienteNombre('');
+                        setClienteEmail('');
+                        setClienteTelefono('');
+                        setClienteDireccion('');
+                        return;
+                      }
+
+                      setClienteModo('base');
+                      handleClienteBaseChange(event.target.value);
+                    }}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  >
+                    <option value="">Seleccionar cliente</option>
+                    {clientes.map((cliente) => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.nombre}
+                      </option>
+                    ))}
+                    <option value="__nuevo__">+ Crear cliente nuevo</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Nombre del cliente</FieldLabel>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input
+                      value={clienteNombre}
+                      onChange={(event) => setClienteNombre(event.target.value)}
+                      placeholder="Nombre o razón social"
+                      className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                    />
+                  </div>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Correo del cliente</FieldLabel>
+                  <input
+                    value={clienteEmail}
+                    onChange={(event) => setClienteEmail(event.target.value)}
+                    placeholder="correo@dominio.com"
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Teléfono del cliente</FieldLabel>
+                  <input
+                    value={clienteTelefono}
+                    onChange={(event) => setClienteTelefono(event.target.value)}
+                    placeholder="Teléfono"
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 md:col-span-2">
+                  <FieldLabel>Dirección del inmueble a valuar</FieldLabel>
+                  <input
+                    value={direccionInmueble}
+                    onChange={(event) => setDireccionInmueble(event.target.value)}
+                    placeholder="Ubicación o dirección del inmueble"
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Tipo de inmueble</FieldLabel>
+                  <select
+                    value={tipoInmuebleValue}
+                    onChange={(event) => handleTipoInmuebleChange(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  >
+                    <option value="">Seleccionar tipo</option>
+                    {TIPOS_INMUEBLE.map((item) => (
+                      <option key={`${item.codigo}-${item.nombre}`} value={`${item.codigo}::${item.nombre}`}>
+                        {item.nombre} - {item.codigo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Clasificación</FieldLabel>
+                  <select
+                    value={clasificacionCodigo}
+                    onChange={(event) => setClasificacionCodigo(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  >
+                    <option value="">Seleccionar clasificación</option>
+                    {CLASIFICACIONES_INMUEBLE.map((item) => (
+                      <option key={item.codigo} value={item.codigo}>
+                        {item.nombre} - {item.codigo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Propósito del avalúo</FieldLabel>
+                  <select
+                    value={propositoCodigo}
+                    onChange={(event) => setPropositoCodigo(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  >
+                    <option value="">Seleccionar propósito</option>
+                    {PROPOSITOS_AVALUO.map((item) => (
+                      <option key={item.codigo} value={item.codigo}>
+                        {item.nombre} - {item.codigo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Descripción del servicio</FieldLabel>
+                  <input
+                    value={descripcionServicio}
+                    onChange={(event) => setDescripcionServicio(event.target.value)}
+                    placeholder="Avalúo de inmueble"
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                <label className="grid gap-2">
+                  <FieldLabel>Costo</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={costoServicio}
+                    onChange={(event) => setCostoServicio(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Moneda</FieldLabel>
+                  <select
+                    value={moneda}
+                    onChange={(event) => setMoneda(event.target.value as MonedaCotizacionINMOVAL)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  >
+                    <option value="US$">US$</option>
+                    <option value="C$">C$</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Fecha cotización</FieldLabel>
+                  <input
+                    type="date"
+                    value={fechaCotizacion}
+                    onChange={(event) => setFechaCotizacion(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+
+                <label className="grid gap-2">
+                  <FieldLabel>Validez</FieldLabel>
+                  <input
+                    type="date"
+                    value={fechaValidez}
+                    onChange={(event) => setFechaValidez(event.target.value)}
+                    className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                  />
+                </label>
+              </div>
+
+              <label className="grid gap-2">
+                <FieldLabel>Términos y condiciones</FieldLabel>
+                <textarea
+                  value={terminosCondiciones}
+                  onChange={(event) => setTerminosCondiciones(event.target.value)}
+                  rows={7}
+                  className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={guardarCotizacion}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+                >
+                  <FilePlus2 className="h-4 w-4" />
+                  Guardar cotización
+                </button>
+
+                <button
+                  type="button"
+                  onClick={limpiarFormulario}
+                  className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
           </section>
         ) : null}
 
-        {mostrarFormulario ? (
-          <section className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 shadow-xl shadow-black/20">
-            <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-                  Nueva cotización
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-slate-50">
-                  Datos básicos de cotización
-                </h2>
-              </div>
-
-              <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/50 px-4 py-3 text-sm text-emerald-100">
-                Configuración aplicada: {configCotizaciones.monedaPredeterminada} ·{' '}
-                {configCotizaciones.diasValidez} días de validez
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_180px_140px_180px]">
-              <input
-                value={clienteNombre}
-                onChange={(event) => setClienteNombre(event.target.value)}
-                placeholder="Cliente"
-                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-              />
-
-              <input
-                value={servicio}
-                onChange={(event) => setServicio(event.target.value)}
-                placeholder="Servicio"
-                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-              />
-
-              <input
-                value={monto}
-                onChange={(event) => setMonto(event.target.value)}
-                placeholder="Monto"
-                type="number"
-                min="0"
-                step="0.01"
-                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-              />
-
-              <select
-                value={moneda}
-                onChange={(event) => setMoneda(event.target.value as 'US$' | 'C$')}
-                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-              >
-                <option value="US$">US$</option>
-                <option value="C$">C$</option>
-              </select>
-
-              <input
-                value={fechaVencimiento}
-                onChange={(event) => setFechaVencimiento(event.target.value)}
-                type="date"
-                className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
-              />
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleCrearCotizacionReal}
-                className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
-              >
-                Guardar cotización
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  limpiarFormulario();
-                  setMostrarFormulario(false);
-                }}
-                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-              >
-                Cancelar
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <CotizacionResumenCard
-            titulo="Total"
-            valor={resumen.total}
-            descripcion="Cotizaciones registradas"
-            icono={<FileText className="h-5 w-5" />}
-          />
-          <CotizacionResumenCard
-            titulo="Enviadas"
-            valor={resumen.enviadas}
-            descripcion="Pendientes de respuesta"
-            icono={<Send className="h-5 w-5" />}
-          />
-          <CotizacionResumenCard
-            titulo="Aprobadas"
-            valor={resumen.aprobadas}
-            descripcion="Listas para expediente"
-            icono={<CheckCircle2 className="h-5 w-5" />}
-          />
-          <CotizacionResumenCard
-            titulo="Rechazadas"
-            valor={resumen.rechazadas}
-            descripcion="No aceptadas"
-            icono={<XCircle className="h-5 w-5" />}
-          />
-          <CotizacionResumenCard
-            titulo="Monto"
-            valor={formatMoneyCotizacion(
-              resumen.montoTotal,
-              configCotizaciones.monedaPredeterminada
-            )}
-            descripcion="Total cotizado"
-            icono={<Wallet className="h-5 w-5" />}
-          />
-        </section>
-
-        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
-          <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/20">
+          <div className="grid gap-3 lg:grid-cols-[1fr_200px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 value={busqueda}
                 onChange={(event) => setBusqueda(event.target.value)}
-                placeholder="Buscar por número, cliente o servicio..."
-                className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+                placeholder="Buscar por cotización, cliente, inmueble o propósito..."
+                className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-11 pr-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
               />
-            </label>
+            </div>
 
             <select
-              value={estado}
-              onChange={(event) =>
-                setEstado(event.target.value as CotizacionFiltroEstado)
-              }
+              value={filtroEstado}
+              onChange={(event) => setFiltroEstado(event.target.value as EstadoCotizacionINMOVAL | 'todos')}
               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
             >
               <option value="todos">Todos los estados</option>
@@ -635,149 +830,106 @@ export default function CotizacionesINMOVALPage() {
               <option value="enviada">Enviada</option>
               <option value="aprobada">Aprobada</option>
               <option value="rechazada">Rechazada</option>
-              <option value="vencida">Vencida</option>
+              <option value="convertida">Convertida</option>
             </select>
           </div>
         </section>
 
-        <section className="mt-6 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 shadow-xl shadow-black/20">
+        <section className="mt-6 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/75 shadow-xl shadow-black/20">
           {cotizacionesFiltradas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/70">
-                <FileText className="h-7 w-7 text-slate-400" />
-              </div>
-              <h2 className="mt-4 text-lg font-semibold text-slate-100">
-                No hay cotizaciones en el índice de Plataforma INMOVAL
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-                Creá una cotización para probar el flujo administrativo.
+            <div className="p-10 text-center">
+              <p className="text-lg font-semibold text-slate-100">
+                No hay cotizaciones registradas
+              </p>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
+                Creá una cotización para iniciar el flujo comercial antes del expediente.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-800 text-sm">
-                <thead className="bg-slate-950/60">
-                  <tr>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Cotización
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Cliente
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Servicio
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Estado
-                    </th>
-                    <th className="px-5 py-4 text-left font-medium text-slate-400">
-                      Fecha
-                    </th>
-                    <th className="px-5 py-4 text-right font-medium text-slate-400">
-                      Total
-                    </th>
-                    <th className="px-5 py-4 text-right font-medium text-slate-400">
-                      Acciones
-                    </th>
+              <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="px-5 py-4 font-medium">Cotización</th>
+                    <th className="px-5 py-4 font-medium">Cliente</th>
+                    <th className="px-5 py-4 font-medium">Inmueble</th>
+                    <th className="px-5 py-4 font-medium">Monto</th>
+                    <th className="px-5 py-4 font-medium">Estado</th>
+                    <th className="px-5 py-4 font-medium">Validez</th>
+                    <th className="px-5 py-4 text-right font-medium">Acciones</th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-800">
+                <tbody>
                   {cotizacionesFiltradas.map((cotizacion) => (
-                    <tr key={cotizacion.id} className="hover:bg-slate-800/40">
+                    <tr key={cotizacion.id} className="border-b border-slate-800/80 align-top last:border-0 hover:bg-slate-950/30">
                       <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-100">
-                          {cotizacion.numero}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {cotizacion.expedienteId
-                            ? `Expediente creado: ${cotizacion.expedienteId}`
-                            : 'Sin expediente asociado'}
-                        </p>
+                        <p className="font-semibold text-slate-50">{cotizacion.numero}</p>
+                        <p className="mt-1 text-xs text-slate-500">{cotizacion.descripcionServicio}</p>
                       </td>
-                      <td className="px-5 py-4 text-slate-300">
-                        {cotizacion.cliente?.nombre || 'Cliente pendiente'}
-                      </td>
-                      <td className="px-5 py-4 text-slate-300">
-                        {cotizacion.servicio}
-                      </td>
+
                       <td className="px-5 py-4">
-                        <CotizacionEstadoBadge estado={cotizacion.estado} />
+                        <p className="text-slate-100">{cotizacion.clienteNombre}</p>
+                        <p className="mt-1 text-xs text-slate-500">{cotizacion.clienteTelefono || cotizacion.clienteEmail || 'Sin contacto'}</p>
                       </td>
+
+                      <td className="px-5 py-4">
+                        <p className="max-w-[260px] truncate text-slate-100">
+                          {cotizacion.tipoInmuebleNombre} - {cotizacion.tipoInmuebleCodigo}
+                        </p>
+                        <p className="mt-1 max-w-[260px] truncate text-xs text-slate-500">
+                          {cotizacion.direccionInmueble}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-4 font-semibold text-slate-50">
+                        {formatMoney(cotizacion.costoServicio, cotizacion.moneda)}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${estadoClass(cotizacion.estado)}`}>
+                          {estadoLabel(cotizacion.estado)}
+                        </span>
+                      </td>
+
                       <td className="px-5 py-4 text-slate-300">
-                        {cotizacion.fecha}
+                        {cotizacion.fechaValidez}
                       </td>
-                      <td className="px-5 py-4 text-right font-medium text-slate-100">
-                        {formatMoneyCotizacion(cotizacion.total, cotizacion.moneda)}
-                      </td>
+
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap justify-end gap-2">
-                          {cotizacion.estado === 'borrador' ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCambiarEstadoCotizacion(
-                                  cotizacion,
-                                  'enviada'
-                                )
-                              }
-                              className="rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
-                            >
-                              Enviar
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => actualizarCotizacion(cotizacion, { estado: 'enviada' })}
+                            className="rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+                          >
+                            Enviada
+                          </button>
 
-                          {cotizacion.estado !== 'aprobada' ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCambiarEstadoCotizacion(
-                                  cotizacion,
-                                  'aprobada'
-                                )
-                              }
-                              className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
-                            >
-                              Aprobar
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => actualizarCotizacion(cotizacion, { estado: 'aprobada' })}
+                            className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
+                          >
+                            Aprobar
+                          </button>
 
-                          {cotizacion.estado !== 'rechazada' ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCambiarEstadoCotizacion(
-                                  cotizacion,
-                                  'rechazada'
-                                )
-                              }
-                              className="rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-medium text-rose-100 hover:bg-rose-400/20"
-                            >
-                              Rechazar
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => convertirEnExpediente(cotizacion)}
+                            className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
+                          >
+                            Crear expediente
+                          </button>
 
-                          {puedeCrearExpedienteDesdeCotizacion(cotizacion) ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCrearExpedienteDesdeCotizacion(cotizacion)
-                              }
-                              className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-100 hover:bg-amber-400/20"
-                            >
-                              Crear expediente
-                            </button>
-                          ) : null}
-
-                          {cotizacion.expedienteId ? (
-                            <Link
-                              to={`/expedientes-plataforma/${cotizacion.expedienteId}`}
-                              className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-400/20"
-                            >
-                              Ver expediente
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => eliminarCotizacion(cotizacion)}
+                            className="inline-flex items-center gap-1 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-100 hover:bg-rose-400/20"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
