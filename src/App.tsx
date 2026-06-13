@@ -9,14 +9,13 @@ import AvaluoAnexosTestigosPage from '@/modules/urbano/reportes/AvaluoAnexosTest
 import AvaluoMercadoComparablesPage from '@/modules/urbano/mercado/AvaluoMercadoComparablesPage';
 import AvaluoMemoriaCalculoPage from '@/modules/urbano/memoria/AvaluoMemoriaCalculoPage';
 ﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import {BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import AppLayout from './components/layout/AppLayout';
 
-import Dashboard from './pages/Dashboard';
 import AvaluosList from './pages/AvaluosList';
 import NuevoExpediente from './pages/NuevoExpediente';
 import AvaluoWizard from './pages/AvaluoWizard';
@@ -43,7 +42,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/plataforma" replace />} />
 
             <Route path="/plataforma" element={<DashboardINMOVALPage />} />
             <Route path="/expedientes-plataforma" element={<ExpedientesINMOVALPage />} />
