@@ -31,14 +31,14 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Dashboard',
+    label: "__HIDDEN__Centro INMOVAL",
     to: '/',
     icon: Gauge,
-    description: 'Vista general operativa',
+    description: 'Dashboard de coordinación',
     group: 'plataforma',
   },
   {
-    label: 'Centro INMOVAL',
+    label: "__HIDDEN__Centro INMOVAL",
     to: '/plataforma',
     icon: Gauge,
     description: 'Centro de control administrativo',
@@ -52,21 +52,21 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Nuevo expediente',
+    label: "__HIDDEN__Nuevo expediente",
     to: '/expedientes-plataforma/nuevo',
     icon: FilePlus2,
     description: 'Crear expediente desde Plataforma',
     group: 'plataforma',
   },
   {
-    label: 'Importar expediente .imv',
+    label: "__HIDDEN__Importar expediente .imv",
     to: '/expedientes-plataforma/importar',
     icon: Upload,
     description: 'Reconstruir expediente desde archivo .imv',
     group: 'plataforma',
   },
   {
-    label: 'Config. Expedientes',
+    label: "__HIDDEN__Config. Expedientes",
     to: '/expedientes-plataforma/configuracion',
     icon: SlidersHorizontal,
     description: 'Reglas propias del área de expedientes',
@@ -80,7 +80,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Config. Cotizaciones',
+    label: "__HIDDEN__Config. Cotizaciones",
     to: '/cotizaciones/configuracion',
     icon: SlidersHorizontal,
     description: 'Reglas propias del área de cotizaciones',
@@ -90,21 +90,21 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Módulos',
     to: '/modulos',
     icon: Boxes,
-    description: 'Cartuchos técnicos disponibles',
+    description: 'Módulos técnicos disponibles',
     group: 'plataforma',
   },
   {
     label: 'Base de comparables',
     to: '/comparables',
     icon: Database,
-    description: 'Comparables locales y archivos .imc',
+    description: 'Base local de comparables',
     group: 'plataforma',
   },
   {
     label: 'Configuración',
     to: '/configuracion-plataforma',
     icon: Settings,
-    description: 'Servidor, Drive y preferencias',
+    description: 'Preferencias generales',
     group: 'plataforma',
   },
   {
@@ -115,7 +115,7 @@ const NAV_ITEMS: NavItem[] = [
     group: 'operacion',
   },
   {
-    label: 'Nuevo expediente',
+    label: "__HIDDEN__Nuevo expediente",
     to: '/avaluos/nuevo',
     icon: FilePlus2,
     description: 'Crear avalúo técnico urbano',
