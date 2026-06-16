@@ -456,6 +456,18 @@ function moduloFromClasificacion(codigo: string): TipoModuloTecnico {
   return 'urbano';
 }
 
+function getModuloTecnicoLabel(modulo: TipoModuloTecnico) {
+  const labels: Record<string, string> = {
+    urbano: 'Urbano',
+    rural: 'Rural',
+    especiales: 'Especiales',
+    maquinaria: 'Maquinaria',
+    vehiculos: 'Vehículos',
+  };
+
+  return labels[modulo] || modulo;
+}
+
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
