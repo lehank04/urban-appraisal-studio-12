@@ -112,14 +112,14 @@ const TIPOS_INMUEBLE: CodigoOption[] = [
   { codigo: 'IE', nombre: 'EDIFICIOS DE CONSERVACIÓN ARQUITECTÓNICA' },
   { codigo: 'IE', nombre: 'MONUMENTOS HISTÓRICOS' },
 
-  { codigo: 'IO', nombre: 'OTRO' },
+  { codigo: 'VM', nombre: 'OTRO' },
 ];
 
 const CLASIFICACIONES_INMUEBLE: CodigoOption[] = [
   { codigo: 'IU', nombre: 'INMUEBLE URBANO' },
   { codigo: 'IR', nombre: 'INMUEBLE RURAL' },
   { codigo: 'IE', nombre: 'INMUEBLE ESPECIAL' },
-  { codigo: 'IO', nombre: 'OTROS INMUEBLES' },
+  { codigo: 'VM', nombre: 'VEHICULO O MAQUINARIA' },
 ];
 
 const PROPOSITOS_AVALUO: CodigoOption[] = [
