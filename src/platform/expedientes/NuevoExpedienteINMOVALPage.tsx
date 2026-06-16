@@ -451,6 +451,7 @@ function moduloFromClasificacion(codigo: string): TipoModuloTecnico {
   if (codigo === 'IU') return 'urbano';
   if (codigo === 'IR') return 'rural';
   if (codigo === 'IE') return 'especiales';
+  if (codigo === 'VM') return 'maquinaria';
 
   return 'urbano';
 }
