@@ -233,6 +233,59 @@ function buildNumeroCotizacion() {
   return 'COT-' + yyyy + mm + dd + '-' + hh + min;
 }
 
+function numeroDiasEnTextoCotizacion(dias: number) {
+  const nombres: Record<number, string> = {
+    1: 'un',
+    2: 'dos',
+    3: 'tres',
+    4: 'cuatro',
+    5: 'cinco',
+    6: 'seis',
+    7: 'siete',
+    8: 'ocho',
+    9: 'nueve',
+    10: 'diez',
+    11: 'once',
+    12: 'doce',
+    13: 'trece',
+    14: 'catorce',
+    15: 'quince',
+    20: 'veinte',
+    30: 'treinta',
+    45: 'cuarenta y cinco',
+    60: 'sesenta',
+    90: 'noventa',
+  };
+
+  return nombres[dias] || String(dias);
+}
+
+function buildTextoVigenciaCotizacion(dias: number) {
+  const diasSeguro = Math.max(1, Number(dias || 15));
+
+  return `Esta cotización tiene una validez de ${numeroDiasEnTextoCotizacion(
+    diasSeguro
+  )} (${diasSeguro}) días calendario. Transcurrido este tiempo, agradeceremos solicitar una actualización de los términos para garantizar la disponibilidad y vigencia de los costos presentados.`;
+}
+
+function extraerDiasVigenciaCotizacion(items: TerminoCondicionCotizacion[]) {
+  const item = items.find((term) => term.id === 'vigencia-propuesta');
+  const texto = item?.texto || '';
+  const match = texto.match(/\((\d+)\)\s*d[ií]as/i) || texto.match(/(\d+)\s*d[ií]as/i);
+
+  return match ? Number(match[1]) : 15;
+}
+
+function diffDaysISOCotizacion(inicio: string, fin: string) {
+  if (!inicio || !fin) return 15;
+
+  const start = new Date(inicio + 'T00:00:00');
+  const end = new Date(fin + 'T00:00:00');
+  const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
+
+  return Number.isFinite(diff) && diff > 0 ? diff : 15;
+}
+
 function parseTipoInmuebleValue(value: string) {
   const [codigo, ...nombreParts] = value.split('::');
 
@@ -501,6 +554,7 @@ export default function CotizacionesINMOVALPage() {
   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+  const [vigenciaDias, setVigenciaDias] = useState(15);
   const [terminosItems, setTerminosItems] =
     useState<TerminoCondicionCotizacion[]>(cloneTerminos(TERMINOS_BASE));
 
@@ -527,6 +581,30 @@ export default function CotizacionesINMOVALPage() {
     (item) => item.codigo === propositoCodigo
   );
 
+  const vigenciaPropuestaActiva = terminosItems.some(
+    (item) => item.id === 'vigencia-propuesta' && item.incluido
+  );
+
+  const fechaValidezAutomatica = vigenciaPropuestaActiva
+    ? addDaysISO(fechaCotizacion, vigenciaDias)
+    : '';
+
+  function actualizarVigenciaDias(value: string) {
+    const dias = Math.max(1, Math.round(Number(value || 1)));
+
+    setVigenciaDias(dias);
+    setTerminosItems((items) =>
+      items.map((item) =>
+        item.id === 'vigencia-propuesta'
+          ? {
+              ...item,
+              texto: buildTextoVigenciaCotizacion(dias),
+            }
+          : item
+      )
+    );
+  }
+
   function refrescar() {
     setRefreshKey((value) => value + 1);
   }
@@ -547,6 +625,7 @@ export default function CotizacionesINMOVALPage() {
     setCostoServicio('0');
     setMoneda('US$');
     setFechaCotizacion(todayISO());
+    setVigenciaDias(15);
     setFechaValidez(addDaysISO(todayISO(), 15));
     setTerminosItems(cloneTerminos(TERMINOS_BASE));
   }
@@ -646,7 +725,7 @@ export default function CotizacionesINMOVALPage() {
         terminosCondiciones: buildTerminosSeleccionados(),
         terminosItems: cloneTerminos(terminosItems),
         fechaCotizacion,
-        fechaValidez,
+        fechaValidez: fechaValidezAutomatica,
         actualizadoEn: ahora,
       };
 
@@ -676,7 +755,7 @@ export default function CotizacionesINMOVALPage() {
         terminosCondiciones: buildTerminosSeleccionados(),
         terminosItems: cloneTerminos(terminosItems),
         fechaCotizacion,
-        fechaValidez,
+        fechaValidez: fechaValidezAutomatica,
         creadoEn: ahora,
         actualizadoEn: ahora,
       };
@@ -731,9 +810,19 @@ export default function CotizacionesINMOVALPage() {
     setDescripcionServicio(cotizacion.descripcionServicio || 'Avalúo de inmueble');
     setCostoServicio(String(cotizacion.costoServicio || 0));
     setMoneda(cotizacion.moneda || 'US$');
-    setFechaCotizacion(cotizacion.fechaCotizacion || todayISO());
-    setFechaValidez(cotizacion.fechaValidez || addDaysISO(todayISO(), 15));
-    setTerminosItems(cloneTerminos(cotizacion.terminosItems || TERMINOS_BASE));
+    const fechaCotizacionEdit = cotizacion.fechaCotizacion || todayISO();
+    const terminosEdit = cloneTerminos(cotizacion.terminosItems || TERMINOS_BASE);
+    const diasEdit =
+      extraerDiasVigenciaCotizacion(terminosEdit) ||
+      diffDaysISOCotizacion(
+        fechaCotizacionEdit,
+        cotizacion.fechaValidez || addDaysISO(fechaCotizacionEdit, 15)
+      );
+
+    setFechaCotizacion(fechaCotizacionEdit);
+    setVigenciaDias(diasEdit);
+    setFechaValidez(cotizacion.fechaValidez || addDaysISO(fechaCotizacionEdit, diasEdit));
+    setTerminosItems(terminosEdit);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -1065,8 +1154,9 @@ export default function CotizacionesINMOVALPage() {
                   <FieldLabel>Validez</FieldLabel>
                   <input
                     type="date"
-                    value={fechaValidez}
-                    onChange={(event) => setFechaValidez(event.target.value)}
+                    value={fechaValidezAutomatica}
+                    disabled
+                    onChange={() => undefined}
                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
                   />
                 </label>
@@ -1120,6 +1210,41 @@ export default function CotizacionesINMOVALPage() {
                               placeholder={'Título del punto ' + String(index + 1)}
                             />
                           </div>
+
+                          {termino.id === 'vigencia-propuesta' ? (
+                            <div className="grid gap-2 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                              <div className="grid gap-3 md:grid-cols-[220px_1fr] md:items-center">
+                                <label className="grid gap-1">
+                                  <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                                    Días de validez de la propuesta
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={vigenciaDias}
+                                    disabled={!termino.incluido}
+                                    onChange={(event) =>
+                                      actualizarVigenciaDias(event.target.value)
+                                    }
+                                    className="h-10 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-emerald-400"
+                                  />
+                                </label>
+
+                                <div className="text-xs leading-5 text-slate-400">
+                                  {termino.incluido ? (
+                                    <>
+                                      La fecha de validez se calcula automáticamente desde la fecha de cotización.
+                                      <span className="mt-1 block font-medium text-slate-200">
+                                        Validez calculada: {fechaValidezAutomatica || '—'}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    'Este punto está desmarcado; la cotización no tendrá fecha de validez.'
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
 
                           <textarea
                             value={termino.texto}
