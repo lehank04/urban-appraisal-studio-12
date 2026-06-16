@@ -1,46 +1,31 @@
-import { Link, useLocation } from 'react-router-dom';
-import { ClipboardList, FileText, LayoutDashboard, Plus, UserCog, Users, Boxes } from 'lucide-react';
+﻿import { NavLink } from 'react-router-dom';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-} from '@/components/ui/sidebar';
+  BarChart3,
+  ClipboardList,
+  FolderKanban,
+  Users,
+  UserCog,
+  Database,
+  Boxes,
+  Settings,
+} from 'lucide-react';
 
-const mainItems = [
+const navigation = [
   {
-    title: 'Dashboard INMOVAL',
+    title: 'Centro INMOVAL',
     url: '/',
-    icon: LayoutDashboard,
+    icon: BarChart3,
   },
   {
-    title: 'Expedientes',
-    url: '/avaluos',
+    title: 'Cotizaciones',
+    url: '/cotizaciones',
     icon: ClipboardList,
   },
   {
     title: 'Expedientes',
     url: '/expedientes-plataforma',
-    icon: ClipboardList,
+    icon: FolderKanban,
   },
-  {
-    title: 'Cotizaciones',
-    url: '/cotizaciones',
-    icon: FileText,
-  },
-  {
-    title: 'Nuevo expediente',
-    url: '/avaluos/nuevo',
-    icon: Plus,
-  },
-];
-
-const adminItems = [
   {
     title: 'Clientes',
     url: '/clientes',
@@ -52,136 +37,58 @@ const adminItems = [
     icon: UserCog,
   },
   {
-    title: 'Módulos',
+    title: 'Base de comparables',
+    url: '/comparables',
+    icon: Database,
+  },
+  {
+    title: 'Módulos técnicos',
     url: '/modulos',
     icon: Boxes,
   },
-];
-
-const moduleItems = [
   {
-    title: 'Módulo urbano',
-    url: '/avaluos',
-    icon: FileText,
+    title: 'Configuración',
+    url: '/configuracion-plataforma',
+    icon: Settings,
   },
 ];
 
 export function AppSidebar() {
-  const location = useLocation();
-
-  const isActive = (url: string) => {
-    if (url === '/') return location.pathname === '/';
-    return location.pathname.startsWith(url);
-  };
-
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <div className="space-y-1">
-          <div className="text-sm font-semibold tracking-tight">
-            INMOVAL
-          </div>
-          <div className="text-xs text-sidebar-foreground/60">
-            Gestión de expedientes y avalúos
-          </div>
-        </div>
-      </SidebarHeader>
+    <aside className="min-h-screen w-72 border-r border-slate-800 bg-slate-950 p-4 text-slate-100">
+      <div className="mb-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
+        <p className="text-xs font-medium uppercase tracking-[0.22em] text-sky-300">
+          Plataforma
+        </p>
+        <h2 className="mt-2 text-xl font-bold">INMOVAL</h2>
+      </div>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Operación</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <nav className="grid gap-2">
+        {navigation.map((item) => {
+          const Icon = item.icon;
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Administración</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Módulos técnicos</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {moduleItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname.startsWith('/avaluos')}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled tooltip="Módulo rural">
-                  <FileText className="h-4 w-4" />
-                  <span>Módulo rural</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled tooltip="Módulo maquinaria">
-                  <FileText className="h-4 w-4" />
-                  <span>Módulo maquinaria</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled tooltip="Módulo vehículos">
-                  <FileText className="h-4 w-4" />
-                  <span>Módulo vehículos</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled tooltip="Módulo especiales">
-                  <FileText className="h-4 w-4" />
-                  <span>Módulo especiales</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+          return (
+            <NavLink
+              key={item.url}
+              to={item.url}
+              end={item.url === '/'}
+              className={({ isActive }) =>
+                [
+                  'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition',
+                  isActive
+                    ? 'bg-sky-500/15 text-sky-100 ring-1 ring-sky-400/30'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100',
+                ].join(' ')
+              }
+            >
+              <Icon className="h-4 w-4" />
+              {item.title}
+            </NavLink>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
+
+export default AppSidebar;
