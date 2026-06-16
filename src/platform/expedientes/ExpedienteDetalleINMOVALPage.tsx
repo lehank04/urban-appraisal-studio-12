@@ -274,14 +274,6 @@ export default function ExpedienteDetalleINMOVALPage() {
                 Volver
               </button>
 
-              <Link
-                to="/avaluos/nuevo"
-                className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
-              >
-                <FileText className="h-4 w-4" />
-                Crear avalúo técnico
-              </Link>
-
               <button
                 type="button"
                 onClick={marcarInspeccionRealizada}
@@ -361,18 +353,24 @@ export default function ExpedienteDetalleINMOVALPage() {
             title="Avalúo técnico"
             icon={<ClipboardList className="h-5 w-5" />}
           >
-            <div className="grid gap-3">
-              <p className="text-sm leading-6 text-slate-400">
-                Desde este expediente se puede crear o vincular el avalúo técnico
-                correspondiente.
-              </p>
+            <div className="grid gap-4">
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                <p className="text-sm font-semibold text-amber-100">
+                  Módulo técnico no conectado a esta plataforma
+                </p>
+                <p className="mt-2 text-sm leading-6 text-amber-100/80">
+                  Para crear el avalúo técnico, primero debe cargarse y activarse
+                  el módulo técnico correspondiente desde la sección Módulos técnicos.
+                  El desarrollo interno del módulo urbano se trabajará aparte.
+                </p>
+              </div>
 
               <Link
-                to="/avaluos/nuevo"
+                to="/modulos"
                 className="inline-flex w-fit items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
               >
                 <FileText className="h-4 w-4" />
-                Crear avalúo técnico
+                Ir a Módulos técnicos
               </Link>
             </div>
           </SectionCard>
