@@ -1,4 +1,4 @@
-﻿import {
+import {
   calcularEstadoPagoExpediente,
   calcularSaldoExpediente,
 } from '@/platform/expedientes/expedienteTypes';
@@ -6,6 +6,7 @@ import { ExpedienteIndiceINMOVAL } from '@/platform/expedientes/expedienteIndexT
 import { upsertExpedienteIndiceINMOVAL } from '@/platform/expedientes/expedienteIndexStorage';
 import { nowISO, todayISO } from '@/shared/utils/dateUtils';
 import { CotizacionINMOVAL } from './cotizacionTypes';
+import { TipoModuloTecnico } from '@/shared/types/inmovalCore';
 
 function createId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -13,6 +14,15 @@ function createId() {
   }
 
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function moduloFromClasificacionCotizacion(codigo?: string): TipoModuloTecnico {
+  if (codigo === 'IU') return 'urbano';
+  if (codigo === 'IR') return 'rural';
+  if (codigo === 'IE') return 'especiales';
+  if (codigo === 'VM') return 'maquinaria';
+
+  return 'urbano';
 }
 
 function buildCodigoExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
@@ -27,28 +37,68 @@ function buildCodigoExpedienteDesdeCotizacion(cotizacion: CotizacionINMOVAL) {
 export function crearExpedienteIndiceDesdeCotizacion(
   cotizacion: CotizacionINMOVAL
 ): ExpedienteIndiceINMOVAL {
+  const data = cotizacion as any;
   const ahora = nowISO();
-  const costoServicio = Number(cotizacion.total || 0);
+
+  const costoServicio = Number(data.total ?? data.costoServicio ?? 0);
   const montoPagado = 0;
   const saldo = calcularSaldoExpediente(costoServicio, montoPagado);
 
-  return {
-    id: cotizacion.expedienteId || createId(),
-    codigo: buildCodigoExpedienteDesdeCotizacion(cotizacion),
-    titulo: cotizacion.servicio || `Expediente de ${cotizacion.numero}`,
+  const clasificacionCodigo = data.clasificacionInmuebleCodigo || '';
+  const tipoModulo = moduloFromClasificacionCotizacion(clasificacionCodigo);
 
-    tipoModulo: cotizacion.tipoModulo,
+  return {
+    id: data.expedienteId || createId(),
+    codigo: buildCodigoExpedienteDesdeCotizacion(cotizacion),
+    titulo:
+      data.servicio ||
+      data.descripcionServicio ||
+      `Expediente de ${data.numero || 'cotización'}`,
+
+    tipoModulo,
     estado: 'cotizacion_aprobada',
     prioridad: 'normal',
 
-    clienteNombre: cotizacion.cliente?.nombre || 'Cliente pendiente',
+    clienteId: data.clienteId || data.cliente?.id || undefined,
+    clienteNombre:
+      data.clienteNombre ||
+      data.cliente?.nombre ||
+      'Cliente pendiente',
+    clienteEmail: data.clienteEmail || data.cliente?.email || undefined,
+    clienteTelefono: data.clienteTelefono || data.cliente?.telefono || undefined,
+    clienteDireccion: data.clienteDireccion || data.cliente?.direccion || undefined,
+
+    direccionInmueble: data.direccionInmueble || undefined,
+    tipoInmuebleCodigo: data.tipoInmuebleCodigo || undefined,
+    tipoInmuebleNombre: data.tipoInmuebleNombre || undefined,
+    clasificacionInmuebleCodigo: data.clasificacionInmuebleCodigo || undefined,
+    clasificacionInmuebleNombre: data.clasificacionInmuebleNombre || undefined,
+    propositoAvaluoCodigo: data.propositoAvaluoCodigo || undefined,
+    propositoAvaluoNombre: data.propositoAvaluoNombre || undefined,
+
+    notas:
+      data.terminosCondiciones ||
+      data.descripcionServicio ||
+      data.servicio ||
+      undefined,
 
     fechaSolicitud: todayISO(),
 
     costoServicio,
     montoPagado,
     saldo,
-    moneda: cotizacion.moneda,
+    moneda: data.moneda || 'US
+
+export function crearExpedienteDeCotizacionAprobada(
+  cotizacion: CotizacionINMOVAL
+) {
+  const expediente = crearExpedienteIndiceDesdeCotizacion(cotizacion);
+
+  upsertExpedienteIndiceINMOVAL(expediente);
+
+  return expediente;
+}
+,
     estadoPago: calcularEstadoPagoExpediente(costoServicio, montoPagado),
 
     facturaEmitida: false,
