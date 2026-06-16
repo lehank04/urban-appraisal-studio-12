@@ -502,15 +502,18 @@ function formatMoney(value: number, moneda: MonedaCotizacionINMOVAL) {
 }
 
 function estadoLabel(estado: EstadoCotizacionINMOVAL) {
-  const labels: Record<EstadoCotizacionINMOVAL, string> = {
+  const labels: Record<string, string> = {
     borrador: 'Borrador',
     enviada: 'Enviada',
     aprobada: 'Aprobada',
     rechazada: 'Rechazada',
-    convertida: 'Convertida',
+    avaluo_en_proceso: 'Avalúo en proceso',
+    avaluo_finalizado: 'Avalúo finalizado',
+    factura_emitida: 'Factura emitida',
+    convertida: 'Avalúo en proceso',
   };
 
-  return labels[estado];
+  return labels[estado] || String(estado || 'Sin estado').replace(/_/g, ' ');
 }
 
 function estadoClass(estado: EstadoCotizacionINMOVAL) {
@@ -518,8 +521,16 @@ function estadoClass(estado: EstadoCotizacionINMOVAL) {
     return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100';
   }
 
-  if (estado === 'convertida') {
+  if (estado === 'avaluo_en_proceso' || estado === 'convertida') {
     return 'border-sky-400/30 bg-sky-400/10 text-sky-100';
+  }
+
+  if (estado === 'avaluo_finalizado') {
+    return 'border-violet-400/30 bg-violet-400/10 text-violet-100';
+  }
+
+  if (estado === 'factura_emitida') {
+    return 'border-cyan-400/30 bg-cyan-400/10 text-cyan-100';
   }
 
   if (estado === 'enviada') {
@@ -531,6 +542,19 @@ function estadoClass(estado: EstadoCotizacionINMOVAL) {
   }
 
   return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
+}
+
+function estadoOperativoCotizacion(
+  cotizacion: CotizacionINMOVALLocal
+): EstadoCotizacionINMOVAL {
+  if (
+    cotizacion.estado === 'convertida' ||
+    (cotizacion.estado === 'aprobada' && cotizacion.expedienteId)
+  ) {
+    return 'avaluo_en_proceso';
+  }
+
+  return cotizacion.estado;
 }
 
 function getMenuFloatingPosition(rect: DOMRect) {

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -51,7 +51,7 @@ function getEstadoLabel(value: unknown) {
   const estado = String(value || 'en_cotizacion');
 
   const labels: Record<string, string> = {
-    en_cotizacion: 'En cotización',
+    en_cotizacion: 'En proceso',
     cotizacion_aprobada: 'Cotización aprobada',
     abierto: 'Abierto',
     en_proceso: 'En proceso',
@@ -102,7 +102,7 @@ function normalizeExpediente(expediente: ExpedienteIndiceINMOVAL) {
 
   return {
     ...data,
-    estado: data.estado || 'en_cotizacion',
+    estado: data.estado || 'en_proceso',
     prioridad: data.prioridad || 'normal',
     estadoPago:
       data.estadoPago ||

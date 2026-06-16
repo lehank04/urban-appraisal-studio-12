@@ -56,7 +56,7 @@ export function crearExpedienteIndiceDesdeCotizacion(
       `Expediente de ${data.numero || 'cotización'}`,
 
     tipoModulo,
-    estado: 'cotizacion_aprobada',
+    estado: 'en_proceso',
     prioridad: 'normal',
 
     clienteId: data.clienteId || data.cliente?.id || undefined,
