@@ -157,7 +157,7 @@ function getCotizacionPrecargaINMOVAL(): CotizacionPrecargaINMOVAL | null {
   }
 }
 
-function marcarCotizacionComoConvertidaINMOVAL(cotizacionId: string, expedienteId: string) {
+function marcarCotizacionComoAvaluoEnProcesoINMOVAL(cotizacionId: string, expedienteId: string) {
   if (typeof window === 'undefined') return;
 
   const raw = window.localStorage.getItem('inmoval_cotizaciones_v1');
@@ -173,7 +173,7 @@ function marcarCotizacionComoConvertidaINMOVAL(cotizacionId: string, expedienteI
       item.id === cotizacionId
         ? {
             ...item,
-            estado: 'convertida',
+            estado: 'avaluo_en_proceso',
             expedienteId,
             actualizadoEn: nowISO(),
           }
