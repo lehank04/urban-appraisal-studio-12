@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@/store/avaluoStore';
-import { Perito, PlantillaId } from '@/store/types';
+import { Perito } from '@/store/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,6 @@ import {
 import { TextField } from '@/components/forms/Fields';
 import {
   Edit,
-  FileBadge,
-  FileText,
   Plus,
   Search,
   Trash2,
@@ -45,9 +43,7 @@ function PeritoForm({
   value: Omit<Perito, 'id'>;
   onChange: (v: Omit<Perito, 'id'>) => void;
 }) {
-  const plantilla = PLANTILLAS[value.plantilla];
-
-  return (
+return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
@@ -107,26 +103,6 @@ function PeritoForm({
             onChange={(v) => onChange({ ...value, direccion: v })}
           />
         </div>
-
-        <div className="col-span-2 space-y-1.5">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-            Plantilla documental
-          </Label>
-
-          <select
-            value={value.plantilla}
-            onChange={(e) =>
-              onChange({ ...value, plantilla: e.target.value as PlantillaId })
-            }
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-          >
-            {Object.entries(PLANTILLAS).map(([k, pl]) => (
-              <option key={k} value={k}>
-                {pl.nombre} · {pl.empresa}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="rounded-md border border-border bg-muted/20 p-3 flex items-start gap-3">
@@ -171,9 +147,6 @@ export default function PeritosPage() {
     return peritos
       .filter((p) => {
         if (!query) return true;
-
-        const plantilla = PLANTILLAS[p.plantilla];
-
         const texto = [
           p.nombre,
           p.cedula,
@@ -185,9 +158,7 @@ export default function PeritosPage() {
           p.cargo,
           p.empresa,
           p.ciudad,
-          plantilla?.nombre,
-          plantilla?.empresa,
-        ]
+]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
@@ -237,7 +208,6 @@ export default function PeritosPage() {
       telefono: nuevo.telefono?.trim(),
       email: nuevo.email?.trim(),
       direccion: nuevo.direccion?.trim(),
-      plantilla: nuevo.plantilla,
       cargo: nuevo.cargo?.trim(),
       empresa: nuevo.empresa?.trim(),
       ciudad: nuevo.ciudad?.trim(),
@@ -264,7 +234,6 @@ export default function PeritosPage() {
       telefono: patch.telefono?.trim(),
       email: patch.email?.trim(),
       direccion: patch.direccion?.trim(),
-      plantilla: patch.plantilla,
       cargo: patch.cargo?.trim(),
       empresa: patch.empresa?.trim(),
       ciudad: patch.ciudad?.trim(),
@@ -294,7 +263,7 @@ export default function PeritosPage() {
             Dashboard INMOVAL
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Peritos y plantillas
+            Peritos
           </h1>
           <p className="text-sm text-muted-foreground">
             {peritos.length} perito(s) · cada perito puede usar su propia plantilla documental
@@ -348,7 +317,6 @@ export default function PeritosPage() {
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {peritosFiltrados.map((p) => {
-            const pl = PLANTILLAS[p.plantilla];
             const totalExpedientes = expedientesPorPerito.get(p.id) || 0;
             const activos = activosPorPerito.get(p.id) || 0;
 
@@ -357,7 +325,7 @@ export default function PeritosPage() {
                 <div className="flex justify-between items-start gap-4">
                   <div className="min-w-0">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {pl.nombre}
+                      {p.empresa || 'Perito / empresa pericial'}
                     </div>
 
                     <div className="font-semibold text-lg mt-1 truncate">
@@ -433,22 +401,6 @@ export default function PeritosPage() {
                   <Badge variant="outline">
                     {activos} activo(s)
                   </Badge>
-
-                  <Badge variant="outline">
-                    {pl.capitulos.length} cap.
-                  </Badge>
-                </div>
-
-                <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Plantilla documental
-                  </div>
-                  <div className="text-sm font-medium mt-1">
-                    {pl.nombre}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {pl.normativa}
-                  </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-border flex justify-end gap-1">
