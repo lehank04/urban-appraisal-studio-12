@@ -1,0 +1,1541 @@
+﻿============================================================
+FILE: src\platform\expedientes\ExpedienteDetalleINMOVALPage.tsx
+============================================================
+632:                 <h2 className="text-lg font-semibold text-slate-100">
+633:                   PreparaciÃ³n para mÃ³dulo tÃ©cnico
+634:                 </h2>
+635:                 <p className="mt-2 text-sm text-slate-400">
+636:                   PreparÃ¡ este expediente para iniciar o vincular
+637:                   el avalÃºo tÃ©cnico urbano.
+638:                 </p>
+639:               </div>
+640: 
+641:               <Link
+642:                 to={`/expedientes-plataforma/${expediente.id}/preparar-tecnico`}
+643:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+644:               >
+645:                 Preparar mÃ³dulo tÃ©cnico
+646:               </Link>
+647:             </div>
+648:           </section>
+649: 
+650:           <ExpedienteModuloTecnicoPanel
+651:             expediente={expediente}
+652:             onUpdated={refrescarExpediente}
+653:           />
+654: 
+655:           <ExpedienteComparablesPanel expediente={expediente} />
+656: 
+657: 
+658:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+659:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+660:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+
+635:                 <p className="mt-2 text-sm text-slate-400">
+636:                   PreparÃ¡ este expediente para iniciar o vincular
+637:                   el avalÃºo tÃ©cnico urbano.
+638:                 </p>
+639:               </div>
+640: 
+641:               <Link
+642:                 to={`/expedientes-plataforma/${expediente.id}/preparar-tecnico`}
+643:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+644:               >
+645:                 Preparar mÃ³dulo tÃ©cnico
+646:               </Link>
+647:             </div>
+648:           </section>
+649: 
+650:           <ExpedienteModuloTecnicoPanel
+651:             expediente={expediente}
+652:             onUpdated={refrescarExpediente}
+653:           />
+654: 
+655:           <ExpedienteComparablesPanel expediente={expediente} />
+656: 
+657: 
+658:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+659:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+660:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+661:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+662:           <DetailItem
+663:             label="RevisiÃ³n activa"
+
+============================================================
+FILE: src\platform\expedientes\expedienteIndexTypes.ts
+============================================================
+59:   totalRevisiones: number;
+60: 
+61:   driveUrl?: string;
+62:   archivoImvNombre?: string;
+63: 
+64:   avaluoTecnicoId?: string;
+65:   avaluoTecnicoRuta?: string;
+66:   moduloTecnicoVinculado?: TipoModuloTecnico;
+67:   vinculadoModuloTecnicoEn?: string;
+68: 
+69:   preparacionTecnicaId?: string;
+70:   preparacionTecnicaEstado?: 'pendiente' | 'preparado' | 'vinculado';
+71:   preparacionTecnicaEn?: string;
+72:   preparacionTecnicaResumen?: string;
+73: 
+74:   creadoEn: string;
+75:   actualizadoEn: string;
+76: };
+77: 
+78: export type ExpedienteIndiceFiltrosINMOVAL = {
+79:   busqueda?: string;
+80:   tipoModulo?: TipoModuloTecnico | 'todos';
+81:   estado?: EstadoExpedienteINMOVAL | 'todos';
+82:   prioridad?: PrioridadExpedienteINMOVAL | 'todos';
+83:   estadoPago?: EstadoPagoINMOVAL | 'todos';
+84: };
+85: 
+86: export function expedienteIndiceCoincideConBusqueda(
+87:   expediente: ExpedienteIndiceINMOVAL,
+
+60: 
+61:   driveUrl?: string;
+62:   archivoImvNombre?: string;
+63: 
+64:   avaluoTecnicoId?: string;
+65:   avaluoTecnicoRuta?: string;
+66:   moduloTecnicoVinculado?: TipoModuloTecnico;
+67:   vinculadoModuloTecnicoEn?: string;
+68: 
+69:   preparacionTecnicaId?: string;
+70:   preparacionTecnicaEstado?: 'pendiente' | 'preparado' | 'vinculado';
+71:   preparacionTecnicaEn?: string;
+72:   preparacionTecnicaResumen?: string;
+73: 
+74:   creadoEn: string;
+75:   actualizadoEn: string;
+76: };
+77: 
+78: export type ExpedienteIndiceFiltrosINMOVAL = {
+79:   busqueda?: string;
+80:   tipoModulo?: TipoModuloTecnico | 'todos';
+81:   estado?: EstadoExpedienteINMOVAL | 'todos';
+82:   prioridad?: PrioridadExpedienteINMOVAL | 'todos';
+83:   estadoPago?: EstadoPagoINMOVAL | 'todos';
+84: };
+85: 
+86: export function expedienteIndiceCoincideConBusqueda(
+87:   expediente: ExpedienteIndiceINMOVAL,
+88:   busqueda?: string
+
+61:   driveUrl?: string;
+62:   archivoImvNombre?: string;
+63: 
+64:   avaluoTecnicoId?: string;
+65:   avaluoTecnicoRuta?: string;
+66:   moduloTecnicoVinculado?: TipoModuloTecnico;
+67:   vinculadoModuloTecnicoEn?: string;
+68: 
+69:   preparacionTecnicaId?: string;
+70:   preparacionTecnicaEstado?: 'pendiente' | 'preparado' | 'vinculado';
+71:   preparacionTecnicaEn?: string;
+72:   preparacionTecnicaResumen?: string;
+73: 
+74:   creadoEn: string;
+75:   actualizadoEn: string;
+76: };
+77: 
+78: export type ExpedienteIndiceFiltrosINMOVAL = {
+79:   busqueda?: string;
+80:   tipoModulo?: TipoModuloTecnico | 'todos';
+81:   estado?: EstadoExpedienteINMOVAL | 'todos';
+82:   prioridad?: PrioridadExpedienteINMOVAL | 'todos';
+83:   estadoPago?: EstadoPagoINMOVAL | 'todos';
+84: };
+85: 
+86: export function expedienteIndiceCoincideConBusqueda(
+87:   expediente: ExpedienteIndiceINMOVAL,
+88:   busqueda?: string
+89: ) {
+
+62:   archivoImvNombre?: string;
+63: 
+64:   avaluoTecnicoId?: string;
+65:   avaluoTecnicoRuta?: string;
+66:   moduloTecnicoVinculado?: TipoModuloTecnico;
+67:   vinculadoModuloTecnicoEn?: string;
+68: 
+69:   preparacionTecnicaId?: string;
+70:   preparacionTecnicaEstado?: 'pendiente' | 'preparado' | 'vinculado';
+71:   preparacionTecnicaEn?: string;
+72:   preparacionTecnicaResumen?: string;
+73: 
+74:   creadoEn: string;
+75:   actualizadoEn: string;
+76: };
+77: 
+78: export type ExpedienteIndiceFiltrosINMOVAL = {
+79:   busqueda?: string;
+80:   tipoModulo?: TipoModuloTecnico | 'todos';
+81:   estado?: EstadoExpedienteINMOVAL | 'todos';
+82:   prioridad?: PrioridadExpedienteINMOVAL | 'todos';
+83:   estadoPago?: EstadoPagoINMOVAL | 'todos';
+84: };
+85: 
+86: export function expedienteIndiceCoincideConBusqueda(
+87:   expediente: ExpedienteIndiceINMOVAL,
+88:   busqueda?: string
+89: ) {
+90:   if (!busqueda?.trim()) return true;
+
+============================================================
+FILE: src\platform\expedientes\expedienteTecnicoBridge.ts
+============================================================
+1: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+2: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+3: 
+4: export type PreparacionModuloTecnicoINMOVAL = {
+5:   id: string;
+6:   expedienteAdministrativoId: string;
+7:   expedienteAdministrativoCodigo: string;
+8:   titulo: string;
+9:   clienteNombre: string;
+10:   peritoNombre?: string;
+11:   tipoModulo: 'urbano' | 'rural' | 'maquinaria' | 'vehiculos' | 'especiales';
+12:   fechaPreparacion: string;
+13:   fechaSolicitud: string;
+14:   fechaEntregaEstimada?: string;
+15:   costoServicio: number;
+16:   moneda: string;
+17:   estado: 'pendiente' | 'preparado' | 'vinculado';
+18:   datosBase: {
+19:     usoPrevisto?: string;
+20:     direccionPendiente: boolean;
+21:     inspeccionPendiente: boolean;
+22:     comparablesPendientes: boolean;
+
+2: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+3: 
+4: export type PreparacionModuloTecnicoINMOVAL = {
+5:   id: string;
+6:   expedienteAdministrativoId: string;
+7:   expedienteAdministrativoCodigo: string;
+8:   titulo: string;
+9:   clienteNombre: string;
+10:   peritoNombre?: string;
+11:   tipoModulo: 'urbano' | 'rural' | 'maquinaria' | 'vehiculos' | 'especiales';
+12:   fechaPreparacion: string;
+13:   fechaSolicitud: string;
+14:   fechaEntregaEstimada?: string;
+15:   costoServicio: number;
+16:   moneda: string;
+17:   estado: 'pendiente' | 'preparado' | 'vinculado';
+18:   datosBase: {
+19:     usoPrevisto?: string;
+20:     direccionPendiente: boolean;
+21:     inspeccionPendiente: boolean;
+22:     comparablesPendientes: boolean;
+23:     documentacionPendiente: boolean;
+24:   };
+25: };
+26: 
+27: const PREPARACION_TECNICA_KEY = 'inmoval_preparaciones_tecnicas_v1';
+28: 
+29: function createId() {
+30:   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+
+17:   estado: 'pendiente' | 'preparado' | 'vinculado';
+18:   datosBase: {
+19:     usoPrevisto?: string;
+20:     direccionPendiente: boolean;
+21:     inspeccionPendiente: boolean;
+22:     comparablesPendientes: boolean;
+23:     documentacionPendiente: boolean;
+24:   };
+25: };
+26: 
+27: const PREPARACION_TECNICA_KEY = 'inmoval_preparaciones_tecnicas_v1';
+28: 
+29: function createId() {
+30:   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+31:     return crypto.randomUUID();
+32:   }
+33: 
+34:   return `prep-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+35: }
+36: 
+37: export function getPreparacionesTecnicasINMOVAL(): PreparacionModuloTecnicoINMOVAL[] {
+38:   if (typeof window === 'undefined') return [];
+39: 
+40:   const raw = window.localStorage.getItem(PREPARACION_TECNICA_KEY);
+41: 
+42:   if (!raw) return [];
+43: 
+44:   try {
+45:     const parsed = JSON.parse(raw);
+
+27: const PREPARACION_TECNICA_KEY = 'inmoval_preparaciones_tecnicas_v1';
+28: 
+29: function createId() {
+30:   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+31:     return crypto.randomUUID();
+32:   }
+33: 
+34:   return `prep-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+35: }
+36: 
+37: export function getPreparacionesTecnicasINMOVAL(): PreparacionModuloTecnicoINMOVAL[] {
+38:   if (typeof window === 'undefined') return [];
+39: 
+40:   const raw = window.localStorage.getItem(PREPARACION_TECNICA_KEY);
+41: 
+42:   if (!raw) return [];
+43: 
+44:   try {
+45:     const parsed = JSON.parse(raw);
+46: 
+47:     if (!Array.isArray(parsed)) return [];
+48: 
+49:     return parsed as PreparacionModuloTecnicoINMOVAL[];
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+
+30:   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+31:     return crypto.randomUUID();
+32:   }
+33: 
+34:   return `prep-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+35: }
+36: 
+37: export function getPreparacionesTecnicasINMOVAL(): PreparacionModuloTecnicoINMOVAL[] {
+38:   if (typeof window === 'undefined') return [];
+39: 
+40:   const raw = window.localStorage.getItem(PREPARACION_TECNICA_KEY);
+41: 
+42:   if (!raw) return [];
+43: 
+44:   try {
+45:     const parsed = JSON.parse(raw);
+46: 
+47:     if (!Array.isArray(parsed)) return [];
+48: 
+49:     return parsed as PreparacionModuloTecnicoINMOVAL[];
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+
+39: 
+40:   const raw = window.localStorage.getItem(PREPARACION_TECNICA_KEY);
+41: 
+42:   if (!raw) return [];
+43: 
+44:   try {
+45:     const parsed = JSON.parse(raw);
+46: 
+47:     if (!Array.isArray(parsed)) return [];
+48: 
+49:     return parsed as PreparacionModuloTecnicoINMOVAL[];
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+
+45:     const parsed = JSON.parse(raw);
+46: 
+47:     if (!Array.isArray(parsed)) return [];
+48: 
+49:     return parsed as PreparacionModuloTecnicoINMOVAL[];
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+
+46: 
+47:     if (!Array.isArray(parsed)) return [];
+48: 
+49:     return parsed as PreparacionModuloTecnicoINMOVAL[];
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+
+50:   } catch {
+51:     return [];
+52:   }
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+
+53: }
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+
+54: 
+55: export function savePreparacionesTecnicasINMOVAL(
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+
+56:   preparaciones: PreparacionModuloTecnicoINMOVAL[]
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+
+57: ) {
+58:   if (typeof window === 'undefined') return;
+59: 
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+
+60:   window.localStorage.setItem(PREPARACION_TECNICA_KEY, JSON.stringify(preparaciones));
+61: }
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+
+62: 
+63: export function upsertPreparacionTecnicaINMOVAL(
+64:   preparacion: PreparacionModuloTecnicoINMOVAL
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+
+65: ) {
+66:   const preparaciones = getPreparacionesTecnicasINMOVAL();
+67:   const index = preparaciones.findIndex((item) => item.id === preparacion.id);
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+
+68: 
+69:   if (index >= 0) {
+70:     preparaciones[index] = preparacion;
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+
+71:   } else {
+72:     preparaciones.unshift(preparacion);
+73:   }
+74: 
+75:   savePreparacionesTecnicasINMOVAL(preparaciones);
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+97:     titulo: expediente.titulo,
+98:     clienteNombre: expediente.clienteNombre,
+99:     peritoNombre: expediente.peritoNombre,
+
+76: }
+77: 
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+97:     titulo: expediente.titulo,
+98:     clienteNombre: expediente.clienteNombre,
+99:     peritoNombre: expediente.peritoNombre,
+100:     tipoModulo: expediente.tipoModulo,
+101:     fechaPreparacion: nowISO(),
+102:     fechaSolicitud: expediente.fechaSolicitud || todayISO(),
+103:     fechaEntregaEstimada: expediente.fechaEntregaEstimada,
+104:     costoServicio: expediente.costoServicio,
+
+78: export function getPreparacionTecnicaPorExpedienteINMOVAL(
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+97:     titulo: expediente.titulo,
+98:     clienteNombre: expediente.clienteNombre,
+99:     peritoNombre: expediente.peritoNombre,
+100:     tipoModulo: expediente.tipoModulo,
+101:     fechaPreparacion: nowISO(),
+102:     fechaSolicitud: expediente.fechaSolicitud || todayISO(),
+103:     fechaEntregaEstimada: expediente.fechaEntregaEstimada,
+104:     costoServicio: expediente.costoServicio,
+105:     moneda: expediente.moneda,
+106:     estado: 'preparado',
+
+79:   expedienteId: string
+80: ) {
+81:   return getPreparacionesTecnicasINMOVAL().find(
+82:     (item) => item.expedienteAdministrativoId === expedienteId
+83:   );
+84: }
+85: 
+86: export function crearPreparacionTecnicaDesdeExpediente(
+87:   expediente: ExpedienteIndiceINMOVAL
+88: ): PreparacionModuloTecnicoINMOVAL {
+89:   const existente = getPreparacionTecnicaPorExpedienteINMOVAL(expediente.id);
+90: 
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+97:     titulo: expediente.titulo,
+98:     clienteNombre: expediente.clienteNombre,
+99:     peritoNombre: expediente.peritoNombre,
+100:     tipoModulo: expediente.tipoModulo,
+101:     fechaPreparacion: nowISO(),
+102:     fechaSolicitud: expediente.fechaSolicitud || todayISO(),
+103:     fechaEntregaEstimada: expediente.fechaEntregaEstimada,
+104:     costoServicio: expediente.costoServicio,
+105:     moneda: expediente.moneda,
+106:     estado: 'preparado',
+107:     datosBase: {
+
+91:   if (existente) return existente;
+92: 
+93:   return {
+94:     id: createId(),
+95:     expedienteAdministrativoId: expediente.id,
+96:     expedienteAdministrativoCodigo: expediente.codigo,
+97:     titulo: expediente.titulo,
+98:     clienteNombre: expediente.clienteNombre,
+99:     peritoNombre: expediente.peritoNombre,
+100:     tipoModulo: expediente.tipoModulo,
+101:     fechaPreparacion: nowISO(),
+102:     fechaSolicitud: expediente.fechaSolicitud || todayISO(),
+103:     fechaEntregaEstimada: expediente.fechaEntregaEstimada,
+104:     costoServicio: expediente.costoServicio,
+105:     moneda: expediente.moneda,
+106:     estado: 'preparado',
+107:     datosBase: {
+108:       usoPrevisto: 'AvalÃºo tÃ©cnico urbano',
+109:       direccionPendiente: true,
+110:       inspeccionPendiente: true,
+111:       comparablesPendientes: true,
+112:       documentacionPendiente: true,
+113:     },
+114:   };
+115: }
+
+============================================================
+FILE: src\platform\expedientes\PrepararModuloTecnicoINMOVALPage.tsx
+============================================================
+10:   Link2,
+11:   Save,
+12: } from 'lucide-react';
+13: import { nowISO } from '@/shared/utils/dateUtils';
+14: import {
+15:   getExpedienteIndiceINMOVAL,
+16:   upsertExpedienteIndiceINMOVAL,
+17: } from './expedienteIndexStorage';
+18: import { registrarActividadExpedienteINMOVAL } from './expedienteActivityStorage';
+19: import {
+20:   crearPreparacionTecnicaDesdeExpediente,
+21:   getPreparacionTecnicaPorExpedienteINMOVAL,
+22:   upsertPreparacionTecnicaINMOVAL,
+23: } from './expedienteTecnicoBridge';
+24: 
+25: function DetailItem({
+26:   label,
+27:   value,
+28: }: {
+29:   label: string;
+30:   value?: string | number;
+31: }) {
+32:   return (
+33:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+34:       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+35:         {label}
+36:       </p>
+37:       <p className="mt-2 break-words text-sm font-semibold text-slate-100">
+38:         {value || 'Pendiente'}
+
+11:   Save,
+12: } from 'lucide-react';
+13: import { nowISO } from '@/shared/utils/dateUtils';
+14: import {
+15:   getExpedienteIndiceINMOVAL,
+16:   upsertExpedienteIndiceINMOVAL,
+17: } from './expedienteIndexStorage';
+18: import { registrarActividadExpedienteINMOVAL } from './expedienteActivityStorage';
+19: import {
+20:   crearPreparacionTecnicaDesdeExpediente,
+21:   getPreparacionTecnicaPorExpedienteINMOVAL,
+22:   upsertPreparacionTecnicaINMOVAL,
+23: } from './expedienteTecnicoBridge';
+24: 
+25: function DetailItem({
+26:   label,
+27:   value,
+28: }: {
+29:   label: string;
+30:   value?: string | number;
+31: }) {
+32:   return (
+33:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+34:       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+35:         {label}
+36:       </p>
+37:       <p className="mt-2 break-words text-sm font-semibold text-slate-100">
+38:         {value || 'Pendiente'}
+39:       </p>
+
+12: } from 'lucide-react';
+13: import { nowISO } from '@/shared/utils/dateUtils';
+14: import {
+15:   getExpedienteIndiceINMOVAL,
+16:   upsertExpedienteIndiceINMOVAL,
+17: } from './expedienteIndexStorage';
+18: import { registrarActividadExpedienteINMOVAL } from './expedienteActivityStorage';
+19: import {
+20:   crearPreparacionTecnicaDesdeExpediente,
+21:   getPreparacionTecnicaPorExpedienteINMOVAL,
+22:   upsertPreparacionTecnicaINMOVAL,
+23: } from './expedienteTecnicoBridge';
+24: 
+25: function DetailItem({
+26:   label,
+27:   value,
+28: }: {
+29:   label: string;
+30:   value?: string | number;
+31: }) {
+32:   return (
+33:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+34:       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+35:         {label}
+36:       </p>
+37:       <p className="mt-2 break-words text-sm font-semibold text-slate-100">
+38:         {value || 'Pendiente'}
+39:       </p>
+40:     </div>
+
+34:       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+35:         {label}
+36:       </p>
+37:       <p className="mt-2 break-words text-sm font-semibold text-slate-100">
+38:         {value || 'Pendiente'}
+39:       </p>
+40:     </div>
+41:   );
+42: }
+43: 
+44: export default function PrepararModuloTecnicoINMOVALPage() {
+45:   const { id } = useParams();
+46:   const navigate = useNavigate();
+47: 
+48:   const [saved, setSaved] = useState(false);
+49:   const [avaluoTecnicoId, setAvaluoTecnicoId] = useState('');
+50: 
+51:   const expediente = useMemo(
+52:     () => getExpedienteIndiceINMOVAL(id || ''),
+53:     [id]
+54:   );
+55: 
+56:   const preparacionExistente = useMemo(
+57:     () => getPreparacionTecnicaPorExpedienteINMOVAL(id || ''),
+58:     [id, saved]
+59:   );
+60: 
+61:   if (!expediente) {
+62:     return (
+
+46:   const navigate = useNavigate();
+47: 
+48:   const [saved, setSaved] = useState(false);
+49:   const [avaluoTecnicoId, setAvaluoTecnicoId] = useState('');
+50: 
+51:   const expediente = useMemo(
+52:     () => getExpedienteIndiceINMOVAL(id || ''),
+53:     [id]
+54:   );
+55: 
+56:   const preparacionExistente = useMemo(
+57:     () => getPreparacionTecnicaPorExpedienteINMOVAL(id || ''),
+58:     [id, saved]
+59:   );
+60: 
+61:   if (!expediente) {
+62:     return (
+63:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+64:         <div className="mx-auto max-w-4xl rounded-3xl border border-rose-400/20 bg-rose-400/10 p-6">
+65:           <h1 className="text-xl font-semibold text-rose-100">
+66:             Expediente no encontrado
+67:           </h1>
+68:           <Link
+69:             to="/expedientes-plataforma"
+70:             className="mt-4 inline-flex rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-200"
+71:           >
+72:             Volver a expedientes
+73:           </Link>
+74:         </div>
+
+47: 
+48:   const [saved, setSaved] = useState(false);
+49:   const [avaluoTecnicoId, setAvaluoTecnicoId] = useState('');
+50: 
+51:   const expediente = useMemo(
+52:     () => getExpedienteIndiceINMOVAL(id || ''),
+53:     [id]
+54:   );
+55: 
+56:   const preparacionExistente = useMemo(
+57:     () => getPreparacionTecnicaPorExpedienteINMOVAL(id || ''),
+58:     [id, saved]
+59:   );
+60: 
+61:   if (!expediente) {
+62:     return (
+63:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+64:         <div className="mx-auto max-w-4xl rounded-3xl border border-rose-400/20 bg-rose-400/10 p-6">
+65:           <h1 className="text-xl font-semibold text-rose-100">
+66:             Expediente no encontrado
+67:           </h1>
+68:           <Link
+69:             to="/expedientes-plataforma"
+70:             className="mt-4 inline-flex rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-200"
+71:           >
+72:             Volver a expedientes
+73:           </Link>
+74:         </div>
+75:       </div>
+
+75:       </div>
+76:     );
+77:   }
+78: 
+79:   const rutaTecnica =
+80:     expediente.avaluoTecnicoRuta ||
+81:     (expediente.avaluoTecnicoId
+82:       ? `/avaluos/${expediente.avaluoTecnicoId}`
+83:       : '');
+84: 
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+
+76:     );
+77:   }
+78: 
+79:   const rutaTecnica =
+80:     expediente.avaluoTecnicoRuta ||
+81:     (expediente.avaluoTecnicoId
+82:       ? `/avaluos/${expediente.avaluoTecnicoId}`
+83:       : '');
+84: 
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+
+79:   const rutaTecnica =
+80:     expediente.avaluoTecnicoRuta ||
+81:     (expediente.avaluoTecnicoId
+82:       ? `/avaluos/${expediente.avaluoTecnicoId}`
+83:       : '');
+84: 
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+
+83:       : '');
+84: 
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+108:     });
+109: 
+110:     setSaved(true);
+111:   }
+
+84: 
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+108:     });
+109: 
+110:     setSaved(true);
+111:   }
+112: 
+
+85:   function handlePrepararModulo() {
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+108:     });
+109: 
+110:     setSaved(true);
+111:   }
+112: 
+113:   function handleVincularTecnico() {
+
+86:     const preparacion = crearPreparacionTecnicaDesdeExpediente(expediente);
+87:     const ahora = nowISO();
+88: 
+89:     upsertPreparacionTecnicaINMOVAL(preparacion);
+90: 
+91:     upsertExpedienteIndiceINMOVAL({
+92:       ...expediente,
+93:       preparacionTecnicaId: preparacion.id,
+94:       preparacionTecnicaEstado: 'preparado',
+95:       preparacionTecnicaEn: ahora,
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+108:     });
+109: 
+110:     setSaved(true);
+111:   }
+112: 
+113:   function handleVincularTecnico() {
+114:     const cleanId = avaluoTecnicoId.trim();
+
+96:       preparacionTecnicaResumen:
+97:         'Datos administrativos preparados para mÃ³dulo tÃ©cnico.',
+98:       actualizadoEn: ahora,
+99:     });
+100: 
+101:     registrarActividadExpedienteINMOVAL({
+102:       expedienteId: expediente.id,
+103:       tipo: 'nota',
+104:       titulo: 'PreparaciÃ³n tÃ©cnica creada',
+105:       descripcion:
+106:         'Se prepararon los datos administrativos para el mÃ³dulo tÃ©cnico urbano.',
+107:       creadoEn: ahora,
+108:     });
+109: 
+110:     setSaved(true);
+111:   }
+112: 
+113:   function handleVincularTecnico() {
+114:     const cleanId = avaluoTecnicoId.trim();
+115: 
+116:     if (!cleanId) {
+117:       window.alert('IngresÃ¡ el ID del avalÃºo tÃ©cnico.');
+118:       return;
+119:     }
+120: 
+121:     const ahora = nowISO();
+122: 
+123:     upsertExpedienteIndiceINMOVAL({
+124:       ...expediente,
+
+119:     }
+120: 
+121:     const ahora = nowISO();
+122: 
+123:     upsertExpedienteIndiceINMOVAL({
+124:       ...expediente,
+125:       avaluoTecnicoId: cleanId,
+126:       avaluoTecnicoRuta: `/avaluos/${cleanId}`,
+127:       moduloTecnicoVinculado: expediente.tipoModulo,
+128:       vinculadoModuloTecnicoEn: ahora,
+129:       preparacionTecnicaEstado: 'vinculado',
+130:       actualizadoEn: ahora,
+131:     });
+132: 
+133:     registrarActividadExpedienteINMOVAL({
+134:       expedienteId: expediente.id,
+135:       tipo: 'nota',
+136:       titulo: 'AvalÃºo tÃ©cnico vinculado',
+137:       descripcion: `Se vinculÃ³ el avalÃºo tÃ©cnico ${cleanId} desde preparaciÃ³n tÃ©cnica.`,
+138:       creadoEn: ahora,
+139:     });
+140: 
+141:     navigate(`/expedientes-plataforma/${expediente.id}`);
+142:   }
+143: 
+144:   return (
+145:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+146:       <div className="mx-auto max-w-7xl">
+147:         <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+
+144:   return (
+145:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+146:       <div className="mx-auto max-w-7xl">
+147:         <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+148:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+149:             <div>
+150:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+151:                 FASE 3 Â· Puente tÃ©cnico
+152:               </p>
+153:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+154:                 Preparar mÃ³dulo tÃ©cnico urbano
+155:               </h1>
+156:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+157:                 Esta pantalla convierte la ficha administrativa en una preparaciÃ³n
+158:                 tÃ©cnica lista para iniciar o vincular el avalÃºo urbano.
+159:               </p>
+160:             </div>
+161: 
+162:             <div className="flex flex-wrap gap-3">
+163:               <Link
+164:                 to={`/expedientes-plataforma/${expediente.id}`}
+165:                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+166:               >
+167:                 <ArrowLeft className="h-4 w-4" />
+168:                 Ficha expediente
+169:               </Link>
+170: 
+171:               {rutaTecnica ? (
+172:                 <Link
+
+158:                 tÃ©cnica lista para iniciar o vincular el avalÃºo urbano.
+159:               </p>
+160:             </div>
+161: 
+162:             <div className="flex flex-wrap gap-3">
+163:               <Link
+164:                 to={`/expedientes-plataforma/${expediente.id}`}
+165:                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+166:               >
+167:                 <ArrowLeft className="h-4 w-4" />
+168:                 Ficha expediente
+169:               </Link>
+170: 
+171:               {rutaTecnica ? (
+172:                 <Link
+173:                   to={rutaTecnica}
+174:                   className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+175:                 >
+176:                   <ExternalLink className="h-4 w-4" />
+177:                   Abrir tÃ©cnico
+178:                 </Link>
+179:               ) : null}
+180: 
+181:               <Link
+182:                 to="/avaluos/nuevo"
+183:                 className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+184:               >
+185:                 <FilePlus2 className="h-4 w-4" />
+186:                 Crear tÃ©cnico urbano
+
+219:               <DetailItem label="TÃ­tulo" value={expediente.titulo} />
+220:               <DetailItem label="MÃ³dulo" value={expediente.tipoModulo} />
+221:               <DetailItem label="Estado" value={expediente.estado} />
+222:               <DetailItem label="Fecha solicitud" value={expediente.fechaSolicitud} />
+223:               <DetailItem
+224:                 label="Entrega estimada"
+225:                 value={expediente.fechaEntregaEstimada}
+226:               />
+227:               <DetailItem
+228:                 label="PreparaciÃ³n"
+229:                 value={expediente.preparacionTecnicaEstado || 'pendiente'}
+230:               />
+231:             </div>
+232: 
+233:             <div className="mt-6 flex flex-wrap gap-3">
+234:               <button
+235:                 type="button"
+236:                 onClick={handlePrepararModulo}
+237:                 className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+238:               >
+239:                 <Save className="h-4 w-4" />
+240:                 Preparar datos tÃ©cnicos
+241:               </button>
+242:             </div>
+243:           </article>
+244: 
+245:           <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+246:             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+247:               <Building2 className="h-5 w-5" />
+
+226:               />
+227:               <DetailItem
+228:                 label="PreparaciÃ³n"
+229:                 value={expediente.preparacionTecnicaEstado || 'pendiente'}
+230:               />
+231:             </div>
+232: 
+233:             <div className="mt-6 flex flex-wrap gap-3">
+234:               <button
+235:                 type="button"
+236:                 onClick={handlePrepararModulo}
+237:                 className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+238:               >
+239:                 <Save className="h-4 w-4" />
+240:                 Preparar datos tÃ©cnicos
+241:               </button>
+242:             </div>
+243:           </article>
+244: 
+245:           <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+246:             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+247:               <Building2 className="h-5 w-5" />
+248:             </div>
+249: 
+250:             <h2 className="mt-4 text-lg font-semibold text-slate-100">
+251:               Vincular avalÃºo tÃ©cnico existente
+252:             </h2>
+253: 
+254:             <p className="mt-2 text-sm leading-6 text-slate-400">
+
+230:               />
+231:             </div>
+232: 
+233:             <div className="mt-6 flex flex-wrap gap-3">
+234:               <button
+235:                 type="button"
+236:                 onClick={handlePrepararModulo}
+237:                 className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+238:               >
+239:                 <Save className="h-4 w-4" />
+240:                 Preparar datos tÃ©cnicos
+241:               </button>
+242:             </div>
+243:           </article>
+244: 
+245:           <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+246:             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+247:               <Building2 className="h-5 w-5" />
+248:             </div>
+249: 
+250:             <h2 className="mt-4 text-lg font-semibold text-slate-100">
+251:               Vincular avalÃºo tÃ©cnico existente
+252:             </h2>
+253: 
+254:             <p className="mt-2 text-sm leading-6 text-slate-400">
+255:               DespuÃ©s de crear el avalÃºo tÃ©cnico urbano, copiÃ¡ su ID aquÃ­
+256:               para dejar el expediente conectado.
+257:             </p>
+258: 
+
+270:               <button
+271:                 type="button"
+272:                 onClick={handleVincularTecnico}
+273:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+274:               >
+275:                 <Link2 className="h-4 w-4" />
+276:                 Guardar vÃ­nculo tÃ©cnico
+277:               </button>
+278:             </div>
+279: 
+280:             {preparacionExistente ? (
+281:               <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+282:                 PreparaciÃ³n existente: {preparacionExistente.id}
+283:               </div>
+284:             ) : null}
+285:           </aside>
+286:         </section>
+287:       </div>
+288:     </div>
+289:   );
+290: }
+
+272:                 onClick={handleVincularTecnico}
+273:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-400/20"
+274:               >
+275:                 <Link2 className="h-4 w-4" />
+276:                 Guardar vÃ­nculo tÃ©cnico
+277:               </button>
+278:             </div>
+279: 
+280:             {preparacionExistente ? (
+281:               <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+282:                 PreparaciÃ³n existente: {preparacionExistente.id}
+283:               </div>
+284:             ) : null}
+285:           </aside>
+286:         </section>
+287:       </div>
+288:     </div>
+289:   );
+290: }
+
+============================================================
+FILE: src\App.tsx
+============================================================
+1: import ConfiguracionExpedientesINMOVALPage from '@/platform/expedientes/ConfiguracionExpedientesINMOVALPage';
+2: import NuevoExpedienteINMOVALPage from '@/platform/expedientes/NuevoExpedienteINMOVALPage';
+3: import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/ConfiguracionCotizacionesINMOVALPage';
+4: import ImportarExpedienteIMVPage from '@/platform/expedientes/ImportarExpedienteIMVPage';
+5: import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPage';
+6: import PrepararModuloTecnicoINMOVALPage from '@/platform/expedientes/PrepararModuloTecnicoINMOVALPage';
+7: import AvaluoComparablesTecnicosPage from '@/modules/urbano/comparables/AvaluoComparablesTecnicosPage';
+8: import AvaluoAnexosTestigosPage from '@/modules/urbano/reportes/AvaluoAnexosTestigosPage';
+9: import AvaluoMercadoComparablesPage from '@/modules/urbano/mercado/AvaluoMercadoComparablesPage';
+10: import AvaluoMemoriaCalculoPage from '@/modules/urbano/memoria/AvaluoMemoriaCalculoPage';
+11: ï»¿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+12: import {BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
+13: import { Toaster as Sonner } from '@/components/ui/sonner';
+14: import { Toaster } from '@/components/ui/toaster';
+15: import { TooltipProvider } from '@/components/ui/tooltip';
+16: 
+17: import AppLayout from './components/layout/AppLayout';
+18: 
+19: import AvaluosList from './pages/AvaluosList';
+20: import NuevoExpediente from './pages/NuevoExpediente';
+21: import AvaluoWizard from './pages/AvaluoWizard';
+22: import AvaluoPreview from './pages/AvaluoPreview';
+23: import ClientesPage from './pages/ClientesPage';
+24: import PeritosPage from './pages/PeritosPage';
+
+42:       <BrowserRouter>
+43:         <Routes>
+44:           <Route element={<AppLayout />}>
+45:             <Route path="/" element={<Navigate to="/plataforma" replace />} />
+46: 
+47:             <Route path="/plataforma" element={<DashboardINMOVALPage />} />
+48:             <Route path="/expedientes-plataforma" element={<ExpedientesINMOVALPage />} />
+49:             <Route path="/expedientes-plataforma/configuracion" element={<ConfiguracionExpedientesINMOVALPage />} />
+50:             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
+51:             <Route path="/expedientes-plataforma/importar" element={<ImportarExpedienteIMVPage />} />
+52:             <Route path="/expedientes-plataforma/:id/preparar-tecnico" element={<PrepararModuloTecnicoINMOVALPage />} />
+53:             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
+54:             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
+55:             <Route path="/cotizaciones/configuracion" element={<ConfiguracionCotizacionesINMOVALPage />} />
+56:             <Route path="/configuracion-plataforma" element={<ConfiguracionINMOVALPage />} />
+57:             <Route path="/modulos" element={<ModulosINMOVALPage />} />
+58:             <Route path="/comparables" element={<ComparablesINMOVALPage />} />
+59: 
+60:             <Route path="/avaluos" element={<AvaluosList />} />
+61:             <Route path="/avaluos/nuevo" element={<NuevoExpediente />} />
+62:             <Route path="/avaluos/:id/memoria-calculo" element={<AvaluoMemoriaCalculoPage />} />
+63:             <Route path="/avaluos/:id" element={<AvaluoWizard />} />
+64: 
+65: 
+66:             <Route path="/avaluos/:id/comparables" element={<AvaluoMemoriaCalculoPage />} />
+67:             <Route path="/avaluos/:id/anexos-testigos" element={<AvaluoAnexosTestigosPage />} />
+68:             <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
+69: 
+70:             <Route path="/clientes" element={<ClientesPage />} />
+

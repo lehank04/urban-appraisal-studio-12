@@ -1,0 +1,1262 @@
+﻿============================================================
+LINEAS 620 A 710 - ERROR ACTUAL
+============================================================
+620:       direccionInmueble: direccionInmueble.trim(),
+621:       tipoInmuebleCodigo: tipoInmueble.codigo,
+622:       tipoInmuebleNombre: tipoInmueble.nombre,
+623:       clasificacionInmuebleCodigo: clasificacion.codigo,
+624:       clasificacionInmuebleNombre: clasificacion.nombre,
+625:       propositoAvaluoCodigo: proposito.codigo,
+626:       propositoAvaluoNombre: proposito.nombre,
+627: 
+628:       descripcionServicio: descripcionServicio.trim() || 'AvalÃºo de inmueble',
+629:       costoServicio: costo,
+630:       moneda,
+631:       terminosCondiciones: buildTerminosSeleccionados(),
+632: 
+633:       fechaCotizacion,
+634:       fechaValidez,
+635: 
+636:       creadoEn: ahora,
+637:       actualizadoEn: ahora,
+638:     };
+639: 
+640:     saveCotizaciones([cotizacion, ...cotizaciones]);
+641:     refrescar();
+642:     limpiarFormulario();
+643:     setMostrarFormulario(false);
+644:   }
+645: 
+646:   function cargarCotizacionParaEditar(cotizacion: CotizacionINMOVALLocal) {
+647:     setCotizacionEditandoId(cotizacion.id);
+648:     setMostrarFormulario(true);
+649: 
+650:     setClienteModo(cotizacion.clienteId ? 'base' : 'nuevo');
+651:     setClienteId(cotizacion.clienteId || '');
+652:     setClienteNombre(cotizacion.clienteNombre || '');
+653:     setClienteEmail(cotizacion.clienteEmail || '');
+654:     setClienteTelefono(cotizacion.clienteTelefono || '');
+655:     setClienteDireccion(cotizacion.clienteDireccion || '');
+656: 
+657:     setDireccionInmueble(cotizacion.direccionInmueble || '');
+658:     setTipoInmuebleValue(
+659:       cotizacion.tipoInmuebleCodigo && cotizacion.tipoInmuebleNombre
+660:         ? `${cotizacion.tipoInmuebleCodigo}::${cotizacion.tipoInmuebleNombre}`
+661:         : ''
+662:     );
+663:     setClasificacionCodigo(cotizacion.clasificacionInmuebleCodigo || '');
+664:     setPropositoCodigo(cotizacion.propositoAvaluoCodigo || '');
+665: 
+666:     setDescripcionServicio(cotizacion.descripcionServicio || 'AvalÃºo de inmueble');
+667:     setCostoServicio(String(cotizacion.costoServicio || 0));
+668:     setMoneda(cotizacion.moneda || 'US
+669:     saveCotizaciones(
+670:       cotizaciones.map((item) =>
+671:         item.id === cotizacion.id
+672:           ? {
+673:               ...item,
+674:               ...patch,
+675:               actualizadoEn: nowISO(),
+676:             }
+677:           : item
+678:       )
+679:     );
+680: 
+681:     refrescar();
+682:   }
+683: 
+684:   function eliminarCotizacion(cotizacion: CotizacionINMOVALLocal) {
+685:     const confirmar = window.confirm(`Â¿Eliminar la cotizaciÃ³n ${cotizacion.numero}?`);
+686: 
+687:     if (!confirmar) return;
+688: 
+689:     saveCotizaciones(cotizaciones.filter((item) => item.id !== cotizacion.id));
+690:     refrescar();
+691:   }
+692: 
+693:   function convertirEnExpediente(cotizacion: CotizacionINMOVALLocal) {
+694:     if (cotizacion.estado !== 'aprobada') {
+695:       const confirmar = window.confirm(
+696:         'Esta cotizaciÃ³n todavÃ­a no estÃ¡ aprobada. Â¿QuerÃ©s aprobarla y continuar con el expediente?'
+697:       );
+698: 
+699:       if (!confirmar) return;
+700: 
+701:       actualizarCotizacion(cotizacion, { estado: 'aprobada' });
+702:     }
+703: 
+704:     navigate(`/expedientes-plataforma/nuevo?cotizacionId=${cotizacion.id}`);
+705:   }
+706: 
+707:   return (
+708:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+709:       <div className="mx-auto max-w-7xl">
+710:         <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
+
+============================================================
+BUSQUEDA TERMINOS / FORMULARIO / ACCIONES
+============================================================
+
+---------- PATRON: terminos ----------
+62:   clasificacionInmuebleCodigo: string;
+63:   clasificacionInmuebleNombre: string;
+64:   propositoAvaluoCodigo: string;
+65:   propositoAvaluoNombre: string;
+66: 
+67:   descripcionServicio: string;
+68:   costoServicio: number;
+69:   moneda: MonedaCotizacionINMOVAL;
+70:   terminosCondiciones: string;
+71: 
+72:   fechaCotizacion: string;
+73:   fechaValidez: string;
+74:   expedienteId?: string;
+75: 
+76:   revisionNumero?: number;
+77:   cotizacionOrigenId?: string;
+78:   cotizacionOrigenNumero?: string;
+79: 
+80:   creadoEn: string;
+81:   actualizadoEn: string;
+82: };
+
+78:   cotizacionOrigenNumero?: string;
+79: 
+80:   creadoEn: string;
+81:   actualizadoEn: string;
+82: };
+83: 
+84: const STORAGE_KEY = 'inmoval_cotizaciones_v1';
+85: 
+86: const TERMINOS_BASE: TerminoCondicionCotizacion[] = [
+87:   {
+88:     id: 'vigencia-propuesta',
+89:     incluido: true,
+90:     titulo: 'VIGENCIA DE LA PROPUESTA',
+91:     texto:
+92:       'Esta cotizaciÃ³n tiene una validez de quince (15) dÃ­as calendario. Transcurrido este tiempo, agradeceremos solicitar una actualizaciÃ³n de los tÃ©rminos para garantizar la disponibilidad y vigencia de los costos presentados.',
+93:   },
+94:   {
+95:     id: 'compromiso-pago',
+96:     incluido: true,
+97:     titulo: 'COMPROMISO DE PAGO',
+98:     texto:
+
+450:   const [clasificacionCodigo, setClasificacionCodigo] = useState('');
+451:   const [propositoCodigo, setPropositoCodigo] = useState('');
+452: 
+453:   const [descripcionServicio, setDescripcionServicio] = useState('AvalÃºo de inmueble');
+454:   const [costoServicio, setCostoServicio] = useState('0');
+455:   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+456:   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+457:   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+458:   const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+459:     TERMINOS_BASE
+460:   );
+461: 
+462:   const total = cotizaciones.length;
+463:   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+464:   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+465:   const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+466:   const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+467: 
+468:   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
+469:   const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+470:   const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+
+451:   const [propositoCodigo, setPropositoCodigo] = useState('');
+452: 
+453:   const [descripcionServicio, setDescripcionServicio] = useState('AvalÃºo de inmueble');
+454:   const [costoServicio, setCostoServicio] = useState('0');
+455:   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+456:   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+457:   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+458:   const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+459:     TERMINOS_BASE
+460:   );
+461: 
+462:   const total = cotizaciones.length;
+463:   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+464:   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+465:   const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+466:   const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+467: 
+468:   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
+469:   const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+470:   const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+471: 
+
+485:     setTipoInmuebleValue('');
+486:     setClasificacionCodigo('');
+487:     setPropositoCodigo('');
+488:     setDescripcionServicio('AvalÃºo de inmueble');
+489:     setCostoServicio('0');
+490:     setMoneda('US$');
+491:     setFechaCotizacion(todayISO());
+492:     setFechaValidez(addDaysISO(todayISO(), 15));
+493:     setTerminosItems(TERMINOS_BASE);
+494:   }
+495: 
+496:   function handleClienteBaseChange(id: string) {
+497:     setClienteId(id);
+498: 
+499:     const cliente = clientes.find((item) => item.id === id);
+500: 
+501:     if (!cliente) return;
+502: 
+503:     setClienteNombre(cliente.nombre);
+504:     setClienteEmail(cliente.email || '');
+505:     setClienteTelefono(cliente.telefono || '');
+
+505:     setClienteTelefono(cliente.telefono || '');
+506:     setClienteDireccion(cliente.direccion || '');
+507:   }
+508: 
+509:   function actualizarTerminoCotizacion(
+510:     id: string,
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+
+510:     id: string,
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+526:     setTipoInmuebleValue(value);
+527: 
+528:     const parsed = parseTipoInmuebleValue(value);
+529: 
+530:     setClasificacionCodigo(parsed.codigo);
+
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+526:     setTipoInmuebleValue(value);
+527: 
+528:     const parsed = parseTipoInmuebleValue(value);
+529: 
+530:     setClasificacionCodigo(parsed.codigo);
+531:   }
+
+582:         clasificacionInmuebleCodigo: clasificacion.codigo,
+583:         clasificacionInmuebleNombre: clasificacion.nombre,
+584:         propositoAvaluoCodigo: proposito.codigo,
+585:         propositoAvaluoNombre: proposito.nombre,
+586: 
+587:         descripcionServicio: descripcionServicio.trim() || 'AvalÃºo de inmueble',
+588:         costoServicio: costo,
+589:         moneda,
+590:         terminosCondiciones: buildTerminosSeleccionados(),
+591: 
+592:         fechaCotizacion,
+593:         fechaValidez,
+594:         actualizadoEn: ahora,
+595:       };
+596: 
+597:       saveCotizaciones(
+598:         cotizaciones.map((item) =>
+599:           item.id === cotizacionActualizada.id ? cotizacionActualizada : item
+600:         )
+601:       );
+602: 
+
+623:       clasificacionInmuebleCodigo: clasificacion.codigo,
+624:       clasificacionInmuebleNombre: clasificacion.nombre,
+625:       propositoAvaluoCodigo: proposito.codigo,
+626:       propositoAvaluoNombre: proposito.nombre,
+627: 
+628:       descripcionServicio: descripcionServicio.trim() || 'AvalÃºo de inmueble',
+629:       costoServicio: costo,
+630:       moneda,
+631:       terminosCondiciones: buildTerminosSeleccionados(),
+632: 
+633:       fechaCotizacion,
+634:       fechaValidez,
+635: 
+636:       creadoEn: ahora,
+637:       actualizadoEn: ahora,
+638:     };
+639: 
+640:     saveCotizaciones([cotizacion, ...cotizaciones]);
+641:     refrescar();
+642:     limpiarFormulario();
+643:     setMostrarFormulario(false);
+
+952:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+953:                   />
+954:                 </label>
+955:               </div>
+956: 
+957:               <label className="grid gap-2">
+958:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+959:                 <textarea
+960:                   value={buildTerminosSeleccionados()}
+961:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+962:                   rows={7}
+963:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+964:                 />
+965:               </label>
+966: 
+967:               <div className="flex flex-wrap gap-3">
+968:                 <button
+969:                   type="button"
+970:                   onClick={guardarCotizacion}
+971:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+972:                 >
+
+953:                   />
+954:                 </label>
+955:               </div>
+956: 
+957:               <label className="grid gap-2">
+958:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+959:                 <textarea
+960:                   value={buildTerminosSeleccionados()}
+961:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+962:                   rows={7}
+963:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+964:                 />
+965:               </label>
+966: 
+967:               <div className="flex flex-wrap gap-3">
+968:                 <button
+969:                   type="button"
+970:                   onClick={guardarCotizacion}
+971:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+972:                 >
+973:                   <FilePlus2 className="h-4 w-4" />
+
+1157:   );
+1158: }
+1159: );
+1160:     setFechaCotizacion(cotizacion.fechaCotizacion || todayISO());
+1161:     setFechaValidez(cotizacion.fechaValidez || addDaysISO(todayISO(), 15));
+1162: 
+1163:     // Al editar, se cargan los tÃ©rminos base para mantener checklist editable.
+1164:     // La cotizaciÃ³n guardada conserva el texto final seleccionado.
+1165:     setTerminosItems(TERMINOS_BASE);
+1166:   }
+1167: 
+1168:   function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
+1169:     const revisionesExistentes = cotizaciones.filter(
+1170:       (item) =>
+1171:         item.cotizacionOrigenId === cotizacion.id ||
+1172:         item.cotizacionOrigenId === cotizacion.cotizacionOrigenId
+1173:     );
+1174: 
+1175:     const revisionNumero = revisionesExistentes.length + 1;
+1176:     const ahora = nowISO();
+1177: 
+
+1479:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1480:                   />
+1481:                 </label>
+1482:               </div>
+1483: 
+1484:               <label className="grid gap-2">
+1485:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+1486:                 <textarea
+1487:                   value={buildTerminosSeleccionados()}
+1488:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+1489:                   rows={7}
+1490:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1491:                 />
+1492:               </label>
+1493: 
+1494:               <div className="flex flex-wrap gap-3">
+1495:                 <button
+1496:                   type="button"
+1497:                   onClick={guardarCotizacion}
+1498:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+1499:                 >
+
+1480:                   />
+1481:                 </label>
+1482:               </div>
+1483: 
+1484:               <label className="grid gap-2">
+1485:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+1486:                 <textarea
+1487:                   value={buildTerminosSeleccionados()}
+1488:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+1489:                   rows={7}
+1490:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1491:                 />
+1492:               </label>
+1493: 
+1494:               <div className="flex flex-wrap gap-3">
+1495:                 <button
+1496:                   type="button"
+1497:                   onClick={guardarCotizacion}
+1498:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+1499:                 >
+1500:                   <FilePlus2 className="h-4 w-4" />
+
+
+---------- PATRON: Terminos ----------
+62:   clasificacionInmuebleCodigo: string;
+63:   clasificacionInmuebleNombre: string;
+64:   propositoAvaluoCodigo: string;
+65:   propositoAvaluoNombre: string;
+66: 
+67:   descripcionServicio: string;
+68:   costoServicio: number;
+69:   moneda: MonedaCotizacionINMOVAL;
+70:   terminosCondiciones: string;
+71: 
+72:   fechaCotizacion: string;
+73:   fechaValidez: string;
+74:   expedienteId?: string;
+75: 
+76:   revisionNumero?: number;
+77:   cotizacionOrigenId?: string;
+78:   cotizacionOrigenNumero?: string;
+79: 
+80:   creadoEn: string;
+81:   actualizadoEn: string;
+82: };
+
+78:   cotizacionOrigenNumero?: string;
+79: 
+80:   creadoEn: string;
+81:   actualizadoEn: string;
+82: };
+83: 
+84: const STORAGE_KEY = 'inmoval_cotizaciones_v1';
+85: 
+86: const TERMINOS_BASE: TerminoCondicionCotizacion[] = [
+87:   {
+88:     id: 'vigencia-propuesta',
+89:     incluido: true,
+90:     titulo: 'VIGENCIA DE LA PROPUESTA',
+91:     texto:
+92:       'Esta cotizaciÃ³n tiene una validez de quince (15) dÃ­as calendario. Transcurrido este tiempo, agradeceremos solicitar una actualizaciÃ³n de los tÃ©rminos para garantizar la disponibilidad y vigencia de los costos presentados.',
+93:   },
+94:   {
+95:     id: 'compromiso-pago',
+96:     incluido: true,
+97:     titulo: 'COMPROMISO DE PAGO',
+98:     texto:
+
+450:   const [clasificacionCodigo, setClasificacionCodigo] = useState('');
+451:   const [propositoCodigo, setPropositoCodigo] = useState('');
+452: 
+453:   const [descripcionServicio, setDescripcionServicio] = useState('AvalÃºo de inmueble');
+454:   const [costoServicio, setCostoServicio] = useState('0');
+455:   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+456:   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+457:   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+458:   const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+459:     TERMINOS_BASE
+460:   );
+461: 
+462:   const total = cotizaciones.length;
+463:   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+464:   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+465:   const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+466:   const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+467: 
+468:   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
+469:   const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+470:   const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+
+451:   const [propositoCodigo, setPropositoCodigo] = useState('');
+452: 
+453:   const [descripcionServicio, setDescripcionServicio] = useState('AvalÃºo de inmueble');
+454:   const [costoServicio, setCostoServicio] = useState('0');
+455:   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+456:   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+457:   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+458:   const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+459:     TERMINOS_BASE
+460:   );
+461: 
+462:   const total = cotizaciones.length;
+463:   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+464:   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+465:   const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+466:   const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+467: 
+468:   const tipoInmueble = parseTipoInmuebleValue(tipoInmuebleValue);
+469:   const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+470:   const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+471: 
+
+485:     setTipoInmuebleValue('');
+486:     setClasificacionCodigo('');
+487:     setPropositoCodigo('');
+488:     setDescripcionServicio('AvalÃºo de inmueble');
+489:     setCostoServicio('0');
+490:     setMoneda('US$');
+491:     setFechaCotizacion(todayISO());
+492:     setFechaValidez(addDaysISO(todayISO(), 15));
+493:     setTerminosItems(TERMINOS_BASE);
+494:   }
+495: 
+496:   function handleClienteBaseChange(id: string) {
+497:     setClienteId(id);
+498: 
+499:     const cliente = clientes.find((item) => item.id === id);
+500: 
+501:     if (!cliente) return;
+502: 
+503:     setClienteNombre(cliente.nombre);
+504:     setClienteEmail(cliente.email || '');
+505:     setClienteTelefono(cliente.telefono || '');
+
+505:     setClienteTelefono(cliente.telefono || '');
+506:     setClienteDireccion(cliente.direccion || '');
+507:   }
+508: 
+509:   function actualizarTerminoCotizacion(
+510:     id: string,
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+
+510:     id: string,
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+526:     setTipoInmuebleValue(value);
+527: 
+528:     const parsed = parseTipoInmuebleValue(value);
+529: 
+530:     setClasificacionCodigo(parsed.codigo);
+
+511:     patch: Partial<TerminoCondicionCotizacion>
+512:   ) {
+513:     setTerminosItems((items) =>
+514:       items.map((item) => (item.id === id ? { ...item, ...patch } : item))
+515:     );
+516:   }
+517: 
+518:   function buildTerminosSeleccionados() {
+519:     return terminosItems
+520:       .filter((item) => item.incluido)
+521:       .map((item, index) => `${index + 1}. ${item.titulo}\n${item.texto.trim()}`)
+522:       .join('\n\n');
+523:   }
+524: 
+525:   function handleTipoInmuebleChange(value: string) {
+526:     setTipoInmuebleValue(value);
+527: 
+528:     const parsed = parseTipoInmuebleValue(value);
+529: 
+530:     setClasificacionCodigo(parsed.codigo);
+531:   }
+
+582:         clasificacionInmuebleCodigo: clasificacion.codigo,
+583:         clasificacionInmuebleNombre: clasificacion.nombre,
+584:         propositoAvaluoCodigo: proposito.codigo,
+585:         propositoAvaluoNombre: proposito.nombre,
+586: 
+587:         descripcionServicio: descripcionServicio.trim() || 'AvalÃºo de inmueble',
+588:         costoServicio: costo,
+589:         moneda,
+590:         terminosCondiciones: buildTerminosSeleccionados(),
+591: 
+592:         fechaCotizacion,
+593:         fechaValidez,
+594:         actualizadoEn: ahora,
+595:       };
+596: 
+597:       saveCotizaciones(
+598:         cotizaciones.map((item) =>
+599:           item.id === cotizacionActualizada.id ? cotizacionActualizada : item
+600:         )
+601:       );
+602: 
+
+623:       clasificacionInmuebleCodigo: clasificacion.codigo,
+624:       clasificacionInmuebleNombre: clasificacion.nombre,
+625:       propositoAvaluoCodigo: proposito.codigo,
+626:       propositoAvaluoNombre: proposito.nombre,
+627: 
+628:       descripcionServicio: descripcionServicio.trim() || 'AvalÃºo de inmueble',
+629:       costoServicio: costo,
+630:       moneda,
+631:       terminosCondiciones: buildTerminosSeleccionados(),
+632: 
+633:       fechaCotizacion,
+634:       fechaValidez,
+635: 
+636:       creadoEn: ahora,
+637:       actualizadoEn: ahora,
+638:     };
+639: 
+640:     saveCotizaciones([cotizacion, ...cotizaciones]);
+641:     refrescar();
+642:     limpiarFormulario();
+643:     setMostrarFormulario(false);
+
+952:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+953:                   />
+954:                 </label>
+955:               </div>
+956: 
+957:               <label className="grid gap-2">
+958:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+959:                 <textarea
+960:                   value={buildTerminosSeleccionados()}
+961:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+962:                   rows={7}
+963:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+964:                 />
+965:               </label>
+966: 
+967:               <div className="flex flex-wrap gap-3">
+968:                 <button
+969:                   type="button"
+970:                   onClick={guardarCotizacion}
+971:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+972:                 >
+
+953:                   />
+954:                 </label>
+955:               </div>
+956: 
+957:               <label className="grid gap-2">
+958:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+959:                 <textarea
+960:                   value={buildTerminosSeleccionados()}
+961:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+962:                   rows={7}
+963:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+964:                 />
+965:               </label>
+966: 
+967:               <div className="flex flex-wrap gap-3">
+968:                 <button
+969:                   type="button"
+970:                   onClick={guardarCotizacion}
+971:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+972:                 >
+973:                   <FilePlus2 className="h-4 w-4" />
+
+1157:   );
+1158: }
+1159: );
+1160:     setFechaCotizacion(cotizacion.fechaCotizacion || todayISO());
+1161:     setFechaValidez(cotizacion.fechaValidez || addDaysISO(todayISO(), 15));
+1162: 
+1163:     // Al editar, se cargan los tÃ©rminos base para mantener checklist editable.
+1164:     // La cotizaciÃ³n guardada conserva el texto final seleccionado.
+1165:     setTerminosItems(TERMINOS_BASE);
+1166:   }
+1167: 
+1168:   function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
+1169:     const revisionesExistentes = cotizaciones.filter(
+1170:       (item) =>
+1171:         item.cotizacionOrigenId === cotizacion.id ||
+1172:         item.cotizacionOrigenId === cotizacion.cotizacionOrigenId
+1173:     );
+1174: 
+1175:     const revisionNumero = revisionesExistentes.length + 1;
+1176:     const ahora = nowISO();
+1177: 
+
+1479:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1480:                   />
+1481:                 </label>
+1482:               </div>
+1483: 
+1484:               <label className="grid gap-2">
+1485:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+1486:                 <textarea
+1487:                   value={buildTerminosSeleccionados()}
+1488:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+1489:                   rows={7}
+1490:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1491:                 />
+1492:               </label>
+1493: 
+1494:               <div className="flex flex-wrap gap-3">
+1495:                 <button
+1496:                   type="button"
+1497:                   onClick={guardarCotizacion}
+1498:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+1499:                 >
+
+1480:                   />
+1481:                 </label>
+1482:               </div>
+1483: 
+1484:               <label className="grid gap-2">
+1485:                 <FieldLabel>TÃ©rminos y condiciones</FieldLabel>
+1486:                 <textarea
+1487:                   value={buildTerminosSeleccionados()}
+1488:                   onChange={(event) => setTerminosCondiciones(event.target.value)}
+1489:                   rows={7}
+1490:                   className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1491:                 />
+1492:               </label>
+1493: 
+1494:               <div className="flex flex-wrap gap-3">
+1495:                 <button
+1496:                   type="button"
+1497:                   onClick={guardarCotizacion}
+1498:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+1499:                 >
+1500:                   <FilePlus2 className="h-4 w-4" />
+
+
+---------- PATRON: Términos ----------
+
+---------- PATRON: cotizacionEditandoId ----------
+429:         cotizacion.descripcionServicio,
+430:       ]
+431:         .filter(Boolean)
+432:         .some((value) => String(value).toLowerCase().includes(query));
+433:     });
+434:   }, [cotizaciones, busqueda, filtroEstado]);
+435: 
+436:   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+437:   const [cotizacionEditandoId, setCotizacionEditandoId] = useState<string | null>(null);
+438:   const [clienteModo, setClienteModo] = useState<'base' | 'nuevo'>(
+439:     clientes.length > 0 ? 'base' : 'nuevo'
+440:   );
+441: 
+442:   const [clienteId, setClienteId] = useState('');
+443:   const [clienteNombre, setClienteNombre] = useState('');
+444:   const [clienteEmail, setClienteEmail] = useState('');
+445:   const [clienteTelefono, setClienteTelefono] = useState('');
+446:   const [clienteDireccion, setClienteDireccion] = useState('');
+447: 
+448:   const [direccionInmueble, setDireccionInmueble] = useState('');
+449:   const [tipoInmuebleValue, setTipoInmuebleValue] = useState('');
+
+469:   const clasificacion = CLASIFICACIONES_INMUEBLE.find((item) => item.codigo === clasificacionCodigo);
+470:   const proposito = PROPOSITOS_AVALUO.find((item) => item.codigo === propositoCodigo);
+471: 
+472:   function refrescar() {
+473:     setRefreshKey((value) => value + 1);
+474:   }
+475: 
+476:   function limpiarFormulario() {
+477:     setCotizacionEditandoId(null);
+478:     setClienteModo(clientes.length > 0 ? 'base' : 'nuevo');
+479:     setClienteId('');
+480:     setClienteNombre('');
+481:     setClienteEmail('');
+482:     setClienteTelefono('');
+483:     setClienteDireccion('');
+484:     setDireccionInmueble('');
+485:     setTipoInmuebleValue('');
+486:     setClasificacionCodigo('');
+487:     setPropositoCodigo('');
+488:     setDescripcionServicio('AvalÃºo de inmueble');
+489:     setCostoServicio('0');
+
+559:     }
+560: 
+561:     if (!Number.isFinite(costo) || costo < 0) {
+562:       window.alert('IngresÃ¡ un costo vÃ¡lido.');
+563:       return;
+564:     }
+565: 
+566:     const ahora = nowISO();
+567:     const cotizacionEditando = cotizaciones.find((item) => item.id === cotizacionEditandoId);
+568: 
+569:     if (cotizacionEditando) {
+570:       const cotizacionActualizada: CotizacionINMOVALLocal = {
+571:         ...cotizacionEditando,
+572: 
+573:         clienteId: clienteId || undefined,
+574:         clienteNombre: clienteNombre.trim(),
+575:         clienteEmail: clienteEmail.trim() || undefined,
+576:         clienteTelefono: clienteTelefono.trim() || undefined,
+577:         clienteDireccion: clienteDireccion.trim() || undefined,
+578: 
+579:         direccionInmueble: direccionInmueble.trim(),
+
+639: 
+640:     saveCotizaciones([cotizacion, ...cotizaciones]);
+641:     refrescar();
+642:     limpiarFormulario();
+643:     setMostrarFormulario(false);
+644:   }
+645: 
+646:   function cargarCotizacionParaEditar(cotizacion: CotizacionINMOVALLocal) {
+647:     setCotizacionEditandoId(cotizacion.id);
+648:     setMostrarFormulario(true);
+649: 
+650:     setClienteModo(cotizacion.clienteId ? 'base' : 'nuevo');
+651:     setClienteId(cotizacion.clienteId || '');
+652:     setClienteNombre(cotizacion.clienteNombre || '');
+653:     setClienteEmail(cotizacion.clienteEmail || '');
+654:     setClienteTelefono(cotizacion.clienteTelefono || '');
+655:     setClienteDireccion(cotizacion.clienteDireccion || '');
+656: 
+657:     setDireccionInmueble(cotizacion.direccionInmueble || '');
+658:     setTipoInmuebleValue(
+659:       cotizacion.tipoInmuebleCodigo && cotizacion.tipoInmuebleNombre
+
+751:           <MetricCard label="Monto" value={formatMoney(montoTotal, 'US$')} description="Monto cotizado" icon={<DollarSign className="h-5 w-5" />} />
+752:         </section>
+753: 
+754:         {mostrarFormulario ? (
+755:           <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+756:             <div className="flex items-start justify-between gap-4">
+757:               <div>
+758:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+759:                   {cotizacionEditandoId ? 'Editar cotizaciÃ³n' : 'Nueva cotizaciÃ³n'}
+760:                 </p>
+761:                 <h2 className="mt-1 text-lg font-semibold text-slate-100">
+762:                   {cotizacionEditandoId ? 'Actualizar datos de propuesta' : 'Datos de propuesta'}
+763:                 </h2>
+764:               </div>
+765: 
+766:               <button
+767:                 type="button"
+768:                 onClick={() => setMostrarFormulario(false)}
+769:                 className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+770:               >
+771:                 Cerrar
+
+754:         {mostrarFormulario ? (
+755:           <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+756:             <div className="flex items-start justify-between gap-4">
+757:               <div>
+758:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+759:                   {cotizacionEditandoId ? 'Editar cotizaciÃ³n' : 'Nueva cotizaciÃ³n'}
+760:                 </p>
+761:                 <h2 className="mt-1 text-lg font-semibold text-slate-100">
+762:                   {cotizacionEditandoId ? 'Actualizar datos de propuesta' : 'Datos de propuesta'}
+763:                 </h2>
+764:               </div>
+765: 
+766:               <button
+767:                 type="button"
+768:                 onClick={() => setMostrarFormulario(false)}
+769:                 className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+770:               >
+771:                 Cerrar
+772:               </button>
+773:             </div>
+774: 
+
+966: 
+967:               <div className="flex flex-wrap gap-3">
+968:                 <button
+969:                   type="button"
+970:                   onClick={guardarCotizacion}
+971:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+972:                 >
+973:                   <FilePlus2 className="h-4 w-4" />
+974:                   {cotizacionEditandoId ? 'Actualizar cotizaciÃ³n' : 'Guardar cotizaciÃ³n'}
+975:                 </button>
+976: 
+977:                 <button
+978:                   type="button"
+979:                   onClick={limpiarFormulario}
+980:                   className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+981:                 >
+982:                   Limpiar
+983:                 </button>
+984:               </div>
+985:             </div>
+986:           </section>
+
+1278:           <MetricCard label="Monto" value={formatMoney(montoTotal, 'US$')} description="Monto cotizado" icon={<DollarSign className="h-5 w-5" />} />
+1279:         </section>
+1280: 
+1281:         {mostrarFormulario ? (
+1282:           <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+1283:             <div className="flex items-start justify-between gap-4">
+1284:               <div>
+1285:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+1286:                   {cotizacionEditandoId ? 'Editar cotizaciÃ³n' : 'Nueva cotizaciÃ³n'}
+1287:                 </p>
+1288:                 <h2 className="mt-1 text-lg font-semibold text-slate-100">
+1289:                   {cotizacionEditandoId ? 'Actualizar datos de propuesta' : 'Datos de propuesta'}
+1290:                 </h2>
+1291:               </div>
+1292: 
+1293:               <button
+1294:                 type="button"
+1295:                 onClick={() => setMostrarFormulario(false)}
+1296:                 className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+1297:               >
+1298:                 Cerrar
+
+1281:         {mostrarFormulario ? (
+1282:           <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+1283:             <div className="flex items-start justify-between gap-4">
+1284:               <div>
+1285:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+1286:                   {cotizacionEditandoId ? 'Editar cotizaciÃ³n' : 'Nueva cotizaciÃ³n'}
+1287:                 </p>
+1288:                 <h2 className="mt-1 text-lg font-semibold text-slate-100">
+1289:                   {cotizacionEditandoId ? 'Actualizar datos de propuesta' : 'Datos de propuesta'}
+1290:                 </h2>
+1291:               </div>
+1292: 
+1293:               <button
+1294:                 type="button"
+1295:                 onClick={() => setMostrarFormulario(false)}
+1296:                 className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+1297:               >
+1298:                 Cerrar
+1299:               </button>
+1300:             </div>
+1301: 
+
+1493: 
+1494:               <div className="flex flex-wrap gap-3">
+1495:                 <button
+1496:                   type="button"
+1497:                   onClick={guardarCotizacion}
+1498:                   className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
+1499:                 >
+1500:                   <FilePlus2 className="h-4 w-4" />
+1501:                   {cotizacionEditandoId ? 'Actualizar cotizaciÃ³n' : 'Guardar cotizaciÃ³n'}
+1502:                 </button>
+1503: 
+1504:                 <button
+1505:                   type="button"
+1506:                   onClick={limpiarFormulario}
+1507:                   className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+1508:                 >
+1509:                   Limpiar
+1510:                 </button>
+1511:               </div>
+1512:             </div>
+1513:           </section>
+
+
+---------- PATRON: cargarCotizacionParaEditar ----------
+638:     };
+639: 
+640:     saveCotizaciones([cotizacion, ...cotizaciones]);
+641:     refrescar();
+642:     limpiarFormulario();
+643:     setMostrarFormulario(false);
+644:   }
+645: 
+646:   function cargarCotizacionParaEditar(cotizacion: CotizacionINMOVALLocal) {
+647:     setCotizacionEditandoId(cotizacion.id);
+648:     setMostrarFormulario(true);
+649: 
+650:     setClienteModo(cotizacion.clienteId ? 'base' : 'nuevo');
+651:     setClienteId(cotizacion.clienteId || '');
+652:     setClienteNombre(cotizacion.clienteNombre || '');
+653:     setClienteEmail(cotizacion.clienteEmail || '');
+654:     setClienteTelefono(cotizacion.clienteTelefono || '');
+655:     setClienteDireccion(cotizacion.clienteDireccion || '');
+656: 
+657:     setDireccionInmueble(cotizacion.direccionInmueble || '');
+658:     setTipoInmuebleValue(
+
+1082:                             aria-label="Acciones de cotizaciÃ³n"
+1083:                           >
+1084:                             <MoreHorizontal className="h-5 w-5" />
+1085:                           </button>
+1086: 
+1087:                           <div className="invisible absolute right-0 top-11 z-40 w-64 rounded-2xl border border-slate-800 bg-slate-950 p-2 text-left opacity-0 shadow-2xl shadow-black/60 transition group-hover:visible group-hover:opacity-100">
+1088:                             <button
+1089:                               type="button"
+1090:                               onClick={() => cargarCotizacionParaEditar(cotizacion)}
+1091:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+1092:                             >
+1093:                               <FileText className="h-4 w-4" />
+1094:                               Editar cotizaciÃ³n
+1095:                             </button>
+1096: 
+1097:                             <button
+1098:                               type="button"
+1099:                               onClick={() => crearRevisionCotizacion(cotizacion)}
+1100:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+1101:                             >
+1102:                               <FilePlus2 className="h-4 w-4" />
+
+
+---------- PATRON: crearRevisionCotizacion ----------
+1091:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+1092:                             >
+1093:                               <FileText className="h-4 w-4" />
+1094:                               Editar cotizaciÃ³n
+1095:                             </button>
+1096: 
+1097:                             <button
+1098:                               type="button"
+1099:                               onClick={() => crearRevisionCotizacion(cotizacion)}
+1100:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+1101:                             >
+1102:                               <FilePlus2 className="h-4 w-4" />
+1103:                               Crear nueva revisiÃ³n
+1104:                             </button>
+1105: 
+1106:                             <div className="my-2 border-t border-slate-800" />
+1107: 
+1108:                             <button
+1109:                               type="button"
+1110:                               onClick={() => actualizarCotizacion(cotizacion, { estado: 'enviada' })}
+1111:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+
+1160:     setFechaCotizacion(cotizacion.fechaCotizacion || todayISO());
+1161:     setFechaValidez(cotizacion.fechaValidez || addDaysISO(todayISO(), 15));
+1162: 
+1163:     // Al editar, se cargan los tÃ©rminos base para mantener checklist editable.
+1164:     // La cotizaciÃ³n guardada conserva el texto final seleccionado.
+1165:     setTerminosItems(TERMINOS_BASE);
+1166:   }
+1167: 
+1168:   function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
+1169:     const revisionesExistentes = cotizaciones.filter(
+1170:       (item) =>
+1171:         item.cotizacionOrigenId === cotizacion.id ||
+1172:         item.cotizacionOrigenId === cotizacion.cotizacionOrigenId
+1173:     );
+1174: 
+1175:     const revisionNumero = revisionesExistentes.length + 1;
+1176:     const ahora = nowISO();
+1177: 
+1178:     const revision: CotizacionINMOVALLocal = {
+1179:       ...cotizacion,
+1180:       id: createId(),
+
+
+---------- PATRON: setMoneda ----------
+447: 
+448:   const [direccionInmueble, setDireccionInmueble] = useState('');
+449:   const [tipoInmuebleValue, setTipoInmuebleValue] = useState('');
+450:   const [clasificacionCodigo, setClasificacionCodigo] = useState('');
+451:   const [propositoCodigo, setPropositoCodigo] = useState('');
+452: 
+453:   const [descripcionServicio, setDescripcionServicio] = useState('AvalÃºo de inmueble');
+454:   const [costoServicio, setCostoServicio] = useState('0');
+455:   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
+456:   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
+457:   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
+458:   const [terminosItems, setTerminosItems] = useState<TerminoCondicionCotizacion[]>(
+459:     TERMINOS_BASE
+460:   );
+461: 
+462:   const total = cotizaciones.length;
+463:   const enviadas = cotizaciones.filter((item) => item.estado === 'enviada').length;
+464:   const aprobadas = cotizaciones.filter((item) => item.estado === 'aprobada').length;
+465:   const pendientesExpediente = cotizaciones.filter((item) => item.estado === 'aprobada' && !item.expedienteId).length;
+466:   const montoTotal = cotizaciones.reduce((sum, item) => sum + Number(item.costoServicio || 0), 0);
+467: 
+
+482:     setClienteTelefono('');
+483:     setClienteDireccion('');
+484:     setDireccionInmueble('');
+485:     setTipoInmuebleValue('');
+486:     setClasificacionCodigo('');
+487:     setPropositoCodigo('');
+488:     setDescripcionServicio('AvalÃºo de inmueble');
+489:     setCostoServicio('0');
+490:     setMoneda('US$');
+491:     setFechaCotizacion(todayISO());
+492:     setFechaValidez(addDaysISO(todayISO(), 15));
+493:     setTerminosItems(TERMINOS_BASE);
+494:   }
+495: 
+496:   function handleClienteBaseChange(id: string) {
+497:     setClienteId(id);
+498: 
+499:     const cliente = clientes.find((item) => item.id === id);
+500: 
+501:     if (!cliente) return;
+502: 
+
+660:         ? `${cotizacion.tipoInmuebleCodigo}::${cotizacion.tipoInmuebleNombre}`
+661:         : ''
+662:     );
+663:     setClasificacionCodigo(cotizacion.clasificacionInmuebleCodigo || '');
+664:     setPropositoCodigo(cotizacion.propositoAvaluoCodigo || '');
+665: 
+666:     setDescripcionServicio(cotizacion.descripcionServicio || 'AvalÃºo de inmueble');
+667:     setCostoServicio(String(cotizacion.costoServicio || 0));
+668:     setMoneda(cotizacion.moneda || 'US
+669:     saveCotizaciones(
+670:       cotizaciones.map((item) =>
+671:         item.id === cotizacion.id
+672:           ? {
+673:               ...item,
+674:               ...patch,
+675:               actualizadoEn: nowISO(),
+676:             }
+677:           : item
+678:       )
+679:     );
+680: 
+
+920:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+921:                   />
+922:                 </label>
+923: 
+924:                 <label className="grid gap-2">
+925:                   <FieldLabel>Moneda</FieldLabel>
+926:                   <select
+927:                     value={moneda}
+928:                     onChange={(event) => setMoneda(event.target.value as MonedaCotizacionINMOVAL)}
+929:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+930:                   >
+931:                     <option value="US$">US$</option>
+932:                     <option value="C$">C$</option>
+933:                   </select>
+934:                 </label>
+935: 
+936:                 <label className="grid gap-2">
+937:                   <FieldLabel>Fecha cotizaciÃ³n</FieldLabel>
+938:                   <input
+939:                     type="date"
+940:                     value={fechaCotizacion}
+
+1447:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1448:                   />
+1449:                 </label>
+1450: 
+1451:                 <label className="grid gap-2">
+1452:                   <FieldLabel>Moneda</FieldLabel>
+1453:                   <select
+1454:                     value={moneda}
+1455:                     onChange={(event) => setMoneda(event.target.value as MonedaCotizacionINMOVAL)}
+1456:                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
+1457:                   >
+1458:                     <option value="US$">US$</option>
+1459:                     <option value="C$">C$</option>
+1460:                   </select>
+1461:                 </label>
+1462: 
+1463:                 <label className="grid gap-2">
+1464:                   <FieldLabel>Fecha cotizaciÃ³n</FieldLabel>
+1465:                   <input
+1466:                     type="date"
+1467:                     value={fechaCotizacion}
+
+
+---------- PATRON: Guardar cotización ----------
+
+---------- PATRON: Actualizar cotización ----------
+
+---------- PATRON: Acciones ----------
+1029:                 <thead>
+1030:                   <tr className="border-b border-slate-800 text-slate-400">
+1031:                     <th className="px-5 py-4 font-medium">CotizaciÃ³n</th>
+1032:                     <th className="px-5 py-4 font-medium">Cliente</th>
+1033:                     <th className="px-5 py-4 font-medium">Inmueble</th>
+1034:                     <th className="px-5 py-4 font-medium">Monto</th>
+1035:                     <th className="px-5 py-4 font-medium">Estado</th>
+1036:                     <th className="px-5 py-4 font-medium">Validez</th>
+1037:                     <th className="px-5 py-4 text-right font-medium">Acciones</th>
+1038:                   </tr>
+1039:                 </thead>
+1040: 
+1041:                 <tbody>
+1042:                   {cotizacionesFiltradas.map((cotizacion) => (
+1043:                     <tr key={cotizacion.id} className="border-b border-slate-800/80 align-top last:border-0 hover:bg-slate-950/30">
+1044:                       <td className="px-5 py-4">
+1045:                         <p className="font-semibold text-slate-50">{cotizacion.numero}</p>
+1046:                         <p className="mt-1 text-xs text-slate-500">{cotizacion.descripcionServicio}</p>
+1047:                       </td>
+1048: 
+1049:                       <td className="px-5 py-4">
+
+1074:                         {cotizacion.fechaValidez}
+1075:                       </td>
+1076: 
+1077:                       <td className="px-5 py-4 text-right">
+1078:                         <div className="group relative inline-flex justify-end">
+1079:                           <button
+1080:                             type="button"
+1081:                             className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
+1082:                             aria-label="Acciones de cotizaciÃ³n"
+1083:                           >
+1084:                             <MoreHorizontal className="h-5 w-5" />
+1085:                           </button>
+1086: 
+1087:                           <div className="invisible absolute right-0 top-11 z-40 w-64 rounded-2xl border border-slate-800 bg-slate-950 p-2 text-left opacity-0 shadow-2xl shadow-black/60 transition group-hover:visible group-hover:opacity-100">
+1088:                             <button
+1089:                               type="button"
+1090:                               onClick={() => cargarCotizacionParaEditar(cotizacion)}
+1091:                               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+1092:                             >
+1093:                               <FileText className="h-4 w-4" />
+1094:                               Editar cotizaciÃ³n
+
+1556:                 <thead>
+1557:                   <tr className="border-b border-slate-800 text-slate-400">
+1558:                     <th className="px-5 py-4 font-medium">CotizaciÃ³n</th>
+1559:                     <th className="px-5 py-4 font-medium">Cliente</th>
+1560:                     <th className="px-5 py-4 font-medium">Inmueble</th>
+1561:                     <th className="px-5 py-4 font-medium">Monto</th>
+1562:                     <th className="px-5 py-4 font-medium">Estado</th>
+1563:                     <th className="px-5 py-4 font-medium">Validez</th>
+1564:                     <th className="px-5 py-4 text-right font-medium">Acciones</th>
+1565:                   </tr>
+1566:                 </thead>
+1567: 
+1568:                 <tbody>
+1569:                   {cotizacionesFiltradas.map((cotizacion) => (
+1570:                     <tr key={cotizacion.id} className="border-b border-slate-800/80 align-top last:border-0 hover:bg-slate-950/30">
+1571:                       <td className="px-5 py-4">
+1572:                         <p className="font-semibold text-slate-50">{cotizacion.numero}</p>
+1573:                         <p className="mt-1 text-xs text-slate-500">{cotizacion.descripcionServicio}</p>
+1574:                       </td>
+1575: 
+1576:                       <td className="px-5 py-4">
+

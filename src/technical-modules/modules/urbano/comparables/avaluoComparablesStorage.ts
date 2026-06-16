@@ -1,4 +1,4 @@
-import { nowISO } from '@/shared/utils/dateUtils';
+﻿import { nowISO } from '@/shared/utils/dateUtils';
 import { ComparableIndiceINMOVAL } from '@/platform/comparables/comparableStorage';
 
 export type EstadoComparableAvaluoINMOVAL =
@@ -198,3 +198,4 @@ export function addComparableManualToAvaluoINMOVAL(
     'manual'
   );
 }
+

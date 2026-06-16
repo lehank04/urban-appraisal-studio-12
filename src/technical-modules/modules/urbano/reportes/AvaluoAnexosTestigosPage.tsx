@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { todayISO } from '@/shared/utils/dateUtils';
-import { getAvaluoComparablesINMOVAL } from '@/modules/urbano/comparables/avaluoComparablesStorage';
+import { getAvaluoComparablesINMOVAL } from '@/technical-modules/modules/urbano/comparables/avaluoComparablesStorage';
 import {
   formatMoneyReporte,
   getComparablesParaAnexoTestigos,
@@ -74,14 +74,14 @@ export default function AvaluoAnexosTestigosPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300 print:text-slate-500">
-                Módulo urbano · Anexos técnicos
+                MÃ³dulo urbano Â· Anexos tÃ©cnicos
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50 print:text-slate-950">
                 Anexo de testigos web
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400 print:text-slate-600">
                 Respaldo visual de comparables usados o congelados dentro del
-                avalúo técnico. Esta vista prepara los testigos web para anexos
+                avalÃºo tÃ©cnico. Esta vista prepara los testigos web para anexos
                 del reporte final.
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function AvaluoAnexosTestigosPage() {
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Comparables técnicos
+                Comparables tÃ©cnicos
               </Link>
 
               <button
@@ -107,9 +107,9 @@ export default function AvaluoAnexosTestigosPage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <DetailItem label="ID Avalúo" value={avaluoId} />
+            <DetailItem label="ID AvalÃºo" value={avaluoId} />
             <DetailItem label="Fecha de anexo" value={todayISO()} />
-            <DetailItem label="Comparables en avalúo" value={resumen.totalSeleccionados} />
+            <DetailItem label="Comparables en avalÃºo" value={resumen.totalSeleccionados} />
             <DetailItem label="Comparables para reporte" value={resumen.totalReporte} />
           </div>
         </header>
@@ -159,8 +159,8 @@ export default function AvaluoAnexosTestigosPage() {
               No hay comparables listos para anexo
             </h2>
             <p className="mt-2 text-sm text-slate-400 print:text-slate-600">
-              En Comparables Técnicos, marca comparables como “usado” o
-              “congelado” para que aparezcan en este anexo.
+              En Comparables TÃ©cnicos, marca comparables como â€œusadoâ€ o
+              â€œcongeladoâ€ para que aparezcan en este anexo.
             </p>
           </section>
         ) : (
@@ -207,7 +207,7 @@ export default function AvaluoAnexosTestigosPage() {
                         <DetailItem label="Fecha comparable" value={comparable.fecha} />
                         <DetailItem label="Fuente" value={comparable.fuente} />
                         <DetailItem label="Contacto" value={comparable.contacto} />
-                        <DetailItem label="Ubicación" value={comparable.ubicacion} />
+                        <DetailItem label="UbicaciÃ³n" value={comparable.ubicacion} />
                         <DetailItem
                           label="Zona"
                           value={[comparable.barrio, comparable.municipio, comparable.departamento]
@@ -218,7 +218,7 @@ export default function AvaluoAnexosTestigosPage() {
                           label="Precio"
                           value={formatMoneyReporte(comparable.precio, comparable.moneda)}
                         />
-                        <DetailItem label="Área terreno" value={comparable.areaTerreno} />
+                        <DetailItem label="Ãrea terreno" value={comparable.areaTerreno} />
                         <DetailItem
                           label="Precio unitario terreno"
                           value={
@@ -230,7 +230,7 @@ export default function AvaluoAnexosTestigosPage() {
                               : undefined
                           }
                         />
-                        <DetailItem label="Revisión" value={item.revision} />
+                        <DetailItem label="RevisiÃ³n" value={item.revision} />
                       </div>
 
                       {comparable.url ? (
@@ -248,7 +248,7 @@ export default function AvaluoAnexosTestigosPage() {
                       {item.justificacion ? (
                         <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 print:border-slate-300 print:bg-white">
                           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                            Justificación técnica
+                            JustificaciÃ³n tÃ©cnica
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-300 print:text-slate-700">
                             {item.justificacion}
@@ -259,7 +259,7 @@ export default function AvaluoAnexosTestigosPage() {
                       {item.ajusteResumen ? (
                         <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 print:border-slate-300 print:bg-white">
                           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                            Resumen de ajuste / homologación
+                            Resumen de ajuste / homologaciÃ³n
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-300 print:text-slate-700">
                             {item.ajusteResumen}
@@ -319,3 +319,4 @@ export default function AvaluoAnexosTestigosPage() {
     </div>
   );
 }
+

@@ -1,0 +1,4808 @@
+﻿============================================================
+EXPEDIENTE DETALLE - PRIMERAS 220 LINEAS
+============================================================
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+58:     </div>
+59:   );
+60: }
+61: 
+62: function ActionButton({
+63:   children,
+64:   onClick,
+65:   disabled,
+66:   tone = 'sky',
+67: }: {
+68:   children: React.ReactNode;
+69:   onClick: () => void;
+70:   disabled?: boolean;
+71:   tone?: 'sky' | 'emerald' | 'amber' | 'rose' | 'slate';
+72: }) {
+73:   const classes = {
+74:     sky: 'border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20',
+75:     emerald:
+76:       'border-emerald-400/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20',
+77:     amber:
+78:       'border-amber-400/30 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20',
+79:     rose: 'border-rose-400/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20',
+80:     slate:
+81:       'border-slate-600 bg-slate-950/50 text-slate-200 hover:bg-slate-800',
+82:   };
+83: 
+84:   return (
+85:     <button
+86:       type="button"
+87:       onClick={onClick}
+88:       disabled={disabled}
+89:       className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+205:     guardarCambios(
+206:       {
+207:         montoPagado: nuevoMontoPagado,
+208:         saldo: nuevoSaldo,
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+211:             ? 'pagado'
+212:             : nuevoMontoPagado > 0
+213:               ? 'parcial'
+214:               : 'pendiente',
+215:       },
+216:       {
+217:         tipo: 'pago',
+218:         titulo: 'Abono registrado',
+219:         descripcion: `Se registrÃ³ un abono de ${expediente.moneda} ${abono.toFixed(
+220:           2
+
+============================================================
+BUSQUEDA DE BLOQUES IMPORTANTES
+============================================================
+
+---------- PATRON: preparar ----------
+
+---------- PATRON: Preparar ----------
+
+---------- PATRON: avaluo ----------
+631:                 </p>
+632:                 <h2 className="text-lg font-semibold text-slate-100">
+633:                   AvalÃºo tÃ©cnico
+634:                 </h2>
+635:                 <p className="mt-2 text-sm text-slate-400">
+636:                   CreÃ¡, abrÃ­ o vinculÃ¡ el avalÃºo tÃ©cnico correspondiente a este expediente.
+637:                 </p>
+638:               </div>
+639: 
+640:               <Link
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+
+
+---------- PATRON: avalúo ----------
+
+---------- PATRON: tecnico ----------
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+
+639: 
+640:               <Link
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+
+
+---------- PATRON: técnico ----------
+
+---------- PATRON: expediente ----------
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+58:     </div>
+
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+58:     </div>
+59:   );
+
+86:       type="button"
+87:       onClick={onClick}
+88:       disabled={disabled}
+89:       className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+
+87:       onClick={onClick}
+88:       disabled={disabled}
+89:       className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+205:     guardarCambios(
+206:       {
+207:         montoPagado: nuevoMontoPagado,
+208:         saldo: nuevoSaldo,
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+211:             ? 'pagado'
+212:             : nuevoMontoPagado > 0
+213:               ? 'parcial'
+214:               : 'pendiente',
+
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+205:     guardarCambios(
+206:       {
+207:         montoPagado: nuevoMontoPagado,
+208:         saldo: nuevoSaldo,
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+211:             ? 'pagado'
+212:             : nuevoMontoPagado > 0
+213:               ? 'parcial'
+214:               : 'pendiente',
+215:       },
+
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+205:     guardarCambios(
+206:       {
+207:         montoPagado: nuevoMontoPagado,
+208:         saldo: nuevoSaldo,
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+211:             ? 'pagado'
+212:             : nuevoMontoPagado > 0
+213:               ? 'parcial'
+214:               : 'pendiente',
+215:       },
+216:       {
+217:         tipo: 'pago',
+218:         titulo: 'Abono registrado',
+219:         descripcion: `Se registrÃ³ un abono de ${expediente.moneda} ${abono.toFixed(
+220:           2
+
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+211:             ? 'pagado'
+212:             : nuevoMontoPagado > 0
+213:               ? 'parcial'
+214:               : 'pendiente',
+215:       },
+216:       {
+217:         tipo: 'pago',
+218:         titulo: 'Abono registrado',
+219:         descripcion: `Se registrÃ³ un abono de ${expediente.moneda} ${abono.toFixed(
+220:           2
+221:         )}.`,
+222:       }
+223:     );
+224: 
+225:     setAbonoMonto('');
+226:   }
+227: 
+228:   if (!expediente) {
+229:     return (
+230:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+231:         <div className="mx-auto max-w-5xl">
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+
+218:         titulo: 'Abono registrado',
+219:         descripcion: `Se registrÃ³ un abono de ${expediente.moneda} ${abono.toFixed(
+220:           2
+221:         )}.`,
+222:       }
+223:     );
+224: 
+225:     setAbonoMonto('');
+226:   }
+227: 
+228:   if (!expediente) {
+229:     return (
+230:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+231:         <div className="mx-auto max-w-5xl">
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+
+223:     );
+224: 
+225:     setAbonoMonto('');
+226:   }
+227: 
+228:   if (!expediente) {
+229:     return (
+230:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+231:         <div className="mx-auto max-w-5xl">
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+
+227: 
+228:   if (!expediente) {
+229:     return (
+230:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+231:         <div className="mx-auto max-w-5xl">
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+
+246:               Plataforma INMOVAL.
+247:             </p>
+248:           </div>
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+
+249:         </div>
+250:       </div>
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+
+251:     );
+252:   }
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+280:             Volver a expedientes
+281:           </Link>
+282: 
+283:           <Link
+284:             to="/cotizaciones"
+285:             className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+286:           >
+287:             <FileText className="h-4 w-4" />
+288:             Cotizaciones
+289:           </Link>
+290: 
+291:           <Link
+292:             to="/modulos"
+293:             className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20"
+294:           >
+
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+280:             Volver a expedientes
+281:           </Link>
+282: 
+283:           <Link
+284:             to="/cotizaciones"
+285:             className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+286:           >
+287:             <FileText className="h-4 w-4" />
+288:             Cotizaciones
+289:           </Link>
+290: 
+291:           <Link
+292:             to="/modulos"
+293:             className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20"
+294:           >
+295:             <Boxes className="h-4 w-4" />
+296:             MÃ³dulos
+297:           </Link>
+298:         </div>
+
+294:           >
+295:             <Boxes className="h-4 w-4" />
+296:             MÃ³dulos
+297:           </Link>
+298:         </div>
+299: 
+300:         <header className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+301:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+302:             <div>
+303:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+304:                 Expediente INMOVAL
+305:               </p>
+306:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+307:                 {expediente.codigo}
+308:               </h1>
+309:               <p className="mt-2 text-lg text-slate-300">
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+
+297:           </Link>
+298:         </div>
+299: 
+300:         <header className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+301:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+302:             <div>
+303:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+304:                 Expediente INMOVAL
+305:               </p>
+306:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+307:                 {expediente.codigo}
+308:               </h1>
+309:               <p className="mt-2 text-lg text-slate-300">
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+
+300:         <header className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+301:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+302:             <div>
+303:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+304:                 Expediente INMOVAL
+305:               </p>
+306:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+307:                 {expediente.codigo}
+308:               </h1>
+309:               <p className="mt-2 text-lg text-slate-300">
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+
+303:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+304:                 Expediente INMOVAL
+305:               </p>
+306:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+307:                 {expediente.codigo}
+308:               </h1>
+309:               <p className="mt-2 text-lg text-slate-300">
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+
+309:               <p className="mt-2 text-lg text-slate-300">
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+332:               <ClipboardList className="h-5 w-5" />
+333:             </div>
+334:             <div>
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+
+310:                 {expediente.titulo}
+311:               </p>
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+332:               <ClipboardList className="h-5 w-5" />
+333:             </div>
+334:             <div>
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+338:               <h2 className="text-lg font-semibold text-slate-100">
+
+312:               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+313:                 Expediente del expediente. Desde aquÃ­ se controla pago,
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+332:               <ClipboardList className="h-5 w-5" />
+333:             </div>
+334:             <div>
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+338:               <h2 className="text-lg font-semibold text-slate-100">
+339:                 Control rÃ¡pido del expediente
+340:               </h2>
+
+314:                 facturaciÃ³n, cierre, estado operativo y referencias documentales.
+315:               </p>
+316:             </div>
+317: 
+318:             <div className="flex flex-wrap gap-2">
+319:               <ExpedienteEstadoBadge tipo="estado" value={expediente.estado} />
+320:               <ExpedienteEstadoBadge
+321:                 tipo="prioridad"
+322:                 value={expediente.prioridad}
+323:               />
+324:               <ExpedienteEstadoBadge tipo="pago" value={expediente.estadoPago} />
+325:             </div>
+326:           </div>
+327:         </header>
+328: 
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+332:               <ClipboardList className="h-5 w-5" />
+333:             </div>
+334:             <div>
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+338:               <h2 className="text-lg font-semibold text-slate-100">
+339:                 Control rÃ¡pido del expediente
+340:               </h2>
+341:             </div>
+342:           </div>
+
+329:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+330:           <div className="flex items-center gap-3">
+331:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+332:               <ClipboardList className="h-5 w-5" />
+333:             </div>
+334:             <div>
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+338:               <h2 className="text-lg font-semibold text-slate-100">
+339:                 Control rÃ¡pido del expediente
+340:               </h2>
+341:             </div>
+342:           </div>
+343: 
+344:           <div className="mt-5 flex flex-wrap gap-3">
+345:               <ExportarExpedienteIMVButton expediente={expediente} disabled={false} />
+346: 
+347:             <ActionButton
+348:               tone="sky"
+349:               disabled={estaCerrado}
+350:               onClick={() =>
+351:                 guardarCambios(
+352:                   {
+353:                     estado: 'en_elaboracion',
+354:                   },
+355:                   {
+356:                     tipo: 'estado',
+357:                     titulo: 'Estado actualizado',
+
+335:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+336:                 Acciones operativas
+337:               </p>
+338:               <h2 className="text-lg font-semibold text-slate-100">
+339:                 Control rÃ¡pido del expediente
+340:               </h2>
+341:             </div>
+342:           </div>
+343: 
+344:           <div className="mt-5 flex flex-wrap gap-3">
+345:               <ExportarExpedienteIMVButton expediente={expediente} disabled={false} />
+346: 
+347:             <ActionButton
+348:               tone="sky"
+349:               disabled={estaCerrado}
+350:               onClick={() =>
+351:                 guardarCambios(
+352:                   {
+353:                     estado: 'en_elaboracion',
+354:                   },
+355:                   {
+356:                     tipo: 'estado',
+357:                     titulo: 'Estado actualizado',
+358:                     descripcion: 'El expediente fue marcado como En elaboraciÃ³n.',
+359:                   }
+360:                 )
+361:               }
+362:             >
+363:               <ClipboardList className="h-4 w-4" />
+
+348:               tone="sky"
+349:               disabled={estaCerrado}
+350:               onClick={() =>
+351:                 guardarCambios(
+352:                   {
+353:                     estado: 'en_elaboracion',
+354:                   },
+355:                   {
+356:                     tipo: 'estado',
+357:                     titulo: 'Estado actualizado',
+358:                     descripcion: 'El expediente fue marcado como En elaboraciÃ³n.',
+359:                   }
+360:                 )
+361:               }
+362:             >
+363:               <ClipboardList className="h-4 w-4" />
+364:               En elaboraciÃ³n
+365:             </ActionButton>
+366: 
+367:             <ActionButton
+368:               tone="amber"
+369:               disabled={estaCerrado}
+370:               onClick={() =>
+371:                 guardarCambios(
+372:                   {
+373:                     estado: 'en_revision',
+374:                   },
+375:                   {
+376:                     tipo: 'estado',
+
+368:               tone="amber"
+369:               disabled={estaCerrado}
+370:               onClick={() =>
+371:                 guardarCambios(
+372:                   {
+373:                     estado: 'en_revision',
+374:                   },
+375:                   {
+376:                     tipo: 'estado',
+377:                     titulo: 'Estado actualizado',
+378:                     descripcion: 'El expediente fue marcado como En revisiÃ³n.',
+379:                   }
+380:                 )
+381:               }
+382:             >
+383:               <FileText className="h-4 w-4" />
+384:               En revisiÃ³n
+385:             </ActionButton>
+386: 
+387:             <ActionButton
+388:               tone="emerald"
+389:               disabled={estaCerrado}
+390:               onClick={() =>
+391:                 guardarCambios(
+392:                   {
+393:                     estado: 'entregado',
+394:                   },
+395:                   {
+396:                     tipo: 'estado',
+
+388:               tone="emerald"
+389:               disabled={estaCerrado}
+390:               onClick={() =>
+391:                 guardarCambios(
+392:                   {
+393:                     estado: 'entregado',
+394:                   },
+395:                   {
+396:                     tipo: 'estado',
+397:                     titulo: 'Estado actualizado',
+398:                     descripcion: 'El expediente fue marcado como Entregado.',
+399:                   }
+400:                 )
+401:               }
+402:             >
+403:               <CheckCircle2 className="h-4 w-4" />
+404:               Entregado
+405:             </ActionButton>
+406: 
+407:             <ActionButton
+408:               tone="emerald"
+409:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+410:               onClick={() =>
+411:                 guardarCambios(
+412:                   {
+413:                     montoPagado: expediente.costoServicio,
+414:                     saldo: 0,
+415:                     estadoPago: 'pagado',
+416:                   },
+
+399:                   }
+400:                 )
+401:               }
+402:             >
+403:               <CheckCircle2 className="h-4 w-4" />
+404:               Entregado
+405:             </ActionButton>
+406: 
+407:             <ActionButton
+408:               tone="emerald"
+409:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+410:               onClick={() =>
+411:                 guardarCambios(
+412:                   {
+413:                     montoPagado: expediente.costoServicio,
+414:                     saldo: 0,
+415:                     estadoPago: 'pagado',
+416:                   },
+417:                   {
+418:                     tipo: 'pago',
+419:                     titulo: 'Pago registrado',
+420:                     descripcion: 'El expediente fue marcado como pagado en su totalidad.',
+421:                   }
+422:                 )
+423:               }
+424:             >
+425:               <BadgeDollarSign className="h-4 w-4" />
+426:               Marcar pagado
+427:             </ActionButton>
+
+403:               <CheckCircle2 className="h-4 w-4" />
+404:               Entregado
+405:             </ActionButton>
+406: 
+407:             <ActionButton
+408:               tone="emerald"
+409:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+410:               onClick={() =>
+411:                 guardarCambios(
+412:                   {
+413:                     montoPagado: expediente.costoServicio,
+414:                     saldo: 0,
+415:                     estadoPago: 'pagado',
+416:                   },
+417:                   {
+418:                     tipo: 'pago',
+419:                     titulo: 'Pago registrado',
+420:                     descripcion: 'El expediente fue marcado como pagado en su totalidad.',
+421:                   }
+422:                 )
+423:               }
+424:             >
+425:               <BadgeDollarSign className="h-4 w-4" />
+426:               Marcar pagado
+427:             </ActionButton>
+428: 
+429:             <ActionButton
+430:               tone="amber"
+431:               disabled={estaCerrado || expediente.facturaEmitida}
+
+410:               onClick={() =>
+411:                 guardarCambios(
+412:                   {
+413:                     montoPagado: expediente.costoServicio,
+414:                     saldo: 0,
+415:                     estadoPago: 'pagado',
+416:                   },
+417:                   {
+418:                     tipo: 'pago',
+419:                     titulo: 'Pago registrado',
+420:                     descripcion: 'El expediente fue marcado como pagado en su totalidad.',
+421:                   }
+422:                 )
+423:               }
+424:             >
+425:               <BadgeDollarSign className="h-4 w-4" />
+426:               Marcar pagado
+427:             </ActionButton>
+428: 
+429:             <ActionButton
+430:               tone="amber"
+431:               disabled={estaCerrado || expediente.facturaEmitida}
+432:               onClick={() =>
+433:                 guardarCambios(
+434:                   {
+435:                     facturaEmitida: true,
+436:                     numeroFactura:
+437:                       expediente.numeroFactura ||
+438:                       `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+
+421:                   }
+422:                 )
+423:               }
+424:             >
+425:               <BadgeDollarSign className="h-4 w-4" />
+426:               Marcar pagado
+427:             </ActionButton>
+428: 
+429:             <ActionButton
+430:               tone="amber"
+431:               disabled={estaCerrado || expediente.facturaEmitida}
+432:               onClick={() =>
+433:                 guardarCambios(
+434:                   {
+435:                     facturaEmitida: true,
+436:                     numeroFactura:
+437:                       expediente.numeroFactura ||
+438:                       `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+439:                         -4
+440:                       )}`,
+441:                     estado: 'facturado',
+442:                   },
+443:                   {
+444:                     tipo: 'facturacion',
+445:                     titulo: 'Factura emitida',
+446:                     descripcion: 'Se registrÃ³ la emisiÃ³n de factura del expediente.',
+447:                   }
+448:                 )
+449:               }
+
+427:             </ActionButton>
+428: 
+429:             <ActionButton
+430:               tone="amber"
+431:               disabled={estaCerrado || expediente.facturaEmitida}
+432:               onClick={() =>
+433:                 guardarCambios(
+434:                   {
+435:                     facturaEmitida: true,
+436:                     numeroFactura:
+437:                       expediente.numeroFactura ||
+438:                       `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+439:                         -4
+440:                       )}`,
+441:                     estado: 'facturado',
+442:                   },
+443:                   {
+444:                     tipo: 'facturacion',
+445:                     titulo: 'Factura emitida',
+446:                     descripcion: 'Se registrÃ³ la emisiÃ³n de factura del expediente.',
+447:                   }
+448:                 )
+449:               }
+450:             >
+451:               <ReceiptText className="h-4 w-4" />
+452:               Emitir factura
+453:             </ActionButton>
+454: 
+455:             <ActionButton
+
+428: 
+429:             <ActionButton
+430:               tone="amber"
+431:               disabled={estaCerrado || expediente.facturaEmitida}
+432:               onClick={() =>
+433:                 guardarCambios(
+434:                   {
+435:                     facturaEmitida: true,
+436:                     numeroFactura:
+437:                       expediente.numeroFactura ||
+438:                       `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+439:                         -4
+440:                       )}`,
+441:                     estado: 'facturado',
+442:                   },
+443:                   {
+444:                     tipo: 'facturacion',
+445:                     titulo: 'Factura emitida',
+446:                     descripcion: 'Se registrÃ³ la emisiÃ³n de factura del expediente.',
+447:                   }
+448:                 )
+449:               }
+450:             >
+451:               <ReceiptText className="h-4 w-4" />
+452:               Emitir factura
+453:             </ActionButton>
+454: 
+455:             <ActionButton
+456:               tone="rose"
+
+436:                     numeroFactura:
+437:                       expediente.numeroFactura ||
+438:                       `FAC-${todayISO().replace(/-/g, '')}-${expediente.codigo.slice(
+439:                         -4
+440:                       )}`,
+441:                     estado: 'facturado',
+442:                   },
+443:                   {
+444:                     tipo: 'facturacion',
+445:                     titulo: 'Factura emitida',
+446:                     descripcion: 'Se registrÃ³ la emisiÃ³n de factura del expediente.',
+447:                   }
+448:                 )
+449:               }
+450:             >
+451:               <ReceiptText className="h-4 w-4" />
+452:               Emitir factura
+453:             </ActionButton>
+454: 
+455:             <ActionButton
+456:               tone="rose"
+457:               disabled={estaCerrado || !puedeCerrarExpediente}
+458:               onClick={() =>
+459:                 guardarCambios(
+460:                   {
+461:                     estado: 'cerrado',
+462:                     fechaCierre: todayISO(),
+463:                   },
+464:                   {
+
+447:                   }
+448:                 )
+449:               }
+450:             >
+451:               <ReceiptText className="h-4 w-4" />
+452:               Emitir factura
+453:             </ActionButton>
+454: 
+455:             <ActionButton
+456:               tone="rose"
+457:               disabled={estaCerrado || !puedeCerrarExpediente}
+458:               onClick={() =>
+459:                 guardarCambios(
+460:                   {
+461:                     estado: 'cerrado',
+462:                     fechaCierre: todayISO(),
+463:                   },
+464:                   {
+465:                     tipo: 'cierre',
+466:                     titulo: 'Expediente cerrado',
+467:                     descripcion: 'El expediente fue cerrado operativamente.',
+468:                   }
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+
+456:               tone="rose"
+457:               disabled={estaCerrado || !puedeCerrarExpediente}
+458:               onClick={() =>
+459:                 guardarCambios(
+460:                   {
+461:                     estado: 'cerrado',
+462:                     fechaCierre: todayISO(),
+463:                   },
+464:                   {
+465:                     tipo: 'cierre',
+466:                     titulo: 'Expediente cerrado',
+467:                     descripcion: 'El expediente fue cerrado operativamente.',
+468:                   }
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+476: 
+477:           {!puedeCerrarExpediente && !estaCerrado ? (
+478:             <p className="mt-4 text-sm text-slate-400">
+479:               {getMensajeReglaCierreExpediente(configExpedientes)}
+480:             </p>
+481:           ) : null}
+482:         </section>
+483: 
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+
+457:               disabled={estaCerrado || !puedeCerrarExpediente}
+458:               onClick={() =>
+459:                 guardarCambios(
+460:                   {
+461:                     estado: 'cerrado',
+462:                     fechaCierre: todayISO(),
+463:                   },
+464:                   {
+465:                     tipo: 'cierre',
+466:                     titulo: 'Expediente cerrado',
+467:                     descripcion: 'El expediente fue cerrado operativamente.',
+468:                   }
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+476: 
+477:           {!puedeCerrarExpediente && !estaCerrado ? (
+478:             <p className="mt-4 text-sm text-slate-400">
+479:               {getMensajeReglaCierreExpediente(configExpedientes)}
+480:             </p>
+481:           ) : null}
+482:         </section>
+483: 
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+485:           <div className="flex items-center gap-3">
+
+463:                   },
+464:                   {
+465:                     tipo: 'cierre',
+466:                     titulo: 'Expediente cerrado',
+467:                     descripcion: 'El expediente fue cerrado operativamente.',
+468:                   }
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+476: 
+477:           {!puedeCerrarExpediente && !estaCerrado ? (
+478:             <p className="mt-4 text-sm text-slate-400">
+479:               {getMensajeReglaCierreExpediente(configExpedientes)}
+480:             </p>
+481:           ) : null}
+482:         </section>
+483: 
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+485:           <div className="flex items-center gap-3">
+486:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+487:               <Save className="h-5 w-5" />
+488:             </div>
+489:             <div>
+490:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+491:                 EdiciÃ³n operativa
+
+467:                     descripcion: 'El expediente fue cerrado operativamente.',
+468:                   }
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+476: 
+477:           {!puedeCerrarExpediente && !estaCerrado ? (
+478:             <p className="mt-4 text-sm text-slate-400">
+479:               {getMensajeReglaCierreExpediente(configExpedientes)}
+480:             </p>
+481:           ) : null}
+482:         </section>
+483: 
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+485:           <div className="flex items-center gap-3">
+486:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+487:               <Save className="h-5 w-5" />
+488:             </div>
+489:             <div>
+490:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+491:                 EdiciÃ³n operativa
+492:               </p>
+493:               <h2 className="text-lg font-semibold text-slate-100">
+494:                 Datos rÃ¡pidos del expediente
+495:               </h2>
+
+469:                 )
+470:               }
+471:             >
+472:               <LockKeyhole className="h-4 w-4" />
+473:               Cerrar expediente
+474:             </ActionButton>
+475:           </div>
+476: 
+477:           {!puedeCerrarExpediente && !estaCerrado ? (
+478:             <p className="mt-4 text-sm text-slate-400">
+479:               {getMensajeReglaCierreExpediente(configExpedientes)}
+480:             </p>
+481:           ) : null}
+482:         </section>
+483: 
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+485:           <div className="flex items-center gap-3">
+486:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+487:               <Save className="h-5 w-5" />
+488:             </div>
+489:             <div>
+490:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+491:                 EdiciÃ³n operativa
+492:               </p>
+493:               <h2 className="text-lg font-semibold text-slate-100">
+494:                 Datos rÃ¡pidos del expediente
+495:               </h2>
+496:             </div>
+497:           </div>
+
+484:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+485:           <div className="flex items-center gap-3">
+486:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+487:               <Save className="h-5 w-5" />
+488:             </div>
+489:             <div>
+490:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+491:                 EdiciÃ³n operativa
+492:               </p>
+493:               <h2 className="text-lg font-semibold text-slate-100">
+494:                 Datos rÃ¡pidos del expediente
+495:               </h2>
+496:             </div>
+497:           </div>
+498: 
+499:           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+500:             <label className="grid gap-2">
+501:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+502:                 Prioridad
+503:               </span>
+504:               <select
+505:                 value={prioridadDraft}
+506:                 onChange={(event) => setPrioridadDraft(event.target.value)}
+507:                 disabled={estaCerrado}
+508:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+509:               >
+510:                 <option value="baja">Baja</option>
+511:                 <option value="normal">Normal</option>
+512:                 <option value="alta">Alta</option>
+
+597:             </div>
+598:           </div>
+599: 
+600:           <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+601:             <input
+602:               type="number"
+603:               min="0"
+604:               step="0.01"
+605:               value={abonoMonto}
+606:               onChange={(event) => setAbonoMonto(event.target.value)}
+607:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+608:               placeholder={`Monto de abono en ${expediente.moneda}`}
+609:               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400 disabled:opacity-50"
+610:             />
+611: 
+612:             <ActionButton
+613:               tone="sky"
+614:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+615:               onClick={handleRegistrarAbono}
+616:             >
+617:               <CreditCard className="h-4 w-4" />
+618:               Registrar abono
+619:             </ActionButton>
+620:           </div>
+621: 
+622:           <p className="mt-3 text-sm text-slate-400">
+623:             El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
+624:           </p>
+625:         </section>
+
+598:           </div>
+599: 
+600:           <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+601:             <input
+602:               type="number"
+603:               min="0"
+604:               step="0.01"
+605:               value={abonoMonto}
+606:               onChange={(event) => setAbonoMonto(event.target.value)}
+607:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+608:               placeholder={`Monto de abono en ${expediente.moneda}`}
+609:               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400 disabled:opacity-50"
+610:             />
+611: 
+612:             <ActionButton
+613:               tone="sky"
+614:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+615:               onClick={handleRegistrarAbono}
+616:             >
+617:               <CreditCard className="h-4 w-4" />
+618:               Registrar abono
+619:             </ActionButton>
+620:           </div>
+621: 
+622:           <p className="mt-3 text-sm text-slate-400">
+623:             El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
+624:           </p>
+625:         </section>
+626:           <section className="mt-6 rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5 shadow-xl shadow-black/20">
+
+604:               step="0.01"
+605:               value={abonoMonto}
+606:               onChange={(event) => setAbonoMonto(event.target.value)}
+607:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+608:               placeholder={`Monto de abono en ${expediente.moneda}`}
+609:               className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400 disabled:opacity-50"
+610:             />
+611: 
+612:             <ActionButton
+613:               tone="sky"
+614:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+615:               onClick={handleRegistrarAbono}
+616:             >
+617:               <CreditCard className="h-4 w-4" />
+618:               Registrar abono
+619:             </ActionButton>
+620:           </div>
+621: 
+622:           <p className="mt-3 text-sm text-slate-400">
+623:             El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
+624:           </p>
+625:         </section>
+626:           <section className="mt-6 rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5 shadow-xl shadow-black/20">
+627:             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+628:               <div>
+629:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
+630:                   FASE 3
+631:                 </p>
+632:                 <h2 className="text-lg font-semibold text-slate-100">
+
+613:               tone="sky"
+614:               disabled={estaCerrado || expediente.estadoPago === 'pagado'}
+615:               onClick={handleRegistrarAbono}
+616:             >
+617:               <CreditCard className="h-4 w-4" />
+618:               Registrar abono
+619:             </ActionButton>
+620:           </div>
+621: 
+622:           <p className="mt-3 text-sm text-slate-400">
+623:             El abono actualiza monto pagado, saldo y estado de pago. Si el saldo llega a cero, el expediente queda como pagado.
+624:           </p>
+625:         </section>
+626:           <section className="mt-6 rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5 shadow-xl shadow-black/20">
+627:             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+628:               <div>
+629:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
+630:                   FASE 3
+631:                 </p>
+632:                 <h2 className="text-lg font-semibold text-slate-100">
+633:                   AvalÃºo tÃ©cnico
+634:                 </h2>
+635:                 <p className="mt-2 text-sm text-slate-400">
+636:                   CreÃ¡, abrÃ­ o vinculÃ¡ el avalÃºo tÃ©cnico correspondiente a este expediente.
+637:                 </p>
+638:               </div>
+639: 
+640:               <Link
+641:                 to="/avaluos/nuevo"
+
+626:           <section className="mt-6 rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5 shadow-xl shadow-black/20">
+627:             <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+628:               <div>
+629:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
+630:                   FASE 3
+631:                 </p>
+632:                 <h2 className="text-lg font-semibold text-slate-100">
+633:                   AvalÃºo tÃ©cnico
+634:                 </h2>
+635:                 <p className="mt-2 text-sm text-slate-400">
+636:                   CreÃ¡, abrÃ­ o vinculÃ¡ el avalÃºo tÃ©cnico correspondiente a este expediente.
+637:                 </p>
+638:               </div>
+639: 
+640:               <Link
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+
+639: 
+640:               <Link
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+
+640:               <Link
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+
+641:                 to="/avaluos/nuevo"
+642:                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+643:               >
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+
+644:                 Crear avalÃºo tÃ©cnico
+645:               </Link>
+646:             </div>
+647:           </section>
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+678:                   Control operativo
+
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+678:                   Control operativo
+679:                 </h2>
+680:               </div>
+681:             </div>
+
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+678:                   Control operativo
+679:                 </h2>
+680:               </div>
+681:             </div>
+682: 
+683:             <div className="mt-5 grid gap-3">
+684:               <DetailItem label="Solicitud" value={expediente.fechaSolicitud} />
+685:               <DetailItem
+686:                 label="Entrega estimada"
+687:                 value={expediente.fechaEntregaEstimada}
+688:               />
+689:               <DetailItem label="Cierre" value={expediente.fechaCierre} />
+690:             </div>
+691:           </article>
+692: 
+693:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+694:             <div className="flex items-center gap-3">
+695:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+696:                 <BadgeDollarSign className="h-5 w-5" />
+697:               </div>
+698:               <div>
+699:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+700:                   Pago
+701:                 </p>
+702:                 <h2 className="text-lg font-semibold text-slate-100">
+
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+678:                   Control operativo
+679:                 </h2>
+680:               </div>
+681:             </div>
+682: 
+683:             <div className="mt-5 grid gap-3">
+684:               <DetailItem label="Solicitud" value={expediente.fechaSolicitud} />
+685:               <DetailItem
+686:                 label="Entrega estimada"
+687:                 value={expediente.fechaEntregaEstimada}
+688:               />
+689:               <DetailItem label="Cierre" value={expediente.fechaCierre} />
+690:             </div>
+691:           </article>
+692: 
+693:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+694:             <div className="flex items-center gap-3">
+695:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+696:                 <BadgeDollarSign className="h-5 w-5" />
+697:               </div>
+698:               <div>
+699:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+700:                   Pago
+701:                 </p>
+702:                 <h2 className="text-lg font-semibold text-slate-100">
+703:                   Servicio y saldo
+704:                 </h2>
+705:               </div>
+
+679:                 </h2>
+680:               </div>
+681:             </div>
+682: 
+683:             <div className="mt-5 grid gap-3">
+684:               <DetailItem label="Solicitud" value={expediente.fechaSolicitud} />
+685:               <DetailItem
+686:                 label="Entrega estimada"
+687:                 value={expediente.fechaEntregaEstimada}
+688:               />
+689:               <DetailItem label="Cierre" value={expediente.fechaCierre} />
+690:             </div>
+691:           </article>
+692: 
+693:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+694:             <div className="flex items-center gap-3">
+695:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+696:                 <BadgeDollarSign className="h-5 w-5" />
+697:               </div>
+698:               <div>
+699:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+700:                   Pago
+701:                 </p>
+702:                 <h2 className="text-lg font-semibold text-slate-100">
+703:                   Servicio y saldo
+704:                 </h2>
+705:               </div>
+706:             </div>
+707: 
+
+702:                 <h2 className="text-lg font-semibold text-slate-100">
+703:                   Servicio y saldo
+704:                 </h2>
+705:               </div>
+706:             </div>
+707: 
+708:             <div className="mt-5 grid gap-3">
+709:               <DetailItem
+710:                 label="Costo servicio"
+711:                 value={formatMoneyINMOVAL(
+712:                   expediente.costoServicio,
+713:                   expediente.moneda
+714:                 )}
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+
+703:                   Servicio y saldo
+704:                 </h2>
+705:               </div>
+706:             </div>
+707: 
+708:             <div className="mt-5 grid gap-3">
+709:               <DetailItem
+710:                 label="Costo servicio"
+711:                 value={formatMoneyINMOVAL(
+712:                   expediente.costoServicio,
+713:                   expediente.moneda
+714:                 )}
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+731:             <div className="flex items-center gap-3">
+
+709:               <DetailItem
+710:                 label="Costo servicio"
+711:                 value={formatMoneyINMOVAL(
+712:                   expediente.costoServicio,
+713:                   expediente.moneda
+714:                 )}
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+731:             <div className="flex items-center gap-3">
+732:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+733:                 <ReceiptText className="h-5 w-5" />
+734:               </div>
+735:               <div>
+736:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+737:                   FacturaciÃ³n
+
+710:                 label="Costo servicio"
+711:                 value={formatMoneyINMOVAL(
+712:                   expediente.costoServicio,
+713:                   expediente.moneda
+714:                 )}
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+731:             <div className="flex items-center gap-3">
+732:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+733:                 <ReceiptText className="h-5 w-5" />
+734:               </div>
+735:               <div>
+736:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+737:                   FacturaciÃ³n
+738:                 </p>
+
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+731:             <div className="flex items-center gap-3">
+732:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+733:                 <ReceiptText className="h-5 w-5" />
+734:               </div>
+735:               <div>
+736:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+737:                   FacturaciÃ³n
+738:                 </p>
+739:                 <h2 className="text-lg font-semibold text-slate-100">
+740:                   Cierre operativo
+741:                 </h2>
+742:               </div>
+743:             </div>
+
+738:                 </p>
+739:                 <h2 className="text-lg font-semibold text-slate-100">
+740:                   Cierre operativo
+741:                 </h2>
+742:               </div>
+743:             </div>
+744: 
+745:             <div className="mt-5 grid gap-3">
+746:               <DetailItem
+747:                 label="Factura emitida"
+748:                 value={expediente.facturaEmitida ? 'SÃ­' : 'No'}
+749:               />
+750:               <DetailItem label="NÃºmero factura" value={expediente.numeroFactura} />
+751:               <DetailItem
+752:                 label="Puede cerrarse"
+753:                 value={puedeCerrarExpediente ? 'SÃ­' : 'No'}
+754:               />
+755:             </div>
+756:           </article>
+757:         </section>
+758: 
+759:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+760:           <div className="flex items-center gap-3">
+761:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+762:               <FolderOpen className="h-5 w-5" />
+763:             </div>
+764:             <div>
+765:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+766:                 Archivo y Drive
+
+740:                   Cierre operativo
+741:                 </h2>
+742:               </div>
+743:             </div>
+744: 
+745:             <div className="mt-5 grid gap-3">
+746:               <DetailItem
+747:                 label="Factura emitida"
+748:                 value={expediente.facturaEmitida ? 'SÃ­' : 'No'}
+749:               />
+750:               <DetailItem label="NÃºmero factura" value={expediente.numeroFactura} />
+751:               <DetailItem
+752:                 label="Puede cerrarse"
+753:                 value={puedeCerrarExpediente ? 'SÃ­' : 'No'}
+754:               />
+755:             </div>
+756:           </article>
+757:         </section>
+758: 
+759:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+760:           <div className="flex items-center gap-3">
+761:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+762:               <FolderOpen className="h-5 w-5" />
+763:             </div>
+764:             <div>
+765:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+766:                 Archivo y Drive
+767:               </p>
+768:               <h2 className="text-lg font-semibold text-slate-100">
+
+743:             </div>
+744: 
+745:             <div className="mt-5 grid gap-3">
+746:               <DetailItem
+747:                 label="Factura emitida"
+748:                 value={expediente.facturaEmitida ? 'SÃ­' : 'No'}
+749:               />
+750:               <DetailItem label="NÃºmero factura" value={expediente.numeroFactura} />
+751:               <DetailItem
+752:                 label="Puede cerrarse"
+753:                 value={puedeCerrarExpediente ? 'SÃ­' : 'No'}
+754:               />
+755:             </div>
+756:           </article>
+757:         </section>
+758: 
+759:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+760:           <div className="flex items-center gap-3">
+761:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+762:               <FolderOpen className="h-5 w-5" />
+763:             </div>
+764:             <div>
+765:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+766:                 Archivo y Drive
+767:               </p>
+768:               <h2 className="text-lg font-semibold text-slate-100">
+769:                 Referencias documentales
+770:               </h2>
+771:             </div>
+
+765:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+766:                 Archivo y Drive
+767:               </p>
+768:               <h2 className="text-lg font-semibold text-slate-100">
+769:                 Referencias documentales
+770:               </h2>
+771:             </div>
+772:           </div>
+773: 
+774:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+775:             <DetailItem label="Archivo .imv" value={expediente.archivoImvNombre} />
+776:             <DetailItem label="Drive URL" value={expediente.driveUrl} />
+777:           </div>
+778: 
+779:           {expediente.driveUrl ? (
+780:             <a
+781:               href={expediente.driveUrl}
+782:               target="_blank"
+783:               rel="noreferrer"
+784:               className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+785:             >
+786:               Abrir en Drive
+787:               <ExternalLink className="h-4 w-4" />
+788:             </a>
+789:           ) : null}
+790:         </section>
+791: 
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+
+766:                 Archivo y Drive
+767:               </p>
+768:               <h2 className="text-lg font-semibold text-slate-100">
+769:                 Referencias documentales
+770:               </h2>
+771:             </div>
+772:           </div>
+773: 
+774:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+775:             <DetailItem label="Archivo .imv" value={expediente.archivoImvNombre} />
+776:             <DetailItem label="Drive URL" value={expediente.driveUrl} />
+777:           </div>
+778: 
+779:           {expediente.driveUrl ? (
+780:             <a
+781:               href={expediente.driveUrl}
+782:               target="_blank"
+783:               rel="noreferrer"
+784:               className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+785:             >
+786:               Abrir en Drive
+787:               <ExternalLink className="h-4 w-4" />
+788:             </a>
+789:           ) : null}
+790:         </section>
+791: 
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+794:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+
+769:                 Referencias documentales
+770:               </h2>
+771:             </div>
+772:           </div>
+773: 
+774:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+775:             <DetailItem label="Archivo .imv" value={expediente.archivoImvNombre} />
+776:             <DetailItem label="Drive URL" value={expediente.driveUrl} />
+777:           </div>
+778: 
+779:           {expediente.driveUrl ? (
+780:             <a
+781:               href={expediente.driveUrl}
+782:               target="_blank"
+783:               rel="noreferrer"
+784:               className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+785:             >
+786:               Abrir en Drive
+787:               <ExternalLink className="h-4 w-4" />
+788:             </a>
+789:           ) : null}
+790:         </section>
+791: 
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+794:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+795:               <History className="h-5 w-5" />
+796:             </div>
+797:             <div>
+
+771:             </div>
+772:           </div>
+773: 
+774:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+775:             <DetailItem label="Archivo .imv" value={expediente.archivoImvNombre} />
+776:             <DetailItem label="Drive URL" value={expediente.driveUrl} />
+777:           </div>
+778: 
+779:           {expediente.driveUrl ? (
+780:             <a
+781:               href={expediente.driveUrl}
+782:               target="_blank"
+783:               rel="noreferrer"
+784:               className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+785:             >
+786:               Abrir en Drive
+787:               <ExternalLink className="h-4 w-4" />
+788:             </a>
+789:           ) : null}
+790:         </section>
+791: 
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+794:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+795:               <History className="h-5 w-5" />
+796:             </div>
+797:             <div>
+798:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+799:                 Historial
+
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+794:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+795:               <History className="h-5 w-5" />
+796:             </div>
+797:             <div>
+798:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+799:                 Historial
+800:               </p>
+801:               <h2 className="text-lg font-semibold text-slate-100">
+802:                 Actividad del expediente
+803:               </h2>
+804:             </div>
+805:           </div>
+806: 
+807:           {actividad.length === 0 ? (
+808:             <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+809:               TodavÃ­a no hay actividad registrada para este expediente.
+810:             </p>
+811:           ) : (
+812:             <div className="mt-5 space-y-3">
+813:               {actividad.map((item) => (
+814:                 <article
+815:                   key={item.id}
+816:                   className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
+817:                 >
+818:                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+819:                     <div>
+820:                       <p className="text-sm font-semibold text-slate-100">
+
+799:                 Historial
+800:               </p>
+801:               <h2 className="text-lg font-semibold text-slate-100">
+802:                 Actividad del expediente
+803:               </h2>
+804:             </div>
+805:           </div>
+806: 
+807:           {actividad.length === 0 ? (
+808:             <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+809:               TodavÃ­a no hay actividad registrada para este expediente.
+810:             </p>
+811:           ) : (
+812:             <div className="mt-5 space-y-3">
+813:               {actividad.map((item) => (
+814:                 <article
+815:                   key={item.id}
+816:                   className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
+817:                 >
+818:                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+819:                     <div>
+820:                       <p className="text-sm font-semibold text-slate-100">
+821:                         {item.titulo}
+822:                       </p>
+823:                       {item.descripcion ? (
+824:                         <p className="mt-1 text-sm text-slate-400">
+825:                           {item.descripcion}
+826:                         </p>
+827:                       ) : null}
+
+850:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+851:                 AuditorÃ­a
+852:               </p>
+853:               <h2 className="text-lg font-semibold text-slate-100">
+854:                 CreaciÃ³n y actualizaciÃ³n
+855:               </h2>
+856:             </div>
+857:           </div>
+858: 
+859:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+860:             <DetailItem label="Creado en" value={expediente.creadoEn} />
+861:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+862:           </div>
+863:         </section>
+864:       </div>
+865:     </div>
+866:   );
+867: }
+
+851:                 AuditorÃ­a
+852:               </p>
+853:               <h2 className="text-lg font-semibold text-slate-100">
+854:                 CreaciÃ³n y actualizaciÃ³n
+855:               </h2>
+856:             </div>
+857:           </div>
+858: 
+859:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+860:             <DetailItem label="Creado en" value={expediente.creadoEn} />
+861:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+862:           </div>
+863:         </section>
+864:       </div>
+865:     </div>
+866:   );
+867: }
+
+
+---------- PATRON: getExpediente ----------
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+
+
+---------- PATRON: useParams ----------
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+
+88:       disabled={disabled}
+89:       className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+103:   );
+104: 
+105:   const [expediente, setExpediente] = useState<
+106:     ExpedienteIndiceINMOVAL | undefined
+107:   >(expedienteInicial);
+108: 
+109:   const [actividad, setActividad] = useState(() =>
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+
+
+---------- PATRON: navigate ----------
+
+---------- PATRON: return ----------
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function DetailItem({
+44:   label,
+45:   value,
+46: }: {
+47:   label: string;
+48:   value?: string | number | null;
+49: }) {
+50:   return (
+51:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+52:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+53:         {label}
+54:       </p>
+55:       <p className="mt-2 text-sm font-medium text-slate-100">
+56:         {value || 'â€”'}
+57:       </p>
+58:     </div>
+59:   );
+60: }
+61: 
+62: function ActionButton({
+63:   children,
+64:   onClick,
+65:   disabled,
+66:   tone = 'sky',
+67: }: {
+68:   children: React.ReactNode;
+
+74:     sky: 'border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20',
+75:     emerald:
+76:       'border-emerald-400/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20',
+77:     amber:
+78:       'border-amber-400/30 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20',
+79:     rose: 'border-rose-400/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20',
+80:     slate:
+81:       'border-slate-600 bg-slate-950/50 text-slate-200 hover:bg-slate-800',
+82:   };
+83: 
+84:   return (
+85:     <button
+86:       type="button"
+87:       onClick={onClick}
+88:       disabled={disabled}
+89:       className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${classes[tone]}`}
+90:     >
+91:       {children}
+92:     </button>
+93:   );
+94: }
+95: 
+96: export default function ExpedienteDetalleINMOVALPage() {
+97:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+98:   const { id } = useParams();
+99: 
+100:   const expedienteInicial = useMemo(
+101:     () => getExpedientesIndiceINMOVAL().find((item) => item.id === id),
+102:     [id]
+
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+140:     }
+141:   ) {
+142:     if (!expediente) return;
+143: 
+144:     const actualizado: ExpedienteIndiceINMOVAL = {
+145:       ...expediente,
+146:       ...cambios,
+147:       actualizadoEn: nowISO(),
+148:     };
+149: 
+150:     upsertExpedienteIndiceINMOVAL(actualizado);
+151:     setExpediente(actualizado);
+152: 
+153:     if (actividadParams) {
+154:       registrarActividadExpedienteINMOVAL({
+155:         expedienteId: expediente.id,
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+
+156:         tipo: actividadParams.tipo,
+157:         titulo: actividadParams.titulo,
+158:         descripcion: actividadParams.descripcion,
+159:       });
+160: 
+161:       setActividad(getExpedienteActivityINMOVAL(expediente.id));
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+199: 
+200:     const nuevoSaldo = Math.max(
+201:       0,
+202:       Number(expediente.costoServicio || 0) - nuevoMontoPagado
+203:     );
+204: 
+205:     guardarCambios(
+206:       {
+207:         montoPagado: nuevoMontoPagado,
+208:         saldo: nuevoSaldo,
+209:         estadoPago:
+210:           nuevoSaldo <= 0
+
+219:         descripcion: `Se registrÃ³ un abono de ${expediente.moneda} ${abono.toFixed(
+220:           2
+221:         )}.`,
+222:       }
+223:     );
+224: 
+225:     setAbonoMonto('');
+226:   }
+227: 
+228:   if (!expediente) {
+229:     return (
+230:       <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+231:         <div className="mx-auto max-w-5xl">
+232:           <Link
+233:             to="/expedientes-plataforma"
+234:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+235:           >
+236:             <ArrowLeft className="h-4 w-4" />
+237:             Volver a expedientes
+238:           </Link>
+239: 
+240:           <div className="mt-6 rounded-3xl border border-rose-400/20 bg-rose-400/10 p-8">
+241:             <h1 className="text-2xl font-bold text-rose-100">
+242:               Expediente no encontrado
+243:             </h1>
+244:             <p className="mt-3 text-sm leading-6 text-rose-100/80">
+245:               No se encontrÃ³ el expediente solicitado en el Ã­ndice local de
+246:               Plataforma INMOVAL.
+247:             </p>
+
+253: 
+254:   const puedeCerrarExpediente = expedientePuedeCerrarseConConfiguracion(
+255:     expediente,
+256:     configExpedientes
+257:   );
+258: 
+259:   const puedeCerrar = puedeCerrarExpediente;
+260: 
+261:   const estaCerrado = expediente.estado === 'cerrado';
+262: 
+263:   return (
+264:     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+265:       <div className="mx-auto max-w-7xl">
+266:         <div className="flex flex-wrap gap-3">
+267:           <Link
+268:             to="/"
+269:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+270:           >
+271:             <Home className="h-4 w-4" />
+272:             Dashboard
+273:           </Link>
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+280:             Volver a expedientes
+281:           </Link>
+
+
+---------- PATRON: cotizacion ----------
+274: 
+275:           <Link
+276:             to="/expedientes-plataforma"
+277:             className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+280:             Volver a expedientes
+281:           </Link>
+282: 
+283:           <Link
+284:             to="/cotizaciones"
+285:             className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+286:           >
+287:             <FileText className="h-4 w-4" />
+288:             Cotizaciones
+289:           </Link>
+290: 
+291:           <Link
+292:             to="/modulos"
+293:             className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20"
+294:           >
+295:             <Boxes className="h-4 w-4" />
+296:             MÃ³dulos
+297:           </Link>
+298:         </div>
+299: 
+300:         <header className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+301:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+302:             <div>
+
+278:           >
+279:             <ArrowLeft className="h-4 w-4" />
+280:             Volver a expedientes
+281:           </Link>
+282: 
+283:           <Link
+284:             to="/cotizaciones"
+285:             className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+286:           >
+287:             <FileText className="h-4 w-4" />
+288:             Cotizaciones
+289:           </Link>
+290: 
+291:           <Link
+292:             to="/modulos"
+293:             className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20"
+294:           >
+295:             <Boxes className="h-4 w-4" />
+296:             MÃ³dulos
+297:           </Link>
+298:         </div>
+299: 
+300:         <header className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-black/30">
+301:           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+302:             <div>
+303:               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+304:                 Expediente INMOVAL
+305:               </p>
+306:               <h1 className="mt-2 text-3xl font-bold text-slate-50">
+
+
+---------- PATRON: Cotización ----------
+
+---------- PATRON: cliente ----------
+648: 
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+
+
+---------- PATRON: perito ----------
+110:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+
+111:   );
+112: 
+113:   const [abonoMonto, setAbonoMonto] = useState('');
+114:   const [prioridadDraft, setPrioridadDraft] = useState(
+115:     expedienteInicial?.prioridad || 'normal'
+116:   );
+117:   const [fechaEntregaDraft, setFechaEntregaDraft] = useState(
+118:     expedienteInicial?.fechaEntregaEstimada || ''
+119:   );
+120:   const [peritoDraft, setPeritoDraft] = useState(
+121:     expedienteInicial?.peritoNombre || ''
+122:   );
+123:   const [driveUrlDraft, setDriveUrlDraft] = useState(
+124:     expedienteInicial?.driveUrl || ''
+125:   );
+126:   const [archivoImvDraft, setArchivoImvDraft] = useState(
+127:     expedienteInicial?.archivoImvNombre || ''
+128:   );
+129:   function refrescarExpediente() {
+130:     setExpediente(getExpedienteIndiceINMOVAL(id || ''));
+131:   }
+132: 
+133: 
+134:   function guardarCambios(
+135:     cambios: Partial<ExpedienteIndiceINMOVAL>,
+136:     actividadParams?: {
+137:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+138:       titulo: string;
+139:       descripcion?: string;
+
+162:     }
+163:   }
+164: 
+165:   function handleGuardarDatosOperativos() {
+166:     if (!expediente) return;
+167: 
+168:     guardarCambios(
+169:       {
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+
+170:         prioridad: prioridadDraft as ExpedienteIndiceINMOVAL['prioridad'],
+171:         fechaEntregaEstimada: fechaEntregaDraft || undefined,
+172:         peritoNombre: peritoDraft.trim() || undefined,
+173:         driveUrl: driveUrlDraft.trim() || undefined,
+174:         archivoImvNombre: archivoImvDraft.trim() || undefined,
+175:       },
+176:       {
+177:         tipo: 'nota',
+178:         titulo: 'Datos del expediente actualizados',
+179:         descripcion:
+180:           'Se actualizaron prioridad, entrega estimada, perito o referencias documentales.',
+181:       }
+182:     );
+183:   }
+184: 
+185:   function handleRegistrarAbono() {
+186:     if (!expediente) return;
+187: 
+188:     const abono = Number(abonoMonto || 0);
+189: 
+190:     if (!Number.isFinite(abono) || abono <= 0) {
+191:       window.alert('IngresÃ¡ un monto de abono vÃ¡lido.');
+192:       return;
+193:     }
+194: 
+195:     const nuevoMontoPagado = Math.min(
+196:       Number(expediente.costoServicio || 0),
+197:       Number(expediente.montoPagado || 0) + abono
+198:     );
+
+522:                 type="date"
+523:                 value={fechaEntregaDraft}
+524:                 onChange={(event) => setFechaEntregaDraft(event.target.value)}
+525:                 disabled={estaCerrado}
+526:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+527:               />
+528:             </label>
+529: 
+530:             <label className="grid gap-2">
+531:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+532:                 Perito asignado
+533:               </span>
+534:               <input
+535:                 value={peritoDraft}
+536:                 onChange={(event) => setPeritoDraft(event.target.value)}
+537:                 disabled={estaCerrado}
+538:                 placeholder="Nombre del perito"
+539:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+540:               />
+541:             </label>
+542: 
+543:             <label className="grid gap-2 md:col-span-2">
+544:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+545:                 URL de Drive
+546:               </span>
+547:               <div className="relative">
+548:                 <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+549:                 <input
+550:                   value={driveUrlDraft}
+
+525:                 disabled={estaCerrado}
+526:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+527:               />
+528:             </label>
+529: 
+530:             <label className="grid gap-2">
+531:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+532:                 Perito asignado
+533:               </span>
+534:               <input
+535:                 value={peritoDraft}
+536:                 onChange={(event) => setPeritoDraft(event.target.value)}
+537:                 disabled={estaCerrado}
+538:                 placeholder="Nombre del perito"
+539:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+540:               />
+541:             </label>
+542: 
+543:             <label className="grid gap-2 md:col-span-2">
+544:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+545:                 URL de Drive
+546:               </span>
+547:               <div className="relative">
+548:                 <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+549:                 <input
+550:                   value={driveUrlDraft}
+551:                   onChange={(event) => setDriveUrlDraft(event.target.value)}
+552:                   disabled={estaCerrado}
+553:                   placeholder="https://drive.google.com/..."
+
+526:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+527:               />
+528:             </label>
+529: 
+530:             <label className="grid gap-2">
+531:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+532:                 Perito asignado
+533:               </span>
+534:               <input
+535:                 value={peritoDraft}
+536:                 onChange={(event) => setPeritoDraft(event.target.value)}
+537:                 disabled={estaCerrado}
+538:                 placeholder="Nombre del perito"
+539:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+540:               />
+541:             </label>
+542: 
+543:             <label className="grid gap-2 md:col-span-2">
+544:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+545:                 URL de Drive
+546:               </span>
+547:               <div className="relative">
+548:                 <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+549:                 <input
+550:                   value={driveUrlDraft}
+551:                   onChange={(event) => setDriveUrlDraft(event.target.value)}
+552:                   disabled={estaCerrado}
+553:                   placeholder="https://drive.google.com/..."
+554:                   className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+
+528:             </label>
+529: 
+530:             <label className="grid gap-2">
+531:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+532:                 Perito asignado
+533:               </span>
+534:               <input
+535:                 value={peritoDraft}
+536:                 onChange={(event) => setPeritoDraft(event.target.value)}
+537:                 disabled={estaCerrado}
+538:                 placeholder="Nombre del perito"
+539:                 className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+540:               />
+541:             </label>
+542: 
+543:             <label className="grid gap-2 md:col-span-2">
+544:               <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+545:                 URL de Drive
+546:               </span>
+547:               <div className="relative">
+548:                 <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+549:                 <input
+550:                   value={driveUrlDraft}
+551:                   onChange={(event) => setDriveUrlDraft(event.target.value)}
+552:                   disabled={estaCerrado}
+553:                   placeholder="https://drive.google.com/..."
+554:                   className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400 disabled:opacity-50"
+555:                 />
+556:               </div>
+
+649:           <ExpedienteModuloTecnicoPanel
+650:             expediente={expediente}
+651:             onUpdated={refrescarExpediente}
+652:           />
+653: 
+654:           <ExpedienteComparablesPanel expediente={expediente} />
+655: 
+656: 
+657:         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+658:           <DetailItem label="Cliente" value={expediente.clienteNombre} />
+659:           <DetailItem label="Perito" value={expediente.peritoNombre} />
+660:           <DetailItem label="MÃ³dulo" value={getModuloLabel(expediente.tipoModulo)} />
+661:           <DetailItem
+662:             label="RevisiÃ³n activa"
+663:             value={expediente.revisionActivaCodigo || 'Rev00'}
+664:           />
+665:         </section>
+666: 
+667:         <section className="mt-6 grid gap-4 lg:grid-cols-3">
+668:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+669:             <div className="flex items-center gap-3">
+670:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+671:                 <CalendarDays className="h-5 w-5" />
+672:               </div>
+673:               <div>
+674:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+675:                   Fechas
+676:                 </p>
+677:                 <h2 className="text-lg font-semibold text-slate-100">
+
+
+============================================================
+ULTIMAS 180 LINEAS
+============================================================
+687:                 value={expediente.fechaEntregaEstimada}
+688:               />
+689:               <DetailItem label="Cierre" value={expediente.fechaCierre} />
+690:             </div>
+691:           </article>
+692: 
+693:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+694:             <div className="flex items-center gap-3">
+695:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+696:                 <BadgeDollarSign className="h-5 w-5" />
+697:               </div>
+698:               <div>
+699:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+700:                   Pago
+701:                 </p>
+702:                 <h2 className="text-lg font-semibold text-slate-100">
+703:                   Servicio y saldo
+704:                 </h2>
+705:               </div>
+706:             </div>
+707: 
+708:             <div className="mt-5 grid gap-3">
+709:               <DetailItem
+710:                 label="Costo servicio"
+711:                 value={formatMoneyINMOVAL(
+712:                   expediente.costoServicio,
+713:                   expediente.moneda
+714:                 )}
+715:               />
+716:               <DetailItem
+717:                 label="Monto pagado"
+718:                 value={formatMoneyINMOVAL(
+719:                   expediente.montoPagado,
+720:                   expediente.moneda
+721:                 )}
+722:               />
+723:               <DetailItem
+724:                 label="Saldo"
+725:                 value={formatMoneyINMOVAL(expediente.saldo, expediente.moneda)}
+726:               />
+727:             </div>
+728:           </article>
+729: 
+730:           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+731:             <div className="flex items-center gap-3">
+732:               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-300">
+733:                 <ReceiptText className="h-5 w-5" />
+734:               </div>
+735:               <div>
+736:                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+737:                   FacturaciÃ³n
+738:                 </p>
+739:                 <h2 className="text-lg font-semibold text-slate-100">
+740:                   Cierre operativo
+741:                 </h2>
+742:               </div>
+743:             </div>
+744: 
+745:             <div className="mt-5 grid gap-3">
+746:               <DetailItem
+747:                 label="Factura emitida"
+748:                 value={expediente.facturaEmitida ? 'SÃ­' : 'No'}
+749:               />
+750:               <DetailItem label="NÃºmero factura" value={expediente.numeroFactura} />
+751:               <DetailItem
+752:                 label="Puede cerrarse"
+753:                 value={puedeCerrarExpediente ? 'SÃ­' : 'No'}
+754:               />
+755:             </div>
+756:           </article>
+757:         </section>
+758: 
+759:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+760:           <div className="flex items-center gap-3">
+761:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+762:               <FolderOpen className="h-5 w-5" />
+763:             </div>
+764:             <div>
+765:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+766:                 Archivo y Drive
+767:               </p>
+768:               <h2 className="text-lg font-semibold text-slate-100">
+769:                 Referencias documentales
+770:               </h2>
+771:             </div>
+772:           </div>
+773: 
+774:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+775:             <DetailItem label="Archivo .imv" value={expediente.archivoImvNombre} />
+776:             <DetailItem label="Drive URL" value={expediente.driveUrl} />
+777:           </div>
+778: 
+779:           {expediente.driveUrl ? (
+780:             <a
+781:               href={expediente.driveUrl}
+782:               target="_blank"
+783:               rel="noreferrer"
+784:               className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+785:             >
+786:               Abrir en Drive
+787:               <ExternalLink className="h-4 w-4" />
+788:             </a>
+789:           ) : null}
+790:         </section>
+791: 
+792:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+793:           <div className="flex items-center gap-3">
+794:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-400/20 bg-purple-400/10 text-purple-300">
+795:               <History className="h-5 w-5" />
+796:             </div>
+797:             <div>
+798:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+799:                 Historial
+800:               </p>
+801:               <h2 className="text-lg font-semibold text-slate-100">
+802:                 Actividad del expediente
+803:               </h2>
+804:             </div>
+805:           </div>
+806: 
+807:           {actividad.length === 0 ? (
+808:             <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+809:               TodavÃ­a no hay actividad registrada para este expediente.
+810:             </p>
+811:           ) : (
+812:             <div className="mt-5 space-y-3">
+813:               {actividad.map((item) => (
+814:                 <article
+815:                   key={item.id}
+816:                   className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
+817:                 >
+818:                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+819:                     <div>
+820:                       <p className="text-sm font-semibold text-slate-100">
+821:                         {item.titulo}
+822:                       </p>
+823:                       {item.descripcion ? (
+824:                         <p className="mt-1 text-sm text-slate-400">
+825:                           {item.descripcion}
+826:                         </p>
+827:                       ) : null}
+828:                     </div>
+829: 
+830:                     <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+831:                       {item.tipo}
+832:                     </span>
+833:                   </div>
+834: 
+835:                   <p className="mt-3 text-xs text-slate-500">
+836:                     {item.creadoEn} Â· {item.usuarioNombre}
+837:                   </p>
+838:                 </article>
+839:               ))}
+840:             </div>
+841:           )}
+842:         </section>
+843: 
+844:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+845:           <div className="flex items-center gap-3">
+846:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+847:               <UserRound className="h-5 w-5" />
+848:             </div>
+849:             <div>
+850:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+851:                 AuditorÃ­a
+852:               </p>
+853:               <h2 className="text-lg font-semibold text-slate-100">
+854:                 CreaciÃ³n y actualizaciÃ³n
+855:               </h2>
+856:             </div>
+857:           </div>
+858: 
+859:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+860:             <DetailItem label="Creado en" value={expediente.creadoEn} />
+861:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+862:           </div>
+863:         </section>
+864:       </div>
+865:     </div>
+866:   );
+867: }

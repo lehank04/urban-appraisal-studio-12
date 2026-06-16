@@ -1,10 +1,10 @@
-import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
+﻿import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
 
 export const VEHICULOS_MODULE_MANIFEST: ModuloTecnicoManifest = {
   id: 'vehiculo',
-  nombre: 'Vehículos',
+  nombre: 'VehÃ­culos',
   descripcion:
-    'Cartucho técnico futuro para avalúos vehiculares: automóviles, flotas, maquinaria rodante y activos móviles.',
+    'Cartucho tÃ©cnico futuro para avalÃºos vehiculares: automÃ³viles, flotas, maquinaria rodante y activos mÃ³viles.',
   version: '0.0.0',
   estado: 'no_instalado',
   extension: '.immod',

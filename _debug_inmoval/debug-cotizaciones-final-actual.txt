@@ -1,0 +1,184 @@
+﻿============================================================
+LINEAS 1260 HASTA FINAL - ERROR ACTUAL
+============================================================
+1260: 
+1261:                       <td className="px-5 py-4">
+1262:                         <span
+1263:                           className={
+1264:                             'inline-flex rounded-full border px-3 py-1 text-xs font-medium ' +
+1265:                             estadoClass(cotizacion.estado)
+1266:                           }
+1267:                         >
+1268:                           {estadoLabel(cotizacion.estado)}
+1269:                         </span>
+1270:                       </td>
+1271: 
+1272:                       <td className="px-5 py-4 text-slate-300">
+1273:                         {cotizacion.fechaValidez}
+1274:                       </td>
+1275: 
+1276:                       <td className="px-5 py-4 text-right">
+1277:                         <button
+1278:                           type="button"
+1279:                           onClick={() => setMenuCotizacionId(cotizacion.id)}
+1280:                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/60 text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-100"
+1281:                           aria-label="Acciones de cotizaciÃ³n"
+1282:                         >
+1283:                           <MoreHorizontal className="h-5 w-5" />
+1284:                         </button>
+1285:                       </td>
+1286:                     </tr>
+1287:                   ))}
+1288:                 </tbody>
+1289:               </table>
+1290:             </div>
+1291:           )}
+1292:         </section>
+1293:       </div>
+1294: 
+1295:       {cotizacionMenuActiva ? (
+1296:         <div className="fixed inset-0 z-50">
+1297:           <button
+1298:             type="button"
+1299:             aria-label="Cerrar acciones"
+1300:             className="absolute inset-0 bg-black/30"
+1301:             onClick={() => {
+1302:               setMenuCotizacionId(null);
+1303:               setMenuPosition(null);
+1304:             }}
+1305:           />
+1306: 
+1307:           <aside className="absolute bottom-0 right-0 top-0 w-full max-w-md overflow-y-auto border-l border-slate-800 bg-slate-950 p-5 shadow-2xl shadow-black/70">
+1308:             <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+1309:               <div>
+1310:                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+1311:                   Acciones de cotizaciÃ³n
+1312:                 </p>
+1313:                 <p className="mt-2 text-base font-semibold text-slate-100">
+1314:                   {cotizacionMenuActiva.numero}
+1315:                 </p>
+1316:                 <p className="mt-1 text-sm text-slate-500">
+1317:                   {cotizacionMenuActiva.clienteNombre}
+1318:                 </p>
+1319:               </div>
+1320: 
+1321:               <button
+1322:                 type="button"
+1323:                 onClick={() => {
+1324:                   setMenuCotizacionId(null);
+1325:                   setMenuPosition(null);
+1326:                 }}
+1327:                 className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+1328:               >
+1329:                 Cerrar
+1330:               </button>
+1331:             </div>
+1332: 
+1333:             <div className="mt-5 grid gap-2">
+1334:               <button
+1335:                 type="button"
+1336:                 onClick={() => {
+1337:                   cargarCotizacionParaEditar(cotizacionMenuActiva);
+1338:                   setMenuCotizacionId(null);
+1339:                   setMenuPosition(null);
+1340:                 }}
+1341:                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+1342:               >
+1343:                 <FileText className="h-4 w-4" />
+1344:                 Editar cotizaciÃ³n
+1345:               </button>
+1346: 
+1347:               <button
+1348:                 type="button"
+1349:                 onClick={() => {
+1350:                   crearRevisionCotizacion(cotizacionMenuActiva);
+1351:                   setMenuCotizacionId(null);
+1352:                   setMenuPosition(null);
+1353:                 }}
+1354:                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+1355:               >
+1356:                 <FilePlus2 className="h-4 w-4" />
+1357:                 Crear nueva revisiÃ³n
+1358:               </button>
+1359: 
+1360:               <div className="my-3 border-t border-slate-800" />
+1361: 
+1362:               {cotizacionMenuActiva.estado === 'borrador' ? (
+1363:                 <button
+1364:                   type="button"
+1365:                   onClick={() => {
+1366:                     actualizarCotizacion(cotizacionMenuActiva, { estado: 'enviada' });
+1367:                     setMenuCotizacionId(null);
+1368:                     setMenuPosition(null);
+1369:                   }}
+1370:                   className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+1371:                 >
+1372:                   <Send className="h-4 w-4" />
+1373:                   Marcar como enviada
+1374:                 </button>
+1375:               ) : null}
+1376: 
+1377:               {cotizacionMenuActiva.estado === 'enviada' ? (
+1378:                 <button
+1379:                   type="button"
+1380:                   onClick={() => {
+1381:                     actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+1382:                     setMenuCotizacionId(null);
+1383:                     setMenuPosition(null);
+1384:                   }}
+1385:                   className="flex w-full items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-left text-sm text-emerald-100 hover:bg-emerald-400/20"
+1386:                 >
+1387:                   <CheckCircle2 className="h-4 w-4" />
+1388:                   Aprobar
+1389:                 </button>
+1390:               ) : null}
+1391: 
+1392:               {cotizacionMenuActiva.estado === 'aprobada' ? (
+1393:                 <button
+1394:                   type="button"
+1395:                   onClick={() => {
+1396:                     convertirEnExpediente(cotizacionMenuActiva);
+1397:                     setMenuCotizacionId(null);
+1398:                     setMenuPosition(null);
+1399:                   }}
+1400:                   className="flex w-full items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left text-sm text-sky-100 hover:bg-sky-400/20"
+1401:                 >
+1402:                   <ClipboardList className="h-4 w-4" />
+1403:                   Crear expediente
+1404:                 </button>
+1405:               ) : null}
+1406: 
+1407:               <div className="my-3 border-t border-slate-800" />
+1408: 
+1409:               <button
+1410:                 type="button"
+1411:                 onClick={() => {
+1412:                   eliminarCotizacion(cotizacionMenuActiva);
+1413:                   setMenuCotizacionId(null);
+1414:                   setMenuPosition(null);
+1415:                 }}
+1416:                 className="flex w-full items-center gap-3 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-left text-sm text-rose-100 hover:bg-rose-400/20"
+1417:               >
+1418:                 <Trash2 className="h-4 w-4" />
+1419:                 Eliminar
+1420:               </button>
+1421:             </div>
+1422: 
+1423:             <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+1424:               <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+1425:                 Estado actual
+1426:               </p>
+1427:               <p className="mt-2 text-sm font-semibold text-slate-100">
+1428:                 {estadoLabel(cotizacionMenuActiva.estado)}
+1429:               </p>
+1430:               <p className="mt-2 text-xs leading-5 text-slate-500">
+1431:                 Las acciones de avance cambian segÃºn el estado de la cotizaciÃ³n.
+1432:               </p>
+1433:             </div>
+1434:           </aside>
+1435:         </div>
+1436:       ) : null}
+1437:       </div>
+1438:     </div>
+1439:   );
+1440: }

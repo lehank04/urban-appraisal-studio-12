@@ -240,6 +240,114 @@ function readCatalogOptions(keys: string[]): CatalogOption[] {
   return [];
 }
 
+function normalizePeritoCatalogItem(item: any): CatalogOption | null {
+  const nombre =
+    item?.nombre ||
+    item?.name ||
+    item?.peritoNombre ||
+    item?.displayName ||
+    item?.responsable;
+
+  if (!nombre) return null;
+
+  return {
+    id: String(item.id || item.codigo || item.registro || nombre),
+    nombre: String(nombre),
+    email: item.email || item.correo || item.correoElectronico,
+    telefono: item.telefono || item.phone || item.celular,
+    direccion: item.direccion || item.address,
+    codigo: item.codigo || item.registro || item.numeroRegistro,
+  };
+}
+
+function extractPeritosFromParsedStorage(parsed: any): CatalogOption[] {
+  const possibleArrays = [
+    parsed?.peritos,
+    parsed?.state?.peritos,
+    parsed?.data?.peritos,
+    parsed?.itemsPeritos,
+    parsed?.peritosRegistrados,
+  ];
+
+  for (const value of possibleArrays) {
+    if (Array.isArray(value)) {
+      const normalized = value
+        .map((item) => normalizePeritoCatalogItem(item))
+        .filter(Boolean) as CatalogOption[];
+
+      if (normalized.length > 0) return normalized;
+    }
+  }
+
+  // Solo aceptar array directo cuando la clave de localStorage ya fue identificada como peritos.
+  if (Array.isArray(parsed)) {
+    return parsed
+      .map((item) => normalizePeritoCatalogItem(item))
+      .filter(Boolean) as CatalogOption[];
+  }
+
+  return [];
+}
+
+function readPeritosCatalogOptions(): CatalogOption[] {
+  if (typeof window === 'undefined') return [];
+
+  const encontrados: CatalogOption[] = [];
+
+  const pushUnique = (items: CatalogOption[]) => {
+    for (const item of items) {
+      const exists = encontrados.some(
+        (actual) =>
+          actual.id === item.id ||
+          actual.nombre.trim().toLowerCase() === item.nombre.trim().toLowerCase()
+      );
+
+      if (!exists) encontrados.push(item);
+    }
+  };
+
+  // Primero: solo claves explícitas de peritos.
+  for (const key of Object.keys(window.localStorage)) {
+    if (!/perito|peritos/i.test(key)) continue;
+
+    const raw = window.localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      pushUnique(extractPeritosFromParsedStorage(JSON.parse(raw)));
+    } catch {
+      // Ignorar datos inválidos
+    }
+  }
+
+  // Segundo respaldo: buscar objetos que tengan propiedad interna "peritos",
+  // pero nunca arrays genéricos de clientes.
+  for (const key of Object.keys(window.localStorage)) {
+    if (/cliente|clientes/i.test(key)) continue;
+
+    const raw = window.localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      const hasPeritosProperty =
+        parsed?.peritos ||
+        parsed?.state?.peritos ||
+        parsed?.data?.peritos ||
+        parsed?.itemsPeritos ||
+        parsed?.peritosRegistrados;
+
+      if (hasPeritosProperty) {
+        pushUnique(extractPeritosFromParsedStorage(parsed));
+      }
+    } catch {
+      // Ignorar datos inválidos
+    }
+  }
+
+  return encontrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+
 function saveNewClientIfNeeded(cliente: CatalogOption) {
   if (typeof window === 'undefined') return;
 
@@ -274,6 +382,30 @@ function saveNewClientIfNeeded(cliente: CatalogOption) {
   );
 }
 
+function normalizeClientCode(value: string) {
+  const words = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length >= 3) {
+    return (words[0] + words[2]).toUpperCase().slice(0, 24);
+  }
+
+  if (words.length === 2) {
+    return (words[0] + words[1]).toUpperCase().slice(0, 24);
+  }
+
+  if (words.length === 1) {
+    return words[0].toUpperCase().slice(0, 24);
+  }
+
+  return 'CLIENTE';
+}
+
 function normalizeCode(value: string) {
   return value
     .normalize('NFD')
@@ -301,7 +433,7 @@ function buildCodigoExpediente({
   const clasificacion = clasificacionCodigo || 'CL';
   const proposito = propositoCodigo || 'PR';
   const fecha = formatDateCode(fechaCreacion || todayISO());
-  const cliente = normalizeCode(clienteNombre || 'CLIENTE');
+  const cliente = normalizeClientCode(clienteNombre || 'CLIENTE');
 
   return `${clasificacion}_${proposito}_${fecha}_${cliente}`;
 }
@@ -341,10 +473,7 @@ export default function NuevoExpedienteINMOVALPage() {
     []
   );
 
-  const peritos = useMemo(
-    () => readCatalogOptions(['inmoval_peritos_v1', 'inmoval_peritos', 'peritos']),
-    []
-  );
+  const peritos = useMemo(() => readPeritosCatalogOptions(), []);
 
   const fechaCreacion = todayISO();
 

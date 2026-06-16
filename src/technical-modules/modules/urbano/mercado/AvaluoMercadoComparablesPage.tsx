@@ -31,7 +31,7 @@ import {
   getAvaluoComparablesPorMercadoINMOVAL,
   removeComparableAvaluoINMOVAL,
   updateComparableAvaluoINMOVAL,
-} from '@/modules/urbano/comparables/avaluoComparablesStorage';
+} from '@/technical-modules/modules/urbano/comparables/avaluoComparablesStorage';
 
 type AvaluoMercadoComparablesPageProps = {
   tipoMercado: TipoMercadoAvaluoINMOVAL;
@@ -883,3 +883,4 @@ export default function AvaluoMercadoComparablesPage({
     </div>
   );
 }
+

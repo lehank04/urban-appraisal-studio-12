@@ -1,4 +1,4 @@
-import { ComparableAvaluoINMOVAL } from '@/modules/urbano/comparables/avaluoComparablesStorage';
+﻿import { ComparableAvaluoINMOVAL } from '@/technical-modules/modules/urbano/comparables/avaluoComparablesStorage';
 
 export function getComparablesParaAnexoTestigos(
   comparables: ComparableAvaluoINMOVAL[]
@@ -19,7 +19,7 @@ export function formatMoneyReporte(value: number, moneda: string) {
 
 export function getEstadoReporteLabel(estado: string) {
   if (estado === 'congelado') return 'Congelado para reporte';
-  if (estado === 'usado') return 'Usado en avalúo';
+  if (estado === 'usado') return 'Usado en avalÃºo';
   if (estado === 'descartado') return 'Descartado';
   return 'Preseleccionado';
 }
@@ -27,3 +27,4 @@ export function getEstadoReporteLabel(estado: string) {
 export function getTestigoStatusLabel(hasTestigo: boolean) {
   return hasTestigo ? 'Con testigo web' : 'Sin testigo web';
 }
+

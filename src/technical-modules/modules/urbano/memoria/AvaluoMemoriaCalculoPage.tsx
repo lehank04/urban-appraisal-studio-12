@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -31,7 +31,7 @@ import {
   getComparablesParaSustentosINMOVAL,
   removeComparableAvaluoINMOVAL,
   updateComparableAvaluoINMOVAL,
-} from '@/modules/urbano/comparables/avaluoComparablesStorage';
+} from '@/technical-modules/modules/urbano/comparables/avaluoComparablesStorage';
 
 type ModoNuevoComparable = null | 'manual' | 'base_datos';
 
@@ -80,7 +80,7 @@ function mercadoTitulo(tipoMercado: TipoMercadoAvaluoINMOVAL) {
 function mercadoDescripcion(tipoMercado: TipoMercadoAvaluoINMOVAL) {
   return tipoMercado === 'construido'
     ? 'Comparables de inmuebles construidos, edificaciones, viviendas, locales y mejoras.'
-    : 'Comparables de terrenos, lotes, suelo urbano o áreas vacantes.';
+    : 'Comparables de terrenos, lotes, suelo urbano o Ã¡reas vacantes.';
 }
 
 function filtrarComparablesBase(
@@ -226,12 +226,12 @@ function MercadoSection({
     const areaConstruccionNumero = Number(areaConstruccion || 0);
 
     if (!titulo.trim()) {
-      window.alert('Ingresá un título para el comparable.');
+      window.alert('IngresÃ¡ un tÃ­tulo para el comparable.');
       return;
     }
 
     if (!ubicacion.trim()) {
-      window.alert('Ingresá la ubicación del comparable.');
+      window.alert('IngresÃ¡ la ubicaciÃ³n del comparable.');
       return;
     }
 
@@ -243,7 +243,7 @@ function MercadoSection({
       titulo: titulo.trim(),
       tipo,
       estado: 'activo',
-      fuente: fuente.trim() || 'Ingreso manual en memoria de cálculo',
+      fuente: fuente.trim() || 'Ingreso manual en memoria de cÃ¡lculo',
       url: url.trim() || undefined,
       fecha: todayISO(),
       ubicacion: ubicacion.trim(),
@@ -297,7 +297,7 @@ function MercadoSection({
   }
 
   function handleEliminar(comparable: ComparableAvaluoINMOVAL) {
-    const ok = window.confirm('¿Quitar este comparable de este mercado?');
+    const ok = window.confirm('Â¿Quitar este comparable de este mercado?');
 
     if (!ok) return;
 
@@ -310,7 +310,7 @@ function MercadoSection({
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
-            Memoria de cálculo
+            Memoria de cÃ¡lculo
           </p>
           <h2 className="mt-1 text-2xl font-bold text-slate-50">
             {mercadoTitulo(tipoMercado)}
@@ -371,7 +371,7 @@ function MercadoSection({
 
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Título</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">TÃ­tulo</span>
               <input value={titulo} onChange={(event) => setTitulo(event.target.value)} className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
 
@@ -381,7 +381,7 @@ function MercadoSection({
                 <option value="venta">Venta</option>
                 <option value="oferta">Oferta</option>
                 <option value="renta">Renta</option>
-                <option value="avaluo">Avalúo</option>
+                <option value="avaluo">AvalÃºo</option>
                 <option value="referencia">Referencia</option>
               </select>
             </label>
@@ -397,7 +397,7 @@ function MercadoSection({
             </label>
 
             <label className="grid gap-2 xl:col-span-3">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Ubicación</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">UbicaciÃ³n</span>
               <input value={ubicacion} onChange={(event) => setUbicacion(event.target.value)} className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
 
@@ -417,12 +417,12 @@ function MercadoSection({
             </label>
 
             <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Área terreno</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Ãrea terreno</span>
               <input type="number" value={areaTerreno} onChange={(event) => setAreaTerreno(event.target.value)} className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
 
             <label className="grid gap-2">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Área construcción</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Ãrea construcciÃ³n</span>
               <input type="number" value={areaConstruccion} onChange={(event) => setAreaConstruccion(event.target.value)} className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
 
@@ -438,12 +438,12 @@ function MercadoSection({
             </label>
 
             <label className="grid gap-2 xl:col-span-3">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Justificación técnica</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">JustificaciÃ³n tÃ©cnica</span>
               <textarea value={justificacion} onChange={(event) => setJustificacion(event.target.value)} rows={3} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
 
             <label className="grid gap-2 xl:col-span-3">
-              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">Información completada en ficha / ajuste</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-500">InformaciÃ³n completada en ficha / ajuste</span>
               <textarea value={ajusteResumen} onChange={(event) => setAjusteResumen(event.target.value)} rows={3} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none focus:border-emerald-400" />
             </label>
           </div>
@@ -468,7 +468,7 @@ function MercadoSection({
             <input
               value={busquedaBase}
               onChange={(event) => setBusquedaBase(event.target.value)}
-              placeholder="Buscar comparable por municipio, departamento, ubicación, zona, tipo o palabra clave..."
+              placeholder="Buscar comparable por municipio, departamento, ubicaciÃ³n, zona, tipo o palabra clave..."
               className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 text-sm text-slate-100 outline-none focus:border-sky-400"
             />
           </div>
@@ -501,7 +501,7 @@ function MercadoSection({
                     <p className="mt-1 text-xs text-slate-500">
                       {[comparable.ubicacion, comparable.municipio, comparable.departamento]
                         .filter(Boolean)
-                        .join(' · ')}
+                        .join(' Â· ')}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-100">
                       {formatMoney(comparable.precio, comparable.moneda)}
@@ -524,10 +524,10 @@ function MercadoSection({
           <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-950/40 p-8 text-center">
             <Database className="mx-auto h-9 w-9 text-slate-500" />
             <h3 className="mt-3 text-lg font-semibold text-slate-100">
-              Sin comparables en esta sección
+              Sin comparables en esta secciÃ³n
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              Agregá un comparable manual o desde la base de datos.
+              AgregÃ¡ un comparable manual o desde la base de datos.
             </p>
           </div>
         ) : (
@@ -568,14 +568,14 @@ function MercadoSection({
                     </div>
 
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Área terreno</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Ãrea terreno</p>
                       <p className="mt-1 text-sm font-semibold text-slate-100">
                         {item.snapshot.areaTerreno || 'N/D'}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Área construcción</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Ãrea construcciÃ³n</p>
                       <p className="mt-1 text-sm font-semibold text-slate-100">
                         {item.snapshot.areaConstruccion || 'N/D'}
                       </p>
@@ -592,7 +592,7 @@ function MercadoSection({
                   <div className="mt-5 grid gap-3">
                     <label className="grid gap-2">
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        Justificación técnica
+                        JustificaciÃ³n tÃ©cnica
                       </span>
                       <textarea
                         value={item.justificacion || ''}
@@ -608,7 +608,7 @@ function MercadoSection({
 
                     <label className="grid gap-2">
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        Información completada en ficha / ajuste
+                        InformaciÃ³n completada en ficha / ajuste
                       </span>
                       <textarea
                         value={item.ajusteResumen || ''}
@@ -644,7 +644,7 @@ function MercadoSection({
                   </label>
 
                   <label className="grid gap-2">
-                    <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Revisión</span>
+                    <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">RevisiÃ³n</span>
                     <select
                       value={item.revision}
                       onChange={(event) =>
@@ -702,15 +702,15 @@ function SustentosSection({
     <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-          Módulo Urbano
+          MÃ³dulo Urbano
         </p>
         <h2 className="mt-1 text-2xl font-bold text-slate-50">
           Anexos / Sustentos de comparables
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-          Las fotos o capturas web no se eligen aquí. Aparecen automáticamente
-          cuando un comparable de la memoria de cálculo tiene respaldo visual y
-          está marcado como usado o congelado.
+          Las fotos o capturas web no se eligen aquÃ­. Aparecen automÃ¡ticamente
+          cuando un comparable de la memoria de cÃ¡lculo tiene respaldo visual y
+          estÃ¡ marcado como usado o congelado.
         </p>
       </div>
 
@@ -722,8 +722,8 @@ function SustentosSection({
               Sin sustentos visibles
             </h3>
             <p className="mt-2 text-sm text-slate-400">
-              Marcá comparables como usado o congelado en Mercado Construido o
-              Mercado Terreno para ver sus fotos aquí.
+              MarcÃ¡ comparables como usado o congelado en Mercado Construido o
+              Mercado Terreno para ver sus fotos aquÃ­.
             </p>
           </div>
         ) : (
@@ -763,7 +763,7 @@ function SustentosSection({
                   {item.justificacion ? (
                     <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                        Justificación
+                        JustificaciÃ³n
                       </p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
                         {item.justificacion}
@@ -774,7 +774,7 @@ function SustentosSection({
                   {item.ajusteResumen ? (
                     <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                        Información de ficha / ajuste
+                        InformaciÃ³n de ficha / ajuste
                       </p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
                         {item.ajusteResumen}
@@ -839,15 +839,15 @@ export default function AvaluoMemoriaCalculoPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Módulo Urbano
+                MÃ³dulo Urbano
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
-                Memoria de cálculo
+                Memoria de cÃ¡lculo
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Aquí se seleccionan los comparables de la base de datos o se
+                AquÃ­ se seleccionan los comparables de la base de datos o se
                 crean comparables manuales. Los sustentos visuales aparecen en
-                anexos dentro del mismo módulo urbano.
+                anexos dentro del mismo mÃ³dulo urbano.
               </p>
             </div>
 
@@ -857,7 +857,7 @@ export default function AvaluoMemoriaCalculoPage() {
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Avalúo
+                AvalÃºo
               </Link>
 
               <Link
@@ -892,3 +892,4 @@ export default function AvaluoMemoriaCalculoPage() {
     </div>
   );
 }
+

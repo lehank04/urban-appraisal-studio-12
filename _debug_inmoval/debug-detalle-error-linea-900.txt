@@ -1,0 +1,594 @@
+﻿============================================================
+LINEAS 860 A 930 - ERROR ACTUAL
+============================================================
+860:                     </div>
+861: 
+862:                     <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+863:                       {item.tipo}
+864:                     </span>
+865:                   </div>
+866: 
+867:                   <p className="mt-3 text-xs text-slate-500">
+868:                     {item.creadoEn} Â· {item.usuarioNombre}
+869:                   </p>
+870:                 </article>
+871:               ))}
+872:             </div>
+873:           )}
+874:         </section>
+875: 
+876:         <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+877:           <div className="flex items-center gap-3">
+878:             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-600 bg-slate-950/70 text-slate-300">
+879:               <UserRound className="h-5 w-5" />
+880:             </div>
+881:             <div>
+882:               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+883:                 AuditorÃ­a
+884:               </p>
+885:               <h2 className="text-lg font-semibold text-slate-100">
+886:                 CreaciÃ³n y actualizaciÃ³n
+887:               </h2>
+888:             </div>
+889:           </div>
+890: 
+891:           <div className="mt-5 grid gap-3 md:grid-cols-2">
+892:             <DetailItem label="Creado en" value={expediente.creadoEn} />
+893:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+894:           </div>
+895:         </section>
+896:       </div>
+897:     </div>
+898:   );
+899: }
+900: ,
+901:     tipoModulo: expediente.tipoModulo || 'urbano',
+902:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+903:     peritoNombre: expediente.peritoNombre || '',
+904:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+905:   } as ExpedienteIndiceINMOVAL;
+906: }
+907: 
+908: function DetailItem({
+909:   label,
+910:   value,
+911: }: {
+912:   label: string;
+913:   value?: string | number | null;
+914: }) {
+915:   return (
+916:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+917:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+918:         {label}
+919:       </p>
+920:       <p className="mt-2 text-sm font-medium text-slate-100">
+921:         {value || 'â€”'}
+922:       </p>
+923:     </div>
+924:   );
+925: }
+926: 
+927: function ActionButton({
+928:   children,
+929:   onClick,
+930:   disabled,
+
+============================================================
+BUSQUEDA DE COPIAS DE NORMALIZE
+============================================================
+
+---------- PATRON: normalizeExpedienteDetalleINMOVAL ----------
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function normalizeExpedienteDetalleINMOVAL(expediente: ExpedienteIndiceINMOVAL) {
+44:   const costoServicio = Number(expediente.costoServicio || 0);
+45:   const montoPagado = Number(expediente.montoPagado || 0);
+46:   const saldo =
+47:     typeof expediente.saldo === 'number'
+48:       ? expediente.saldo
+49:       : Math.max(0, costoServicio - montoPagado);
+50: 
+51:   return {
+52:     ...expediente,
+53:     estadoPago:
+54:       expediente.estadoPago ||
+55:       (saldo <= 0 && costoServicio > 0
+
+124: }
+125: 
+126: export default function ExpedienteDetalleINMOVALPage() {
+127:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+128:   const { id } = useParams();
+129: 
+130:   const expedienteInicial = useMemo(() => {
+131:     const encontrado = getExpedientesIndiceINMOVAL().find((item) => item.id === id);
+132:     return encontrado ? normalizeExpedienteDetalleINMOVAL(encontrado) : undefined;
+133:   }, [id]);
+134: 
+135:   const [expediente, setExpediente] = useState<
+136:     ExpedienteIndiceINMOVAL | undefined
+137:   >(expedienteInicial);
+138: 
+139:   const [actividad, setActividad] = useState(() =>
+140:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+141:   );
+142: 
+143:   const [abonoMonto, setAbonoMonto] = useState('');
+144:   const [prioridadDraft, setPrioridadDraft] = useState(
+
+168:     actividadParams?: {
+169:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+170:       titulo: string;
+171:       descripcion?: string;
+172:     }
+173:   ) {
+174:     if (!expediente) return;
+175: 
+176:     const actualizado: ExpedienteIndiceINMOVAL = normalizeExpedienteDetalleINMOVAL({
+177:       ...expediente,
+178:       ...cambios,
+179:       actualizadoEn: nowISO(),
+180:     } as ExpedienteIndiceINMOVAL);
+181: 
+182:     upsertExpedienteIndiceINMOVAL(actualizado);
+183:     setExpediente(actualizado);
+184: 
+185:     if (actividadParams) {
+186:       registrarActividadExpedienteINMOVAL({
+187:         expedienteId: expediente.id,
+188:         tipo: actividadParams.tipo,
+
+1785: }
+1786: 
+1787: export default function ExpedienteDetalleINMOVALPage() {
+1788:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+1789:   const { id } = useParams();
+1790: 
+1791:   const expedienteInicial = useMemo(() => {
+1792:     const encontrado = getExpedientesIndiceINMOVAL().find((item) => item.id === id);
+1793:     return encontrado ? normalizeExpedienteDetalleINMOVAL(encontrado) : undefined;
+1794:   }, [id]);
+1795: 
+1796:   const [expediente, setExpediente] = useState<
+1797:     ExpedienteIndiceINMOVAL | undefined
+1798:   >(expedienteInicial);
+1799: 
+1800:   const [actividad, setActividad] = useState(() =>
+1801:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+1802:   );
+1803: 
+1804:   const [abonoMonto, setAbonoMonto] = useState('');
+1805:   const [prioridadDraft, setPrioridadDraft] = useState(
+
+1829:     actividadParams?: {
+1830:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+1831:       titulo: string;
+1832:       descripcion?: string;
+1833:     }
+1834:   ) {
+1835:     if (!expediente) return;
+1836: 
+1837:     const actualizado: ExpedienteIndiceINMOVAL = normalizeExpedienteDetalleINMOVAL({
+1838:       ...expediente,
+1839:       ...cambios,
+1840:       actualizadoEn: nowISO(),
+1841:     } as ExpedienteIndiceINMOVAL);
+1842: 
+1843:     upsertExpedienteIndiceINMOVAL(actualizado);
+1844:     setExpediente(actualizado);
+1845: 
+1846:     if (actividadParams) {
+1847:       registrarActividadExpedienteINMOVAL({
+1848:         expedienteId: expediente.id,
+1849:         tipo: actividadParams.tipo,
+
+3451: }
+3452: 
+3453: export default function ExpedienteDetalleINMOVALPage() {
+3454:   const configExpedientes = getConfiguracionExpedientesINMOVAL();
+3455:   const { id } = useParams();
+3456: 
+3457:   const expedienteInicial = useMemo(() => {
+3458:     const encontrado = getExpedientesIndiceINMOVAL().find((item) => item.id === id);
+3459:     return encontrado ? normalizeExpedienteDetalleINMOVAL(encontrado) : undefined;
+3460:   }, [id]);
+3461: 
+3462:   const [expediente, setExpediente] = useState<
+3463:     ExpedienteIndiceINMOVAL | undefined
+3464:   >(expedienteInicial);
+3465: 
+3466:   const [actividad, setActividad] = useState(() =>
+3467:     expedienteInicial ? getExpedienteActivityINMOVAL(expedienteInicial.id) : []
+3468:   );
+3469: 
+3470:   const [abonoMonto, setAbonoMonto] = useState('');
+3471:   const [prioridadDraft, setPrioridadDraft] = useState(
+
+3495:     actividadParams?: {
+3496:       tipo: 'estado' | 'pago' | 'facturacion' | 'cierre' | 'archivo' | 'nota';
+3497:       titulo: string;
+3498:       descripcion?: string;
+3499:     }
+3500:   ) {
+3501:     if (!expediente) return;
+3502: 
+3503:     const actualizado: ExpedienteIndiceINMOVAL = normalizeExpedienteDetalleINMOVAL({
+3504:       ...expediente,
+3505:       ...cambios,
+3506:       actualizadoEn: nowISO(),
+3507:     } as ExpedienteIndiceINMOVAL);
+3508: 
+3509:     upsertExpedienteIndiceINMOVAL(actualizado);
+3510:     setExpediente(actualizado);
+3511: 
+3512:     if (actividadParams) {
+3513:       registrarActividadExpedienteINMOVAL({
+3514:         expedienteId: expediente.id,
+3515:         tipo: actividadParams.tipo,
+
+
+---------- PATRON: tipoModulo: expediente.tipoModulo ----------
+58:           ? 'parcial'
+59:           : 'pendiente'),
+60:     prioridad: expediente.prioridad || 'normal',
+61:     estado: expediente.estado || 'en_cotizacion',
+62:     costoServicio,
+63:     montoPagado,
+64:     saldo,
+65:     moneda: expediente.moneda || 'US$',
+66:     tipoModulo: expediente.tipoModulo || 'urbano',
+67:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+68:     peritoNombre: expediente.peritoNombre || '',
+69:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+70:   } as ExpedienteIndiceINMOVAL;
+71: }
+72: 
+73: function DetailItem({
+74:   label,
+75:   value,
+76: }: {
+77:   label: string;
+78:   value?: string | number | null;
+
+893:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+894:           </div>
+895:         </section>
+896:       </div>
+897:     </div>
+898:   );
+899: }
+900: ,
+901:     tipoModulo: expediente.tipoModulo || 'urbano',
+902:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+903:     peritoNombre: expediente.peritoNombre || '',
+904:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+905:   } as ExpedienteIndiceINMOVAL;
+906: }
+907: 
+908: function DetailItem({
+909:   label,
+910:   value,
+911: }: {
+912:   label: string;
+913:   value?: string | number | null;
+
+2554:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+2555:           </div>
+2556:         </section>
+2557:       </div>
+2558:     </div>
+2559:   );
+2560: }
+2561: ,
+2562:     tipoModulo: expediente.tipoModulo || 'urbano',
+2563:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+2564:     peritoNombre: expediente.peritoNombre || '',
+2565:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+2566:   } as ExpedienteIndiceINMOVAL;
+2567: }
+2568: 
+2569: function DetailItem({
+2570:   label,
+2571:   value,
+2572: }: {
+2573:   label: string;
+2574:   value?: string | number | null;
+
+4220:             <DetailItem label="Actualizado en" value={expediente.actualizadoEn} />
+4221:           </div>
+4222:         </section>
+4223:       </div>
+4224:     </div>
+4225:   );
+4226: }
+4227: ,
+4228:     tipoModulo: expediente.tipoModulo || 'urbano',
+4229:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+4230:     peritoNombre: expediente.peritoNombre || '',
+4231:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+4232:   } as ExpedienteIndiceINMOVAL;
+4233: }
+4234: 
+4235: function DetailItem({
+4236:   label,
+4237:   value,
+4238: }: {
+4239:   label: string;
+4240:   value?: string | number | null;
+
+
+---------- PATRON: clienteNombre: expediente.clienteNombre ----------
+59:           : 'pendiente'),
+60:     prioridad: expediente.prioridad || 'normal',
+61:     estado: expediente.estado || 'en_cotizacion',
+62:     costoServicio,
+63:     montoPagado,
+64:     saldo,
+65:     moneda: expediente.moneda || 'US$',
+66:     tipoModulo: expediente.tipoModulo || 'urbano',
+67:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+68:     peritoNombre: expediente.peritoNombre || '',
+69:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+70:   } as ExpedienteIndiceINMOVAL;
+71: }
+72: 
+73: function DetailItem({
+74:   label,
+75:   value,
+76: }: {
+77:   label: string;
+78:   value?: string | number | null;
+79: }) {
+
+894:           </div>
+895:         </section>
+896:       </div>
+897:     </div>
+898:   );
+899: }
+900: ,
+901:     tipoModulo: expediente.tipoModulo || 'urbano',
+902:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+903:     peritoNombre: expediente.peritoNombre || '',
+904:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+905:   } as ExpedienteIndiceINMOVAL;
+906: }
+907: 
+908: function DetailItem({
+909:   label,
+910:   value,
+911: }: {
+912:   label: string;
+913:   value?: string | number | null;
+914: }) {
+
+2555:           </div>
+2556:         </section>
+2557:       </div>
+2558:     </div>
+2559:   );
+2560: }
+2561: ,
+2562:     tipoModulo: expediente.tipoModulo || 'urbano',
+2563:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+2564:     peritoNombre: expediente.peritoNombre || '',
+2565:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+2566:   } as ExpedienteIndiceINMOVAL;
+2567: }
+2568: 
+2569: function DetailItem({
+2570:   label,
+2571:   value,
+2572: }: {
+2573:   label: string;
+2574:   value?: string | number | null;
+2575: }) {
+
+4221:           </div>
+4222:         </section>
+4223:       </div>
+4224:     </div>
+4225:   );
+4226: }
+4227: ,
+4228:     tipoModulo: expediente.tipoModulo || 'urbano',
+4229:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+4230:     peritoNombre: expediente.peritoNombre || '',
+4231:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+4232:   } as ExpedienteIndiceINMOVAL;
+4233: }
+4234: 
+4235: function DetailItem({
+4236:   label,
+4237:   value,
+4238: }: {
+4239:   label: string;
+4240:   value?: string | number | null;
+4241: }) {
+
+
+---------- PATRON: peritoNombre: expediente.peritoNombre ----------
+60:     prioridad: expediente.prioridad || 'normal',
+61:     estado: expediente.estado || 'en_cotizacion',
+62:     costoServicio,
+63:     montoPagado,
+64:     saldo,
+65:     moneda: expediente.moneda || 'US$',
+66:     tipoModulo: expediente.tipoModulo || 'urbano',
+67:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+68:     peritoNombre: expediente.peritoNombre || '',
+69:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+70:   } as ExpedienteIndiceINMOVAL;
+71: }
+72: 
+73: function DetailItem({
+74:   label,
+75:   value,
+76: }: {
+77:   label: string;
+78:   value?: string | number | null;
+79: }) {
+80:   return (
+
+895:         </section>
+896:       </div>
+897:     </div>
+898:   );
+899: }
+900: ,
+901:     tipoModulo: expediente.tipoModulo || 'urbano',
+902:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+903:     peritoNombre: expediente.peritoNombre || '',
+904:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+905:   } as ExpedienteIndiceINMOVAL;
+906: }
+907: 
+908: function DetailItem({
+909:   label,
+910:   value,
+911: }: {
+912:   label: string;
+913:   value?: string | number | null;
+914: }) {
+915:   return (
+
+2556:         </section>
+2557:       </div>
+2558:     </div>
+2559:   );
+2560: }
+2561: ,
+2562:     tipoModulo: expediente.tipoModulo || 'urbano',
+2563:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+2564:     peritoNombre: expediente.peritoNombre || '',
+2565:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+2566:   } as ExpedienteIndiceINMOVAL;
+2567: }
+2568: 
+2569: function DetailItem({
+2570:   label,
+2571:   value,
+2572: }: {
+2573:   label: string;
+2574:   value?: string | number | null;
+2575: }) {
+2576:   return (
+
+4222:         </section>
+4223:       </div>
+4224:     </div>
+4225:   );
+4226: }
+4227: ,
+4228:     tipoModulo: expediente.tipoModulo || 'urbano',
+4229:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+4230:     peritoNombre: expediente.peritoNombre || '',
+4231:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+4232:   } as ExpedienteIndiceINMOVAL;
+4233: }
+4234: 
+4235: function DetailItem({
+4236:   label,
+4237:   value,
+4238: }: {
+4239:   label: string;
+4240:   value?: string | number | null;
+4241: }) {
+4242:   return (
+
+
+---------- PATRON: fechaEntregaEstimada: expediente.fechaEntregaEstimada ----------
+61:     estado: expediente.estado || 'en_cotizacion',
+62:     costoServicio,
+63:     montoPagado,
+64:     saldo,
+65:     moneda: expediente.moneda || 'US$',
+66:     tipoModulo: expediente.tipoModulo || 'urbano',
+67:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+68:     peritoNombre: expediente.peritoNombre || '',
+69:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+70:   } as ExpedienteIndiceINMOVAL;
+71: }
+72: 
+73: function DetailItem({
+74:   label,
+75:   value,
+76: }: {
+77:   label: string;
+78:   value?: string | number | null;
+79: }) {
+80:   return (
+81:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+
+896:       </div>
+897:     </div>
+898:   );
+899: }
+900: ,
+901:     tipoModulo: expediente.tipoModulo || 'urbano',
+902:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+903:     peritoNombre: expediente.peritoNombre || '',
+904:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+905:   } as ExpedienteIndiceINMOVAL;
+906: }
+907: 
+908: function DetailItem({
+909:   label,
+910:   value,
+911: }: {
+912:   label: string;
+913:   value?: string | number | null;
+914: }) {
+915:   return (
+916:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+
+2557:       </div>
+2558:     </div>
+2559:   );
+2560: }
+2561: ,
+2562:     tipoModulo: expediente.tipoModulo || 'urbano',
+2563:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+2564:     peritoNombre: expediente.peritoNombre || '',
+2565:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+2566:   } as ExpedienteIndiceINMOVAL;
+2567: }
+2568: 
+2569: function DetailItem({
+2570:   label,
+2571:   value,
+2572: }: {
+2573:   label: string;
+2574:   value?: string | number | null;
+2575: }) {
+2576:   return (
+2577:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+
+4223:       </div>
+4224:     </div>
+4225:   );
+4226: }
+4227: ,
+4228:     tipoModulo: expediente.tipoModulo || 'urbano',
+4229:     clienteNombre: expediente.clienteNombre || 'Cliente sin nombre',
+4230:     peritoNombre: expediente.peritoNombre || '',
+4231:     fechaEntregaEstimada: expediente.fechaEntregaEstimada || '',
+4232:   } as ExpedienteIndiceINMOVAL;
+4233: }
+4234: 
+4235: function DetailItem({
+4236:   label,
+4237:   value,
+4238: }: {
+4239:   label: string;
+4240:   value?: string | number | null;
+4241: }) {
+4242:   return (
+4243:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+

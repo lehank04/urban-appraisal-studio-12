@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -127,7 +127,7 @@ export default function AvaluoComparablesTecnicosPage() {
   }
 
   function handleEliminar(comparable: ComparableAvaluoINMOVAL) {
-    const ok = window.confirm('¿Quitar este comparable del avalúo?');
+    const ok = window.confirm('Â¿Quitar este comparable del avalÃºo?');
 
     if (!ok) return;
 
@@ -142,15 +142,15 @@ export default function AvaluoComparablesTecnicosPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Módulo urbano · Comparables técnicos
+                MÃ³dulo urbano Â· Comparables tÃ©cnicos
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-50">
-                Selección de comparables para avalúo
+                SelecciÃ³n de comparables para avalÃºo
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-                Aquí se seleccionan técnicamente los comparables que se usarán
-                en el avalúo. La plataforma administra la base; el avalúo decide
-                cuáles usa, descarta o congela para reporte.
+                AquÃ­ se seleccionan tÃ©cnicamente los comparables que se usarÃ¡n
+                en el avalÃºo. La plataforma administra la base; el avalÃºo decide
+                cuÃ¡les usa, descarta o congela para reporte.
               </p>
             </div>
 
@@ -160,7 +160,7 @@ export default function AvaluoComparablesTecnicosPage() {
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver al avalúo
+                Volver al avalÃºo
               </Link>
 
               <Link
@@ -249,7 +249,7 @@ export default function AvaluoComparablesTecnicosPage() {
             <input
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Buscar comparables para agregar al avalúo..."
+              placeholder="Buscar comparables para agregar al avalÃºo..."
               className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
             />
           </div>
@@ -298,7 +298,7 @@ export default function AvaluoComparablesTecnicosPage() {
                     className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/20"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    Agregar al avalúo
+                    Agregar al avalÃºo
                   </button>
                 </div>
               ))
@@ -314,7 +314,7 @@ export default function AvaluoComparablesTecnicosPage() {
                 Sin comparables seleccionados
               </h3>
               <p className="mt-2 text-sm text-slate-400">
-                Agrega comparables desde la base para iniciar el análisis técnico.
+                Agrega comparables desde la base para iniciar el anÃ¡lisis tÃ©cnico.
               </p>
             </div>
           ) : (
@@ -367,7 +367,7 @@ export default function AvaluoComparablesTecnicosPage() {
 
                       <div>
                         <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                          Área terreno
+                          Ãrea terreno
                         </p>
                         <p className="mt-1 text-sm font-semibold text-slate-100">
                           {item.snapshot.areaTerreno || 'N/D'}
@@ -399,7 +399,7 @@ export default function AvaluoComparablesTecnicosPage() {
                     <div className="mt-5 grid gap-3">
                       <label className="grid gap-2">
                         <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Justificación técnica
+                          JustificaciÃ³n tÃ©cnica
                         </span>
                         <textarea
                           value={item.justificacion || ''}
@@ -415,7 +415,7 @@ export default function AvaluoComparablesTecnicosPage() {
 
                       <label className="grid gap-2">
                         <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Resumen de ajuste / homologación
+                          Resumen de ajuste / homologaciÃ³n
                         </span>
                         <textarea
                           value={item.ajusteResumen || ''}
@@ -444,7 +444,7 @@ export default function AvaluoComparablesTecnicosPage() {
 
                     <label className="grid gap-2">
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        Estado técnico
+                        Estado tÃ©cnico
                       </span>
                       <select
                         value={item.estado}
@@ -464,7 +464,7 @@ export default function AvaluoComparablesTecnicosPage() {
 
                     <label className="grid gap-2">
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        Revisión
+                        RevisiÃ³n
                       </span>
                       <select
                         value={item.revision}
@@ -485,7 +485,7 @@ export default function AvaluoComparablesTecnicosPage() {
 
                     <label className="grid gap-2">
                       <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        Peso técnico
+                        Peso tÃ©cnico
                       </span>
                       <input
                         type="number"
@@ -531,7 +531,7 @@ export default function AvaluoComparablesTecnicosPage() {
                       className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-3 py-3 text-sm font-medium text-rose-100 transition hover:bg-rose-400/20"
                     >
                       <Trash2 className="h-4 w-4" />
-                      Quitar del avalúo
+                      Quitar del avalÃºo
                     </button>
                   </div>
                 </div>
@@ -543,3 +543,4 @@ export default function AvaluoComparablesTecnicosPage() {
     </div>
   );
 }
+

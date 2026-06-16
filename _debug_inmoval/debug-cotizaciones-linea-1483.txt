@@ -1,0 +1,137 @@
+﻿============================================================
+LINEAS 1440 A 1495 - ERROR ACTUAL
+============================================================
+1440:                 type="button"
+1441:                 onClick={() => {
+1442:                   actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+1443:                   setMenuCotizacionId(null);
+1444:                   setMenuPosition(null);
+1445:                 }}
+1446:                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
+1447:               >
+1448:                 <CheckCircle2 className="h-4 w-4" />
+1449:                 Aprobar
+1450:               </button>
+1451:             ) : null}
+1452: 
+1453:             {cotizacionMenuActiva.estado === 'aprobada' ? (
+1454:               <button
+1455:                 type="button"
+1456:                 onClick={() => {
+1457:                   convertirEnExpediente(cotizacionMenuActiva);
+1458:                   setMenuCotizacionId(null);
+1459:                   setMenuPosition(null);
+1460:                 }}
+1461:                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
+1462:               >
+1463:                 <ClipboardList className="h-4 w-4" />
+1464:                 Crear expediente
+1465:               </button>
+1466:             ) : null}
+1467: 
+1468:             <div className="my-2 border-t border-slate-800" />
+1469: 
+1470:             <button
+1471:               type="button"
+1472:               onClick={() => {
+1473:                 eliminarCotizacion(cotizacionMenuActiva);
+1474:                 setMenuCotizacionId(null);
+1475:                 setMenuPosition(null);
+1476:               }}
+1477:               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
+1478:             >
+1479:               <Trash2 className="h-4 w-4" />
+1480:               Eliminar
+1481:             </button>
+1482:           </div>
+1483:         </div>
+1484:       ) : null}
+1485: 
+1486:     </div>
+1487:   );
+1488: }
+
+============================================================
+ULTIMAS 80 LINEAS DEL ARCHIVO
+============================================================
+1408: 
+1409:               <button
+1410:                 type="button"
+1411:                 onClick={() => {
+1412:                   eliminarCotizacion(cotizacionMenuActiva);
+1413:                   setMenuCotizacionId(null);
+1414:                   setMenuPosition(null);
+1415:                 }}
+1416:                 className="flex w-full items-center gap-3 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-left text-sm text-rose-100 hover:bg-rose-400/20"
+1417:               >
+1418:                 <Trash2 className="h-4 w-4" />
+1419:                 Eliminar
+1420:               </button>
+1421:             </div>
+1422: 
+1423:             <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+1424:               <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+1425:                 Estado actual
+1426:               </p>
+1427:               <p className="mt-2 text-sm font-semibold text-slate-100">
+1428:                 {estadoLabel(cotizacionMenuActiva.estado)}
+1429:               </p>
+1430:               <p className="mt-2 text-xs leading-5 text-slate-500">
+1431:                 Las acciones de avance cambian segÃºn el estado de la cotizaciÃ³n.
+1432:               </p>
+1433:             </div>
+1434:           </aside>
+1435:         </div>
+1436:       ) : null}
+1437: 
+1438:             {cotizacionMenuActiva.estado === 'enviada' ? (
+1439:               <button
+1440:                 type="button"
+1441:                 onClick={() => {
+1442:                   actualizarCotizacion(cotizacionMenuActiva, { estado: 'aprobada' });
+1443:                   setMenuCotizacionId(null);
+1444:                   setMenuPosition(null);
+1445:                 }}
+1446:                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-emerald-100 hover:bg-emerald-400/10"
+1447:               >
+1448:                 <CheckCircle2 className="h-4 w-4" />
+1449:                 Aprobar
+1450:               </button>
+1451:             ) : null}
+1452: 
+1453:             {cotizacionMenuActiva.estado === 'aprobada' ? (
+1454:               <button
+1455:                 type="button"
+1456:                 onClick={() => {
+1457:                   convertirEnExpediente(cotizacionMenuActiva);
+1458:                   setMenuCotizacionId(null);
+1459:                   setMenuPosition(null);
+1460:                 }}
+1461:                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-sky-100 hover:bg-sky-400/10"
+1462:               >
+1463:                 <ClipboardList className="h-4 w-4" />
+1464:                 Crear expediente
+1465:               </button>
+1466:             ) : null}
+1467: 
+1468:             <div className="my-2 border-t border-slate-800" />
+1469: 
+1470:             <button
+1471:               type="button"
+1472:               onClick={() => {
+1473:                 eliminarCotizacion(cotizacionMenuActiva);
+1474:                 setMenuCotizacionId(null);
+1475:                 setMenuPosition(null);
+1476:               }}
+1477:               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-100 hover:bg-rose-400/10"
+1478:             >
+1479:               <Trash2 className="h-4 w-4" />
+1480:               Eliminar
+1481:             </button>
+1482:           </div>
+1483:         </div>
+1484:       ) : null}
+1485: 
+1486:     </div>
+1487:   );
+1488: }

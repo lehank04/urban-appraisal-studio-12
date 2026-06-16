@@ -734,18 +734,33 @@ export default function ExpedientesINMOVALPage() {
                 Cambiar estado
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  handleCambiarPrioridad(expedienteMenuActivo);
-                  setMenuExpedienteId(null);
-                  setMenuPosition(null);
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
-              >
-                <AlertTriangle className="h-4 w-4" />
-                Cambiar prioridad
-              </button>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+                <div className="mb-2 flex items-center gap-2 text-sm text-slate-300">
+                  <AlertTriangle className="h-4 w-4" />
+                  Prioridad
+                </div>
+
+                <select
+                  value={expedienteMenuActivo.prioridad || 'normal'}
+                  onChange={(event) => {
+                    upsertExpedienteIndiceINMOVAL({
+                      ...expedienteMenuActivo,
+                      prioridad: event.target.value as PrioridadExpedienteINMOVAL,
+                      actualizadoEn: new Date().toISOString(),
+                    });
+
+                    refrescar();
+                    setMenuExpedienteId(null);
+                    setMenuPosition(null);
+                  }}
+                  className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+                >
+                  <option value="baja">Baja</option>
+                  <option value="normal">Normal</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </div>
 
               <div className="my-3 border-t border-slate-800" />
 

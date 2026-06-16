@@ -3,12 +3,11 @@ import NuevoExpedienteINMOVALPage from '@/platform/expedientes/NuevoExpedienteIN
 import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/ConfiguracionCotizacionesINMOVALPage';
 import ImportarExpedienteIMVPage from '@/platform/expedientes/ImportarExpedienteIMVPage';
 import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPage';
-import PrepararModuloTecnicoINMOVALPage from '@/platform/expedientes/PrepararModuloTecnicoINMOVALPage';
-import AvaluoComparablesTecnicosPage from '@/modules/urbano/comparables/AvaluoComparablesTecnicosPage';
-import AvaluoAnexosTestigosPage from '@/modules/urbano/reportes/AvaluoAnexosTestigosPage';
-import AvaluoMercadoComparablesPage from '@/modules/urbano/mercado/AvaluoMercadoComparablesPage';
-import AvaluoMemoriaCalculoPage from '@/modules/urbano/memoria/AvaluoMemoriaCalculoPage';
-﻿import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+
+
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
@@ -49,7 +48,6 @@ const App = () => (
             <Route path="/expedientes-plataforma/configuracion" element={<ConfiguracionExpedientesINMOVALPage />} />
             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
             <Route path="/expedientes-plataforma/importar" element={<ImportarExpedienteIMVPage />} />
-            <Route path="/expedientes-plataforma/:id/preparar-tecnico" element={<PrepararModuloTecnicoINMOVALPage />} />
             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
             <Route path="/cotizaciones/configuracion" element={<ConfiguracionCotizacionesINMOVALPage />} />
@@ -59,12 +57,7 @@ const App = () => (
 
             <Route path="/avaluos" element={<AvaluosList />} />
             <Route path="/avaluos/nuevo" element={<NuevoExpediente />} />
-            <Route path="/avaluos/:id/memoria-calculo" element={<AvaluoMemoriaCalculoPage />} />
             <Route path="/avaluos/:id" element={<AvaluoWizard />} />
-
-
-            <Route path="/avaluos/:id/comparables" element={<AvaluoMemoriaCalculoPage />} />
-            <Route path="/avaluos/:id/anexos-testigos" element={<AvaluoAnexosTestigosPage />} />
             <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
 
             <Route path="/clientes" element={<ClientesPage />} />
@@ -79,3 +72,4 @@ const App = () => (
 );
 
 export default App;
+

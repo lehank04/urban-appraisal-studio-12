@@ -1,0 +1,93 @@
+﻿============================================================
+PRIMERAS 90 LINEAS - DETALLE EXPEDIENTE
+============================================================
+1: import { getConfiguracionExpedientesINMOVAL } from './expedienteConfigStorage';
+2: import { expedientePuedeCerrarseConConfiguracion, getMensajeReglaCierreExpediente } from './expedienteConfigRules';
+3: import { ExportarExpedienteIMVButton } from './components/ExportarExpedienteIMVButton';
+4: import { ExpedienteModuloTecnicoPanel } from './components/ExpedienteModuloTecnicoPanel';
+5: import { ExpedienteComparablesPanel } from './components/ExpedienteComparablesPanel';
+6: ï»¿import { useMemo, useState } from 'react';
+7: import { Link, useParams } from 'react-router-dom';
+8: import {
+9:   ArrowLeft,
+10:   BadgeDollarSign,
+11:   Boxes,
+12:   CalendarDays,
+13:   CheckCircle2,
+14:   ClipboardList,
+15:   ExternalLink,
+16:   FileText,
+17:   FolderOpen,
+18:   Home,
+19:   History,
+20:   LockKeyhole,
+21:   ReceiptText,
+22:   CreditCard,
+23:   Link2,
+24:   Save,
+25:   UserRound,
+26: } from 'lucide-react';
+27: import {
+28:   getExpedientesIndiceINMOVAL,
+29:   upsertExpedienteIndiceINMOVAL,
+30: } from './expedienteIndexStorage';
+31: import { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+32: import { ExpedienteEstadoBadge } from './components/ExpedienteEstadoBadge';
+33: import {
+34:   formatMoneyINMOVAL,
+35:   getModuloLabel,
+36: } from './expedienteUiUtils';
+37: import { nowISO, todayISO } from '@/shared/utils/dateUtils';
+38: import {
+39:   getExpedienteActivityINMOVAL,
+40:   registrarActividadExpedienteINMOVAL,
+41: } from './expedienteActivityStorage';
+42: 
+43: function normalizeExpedienteDetalleINMOVAL(expediente: ExpedienteIndiceINMOVAL) {
+44:   const costoServicio = Number(expediente.costoServicio || 0);
+45:   const montoPagado = Number(expediente.montoPagado || 0);
+46:   const saldo =
+47:     typeof expediente.saldo === 'number'
+48:       ? expediente.saldo
+49:       : Math.max(0, costoServicio - montoPagado);
+50: 
+51:   return {
+52:     ...expediente,
+53:     estadoPago: expediente.estadoPago || (saldo <= 0 && costoServicio > 0 ? 'pagado' : montoPagado > 0 ? 'parcial' : 'pendiente'),
+54:     prioridad: expediente.prioridad || 'normal',
+55:     estado: expediente.estado || 'en_cotizacion',
+56:     costoServicio,
+57:     montoPagado,
+58:     saldo,
+59:     moneda: expediente.moneda || 'US
+60:   value,
+61: }: {
+62:   label: string;
+63:   value?: string | number | null;
+64: }) {
+65:   return (
+66:     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+67:       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+68:         {label}
+69:       </p>
+70:       <p className="mt-2 text-sm font-medium text-slate-100">
+71:         {value || 'â€”'}
+72:       </p>
+73:     </div>
+74:   );
+75: }
+76: 
+77: function ActionButton({
+78:   children,
+79:   onClick,
+80:   disabled,
+81:   tone = 'sky',
+82: }: {
+83:   children: React.ReactNode;
+84:   onClick: () => void;
+85:   disabled?: boolean;
+86:   tone?: 'sky' | 'emerald' | 'amber' | 'rose' | 'slate';
+87: }) {
+88:   const classes = {
+89:     sky: 'border-sky-400/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20',
+90:     emerald:

@@ -1,4 +1,4 @@
-import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
+﻿import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
 import { URBANO_MODULE_MANIFEST } from './urbano/moduleManifest';
 import { RURAL_MODULE_MANIFEST } from './rural/moduleManifest';
 import { MAQUINARIA_MODULE_MANIFEST } from './maquinaria/moduleManifest';

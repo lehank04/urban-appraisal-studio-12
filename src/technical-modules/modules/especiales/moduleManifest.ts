@@ -1,10 +1,10 @@
-import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
+﻿import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
 
 export const ESPECIALES_MODULE_MANIFEST: ModuloTecnicoManifest = {
   id: 'especial',
-  nombre: 'Avalúos especiales',
+  nombre: 'AvalÃºos especiales',
   descripcion:
-    'Cartucho técnico futuro para avalúos especiales o no estandarizados.',
+    'Cartucho tÃ©cnico futuro para avalÃºos especiales o no estandarizados.',
   version: '0.0.0',
   estado: 'no_instalado',
   extension: '.immod',
