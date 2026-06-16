@@ -375,55 +375,40 @@ function readClientes(): CatalogOption[] {
   return encontrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
-function buscarExpedienteIdDeCotizacion(cotizacion: CotizacionINMOVALLocal) {
-  if (typeof window === 'undefined') return undefined;
+function revisarValorParaExpediente(
+  value: any,
+  matcher: (value: any) => boolean
+): string | undefined {
+  if (!value) return undefined;
 
-  const numero = String(cotizacion.numero || '');
-  const cotizacionId = String(cotizacion.id || '');
-
-  function revisarValor(value: any): string | undefined {
-    if (!value) return undefined;
-
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        const found = revisarValor(item);
-        if (found) return found;
-      }
-
-      return undefined;
-    }
-
-    if (typeof value !== 'object') return undefined;
-
-    const texto = [
-      value.cotizacionId,
-      value.cotizacionOrigenId,
-      value.cotizacionNumero,
-      value.numeroCotizacion,
-      value.notas,
-      value.observaciones,
-      value.descripcion,
-      value.titulo,
-      value.codigo,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const coincide =
-      (cotizacionId && texto.includes(cotizacionId)) ||
-      (numero && texto.includes(numero));
-
-    if (coincide && value.id) {
-      return String(value.id);
-    }
-
-    for (const child of Object.values(value)) {
-      const found = revisarValor(child);
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = revisarValorParaExpediente(item, matcher);
       if (found) return found;
     }
 
     return undefined;
   }
+
+  if (typeof value !== 'object') return undefined;
+
+  if (matcher(value) && value.id) {
+    return String(value.id);
+  }
+
+  for (const child of Object.values(value)) {
+    const found = revisarValorParaExpediente(child, matcher);
+    if (found) return found;
+  }
+
+  return undefined;
+}
+
+function buscarExpedienteIdDeCotizacion(cotizacion: CotizacionINMOVALLocal) {
+  if (typeof window === 'undefined') return undefined;
+
+  const numero = String(cotizacion.numero || '');
+  const cotizacionId = String(cotizacion.id || '');
 
   for (const key of Object.keys(window.localStorage)) {
     if (!/expediente|expedientes|inmoval/i.test(key)) continue;
@@ -432,14 +417,62 @@ function buscarExpedienteIdDeCotizacion(cotizacion: CotizacionINMOVALLocal) {
     if (!raw) continue;
 
     try {
-      const found = revisarValor(JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+
+      const found = revisarValorParaExpediente(parsed, (value) => {
+        const texto = [
+          value.cotizacionId,
+          value.cotizacionOrigenId,
+          value.cotizacionNumero,
+          value.numeroCotizacion,
+          value.notas,
+          value.observaciones,
+          value.descripcion,
+          value.titulo,
+          value.codigo,
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        return Boolean(
+          (cotizacionId && texto.includes(cotizacionId)) ||
+            (numero && texto.includes(numero))
+        );
+      });
+
       if (found) return found;
     } catch {
-      // Ignorar datos no JSON
+      // Ignorar storage inválido
     }
   }
 
   return undefined;
+}
+
+function existeExpedienteINMOVAL(expedienteId?: string) {
+  if (typeof window === 'undefined') return false;
+  if (!expedienteId) return false;
+
+  for (const key of Object.keys(window.localStorage)) {
+    if (!/expediente|expedientes|inmoval/i.test(key)) continue;
+
+    const raw = window.localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+
+      const found = revisarValorParaExpediente(parsed, (value) => {
+        return String(value?.id || '') === String(expedienteId);
+      });
+
+      if (found) return true;
+    } catch {
+      // Ignorar storage inválido
+    }
+  }
+
+  return false;
 }
 
 function getCotizaciones() {
@@ -454,20 +487,43 @@ function getCotizaciones() {
     let changed = false;
 
     const normalizadas = parsed.map((cotizacion: CotizacionINMOVALLocal) => {
+      const estado = cotizacion.estado;
+
       if (
-        cotizacion.estado === 'aprobada' ||
-        cotizacion.estado === 'convertida'
+        estado === 'aprobada' ||
+        estado === 'convertida' ||
+        estado === 'avaluo_en_proceso'
       ) {
         const expedienteId =
           cotizacion.expedienteId || buscarExpedienteIdDeCotizacion(cotizacion);
 
-        if (expedienteId) {
-          changed = true;
+        const expedienteExiste = expedienteId
+          ? existeExpedienteINMOVAL(expedienteId)
+          : false;
+
+        if (expedienteExiste) {
+          const debeActualizar =
+            cotizacion.expedienteId !== expedienteId ||
+            estado !== 'avaluo_en_proceso';
+
+          if (debeActualizar) changed = true;
 
           return {
             ...cotizacion,
             expedienteId,
             estado: 'avaluo_en_proceso' as EstadoCotizacionINMOVAL,
+            actualizadoEn: new Date().toISOString(),
+          };
+        }
+
+        if (estado === 'avaluo_en_proceso' || estado === 'convertida') {
+          changed = true;
+
+          const { expedienteId: _expedienteId, ...sinExpediente } = cotizacion;
+
+          return {
+            ...sinExpediente,
+            estado: 'aprobada' as EstadoCotizacionINMOVAL,
             actualizadoEn: new Date().toISOString(),
           };
         }
