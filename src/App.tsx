@@ -4,9 +4,6 @@ import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/Config
 import ImportarExpedienteIMVPage from '@/platform/expedientes/ImportarExpedienteIMVPage';
 import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPage';
 
-
-
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -15,10 +12,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 import AppLayout from './components/layout/AppLayout';
 
-import AvaluosList from './pages/AvaluosList';
-import NuevoExpediente from './pages/NuevoExpediente';
-import AvaluoWizard from './pages/AvaluoWizard';
-import AvaluoPreview from './pages/AvaluoPreview';
 import ClientesPage from './pages/ClientesPage';
 import PeritosPage from './pages/PeritosPage';
 import NotFound from './pages/NotFound';
@@ -55,10 +48,10 @@ const App = () => (
             <Route path="/modulos" element={<ModulosINMOVALPage />} />
             <Route path="/comparables" element={<ComparablesINMOVALPage />} />
 
-            <Route path="/avaluos" element={<AvaluosList />} />
-            <Route path="/avaluos/nuevo" element={<NuevoExpediente />} />
-            <Route path="/avaluos/:id" element={<AvaluoWizard />} />
-            <Route path="/avaluos/:id/preview" element={<AvaluoPreview />} />
+            
+            
+            
+            
 
             <Route path="/clientes" element={<ClientesPage />} />
             <Route path="/peritos" element={<PeritosPage />} />
