@@ -186,6 +186,7 @@ function SectionCard({
 }
 
 export default function ExpedienteDetalleINMOVALPage() {
+  const [bitacoraAbierta, setBitacoraAbierta] = useState(false);
   const [estadoModalAbierto, setEstadoModalAbierto] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
   const { id } = useParams();
@@ -281,23 +282,6 @@ export default function ExpedienteDetalleINMOVALPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => navigate('/expedientes-plataforma')}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </button>
-
-              <button
-                type="button"
-                onClick={marcarInspeccionRealizada}
-                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Marcar inspección realizada
-              </button>
             </div>
           </div>
         </header>
@@ -337,15 +321,46 @@ export default function ExpedienteDetalleINMOVALPage() {
           </SectionCard>
 
           <SectionCard
-            eyebrow="Operación"
-            title="Perito, fechas e inspección"
+            eyebrow="Inspección"
+            title="Gestión de inspección"
             icon={<CalendarDays className="h-5 w-5" />}
           >
             <div className="grid gap-4 md:grid-cols-2">
-              <DetailItem label="Perito" value={data.peritoNombre || 'Sin asignar'} />
-              <DetailItem label="Fecha inspección" value={data.fechaInspeccion || data.fechaInspeccionProgramada} />
-              <DetailItem label="Inspección realizada" value={data.inspeccionRealizada ? 'Sí' : 'No'} />
-              <DetailItem label="Entrega estimada" value={data.fechaEntregaEstimada} />
+              <DetailItem label="Perito asignado" value={label(data.peritoNombre, 'Sin asignar')} />
+              <DetailItem label="Estado inspección" value={data.inspeccionRealizada ? 'Realizada' : data.fechaInspeccion ? 'Programada' : 'No programada'} />
+              <DetailItem label="Fecha programada" value={label(data.fechaInspeccion)} />
+              <DetailItem label="Fecha realizada" value={label(data.fechaInspeccionRealizada)} />
+              <DetailItem label="Entrega estimada" value={label(data.fechaEntregaEstimada)} />
+              <DetailItem label="Origen" value={data.inspeccionOrigen || 'Manual / plataforma'} />
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={marcarInspeccionRealizada}
+                disabled={Boolean(data.inspeccionRealizada)}
+                className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {data.inspeccionRealizada ? 'Inspección realizada' : 'Marcar realizada'}
+              </button>
+
+              <button
+                type="button"
+                disabled
+                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-500 disabled:cursor-not-allowed"
+                title="Pendiente para la integración con agenda o módulo técnico"
+              >
+                Reprogramar
+              </button>
+
+              <button
+                type="button"
+                disabled
+                className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100/60 disabled:cursor-not-allowed"
+                title="Pendiente para importar archivo de inspección desde la app externa"
+              >
+                Importar inspección
+              </button>
             </div>
           </SectionCard>
 
@@ -418,40 +433,61 @@ export default function ExpedienteDetalleINMOVALPage() {
         </div>
 
         <SectionCard
-          eyebrow="Bitácora"
-          title="Actividad del expediente"
-          icon={<History className="h-5 w-5" />}
-        >
-          {actividad.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              Todavía no hay actividad registrada.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {actividad.slice(0, 8).map((item: any) => (
-                <article
-                  key={item.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">
-                        {item.titulo}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {item.descripcion || 'Sin descripción'}
-                      </p>
-                    </div>
+            eyebrow="Bitácora"
+            title="Actividad del expediente"
+            icon={<History className="h-5 w-5" />}
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-slate-400">
+                  {actividad.length} movimiento(s) registrado(s).
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  La bitácora mantiene el historial fiel del expediente.
+                </p>
+              </div>
 
-                    <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
-                      {item.tipo}
-                    </span>
-                  </div>
-                </article>
-              ))}
+              <button
+                type="button"
+                onClick={() => setBitacoraAbierta((value) => !value)}
+                className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-semibold text-sky-100 transition hover:bg-sky-400/20"
+              >
+                {bitacoraAbierta ? 'Ocultar bitácora' : 'Ver bitácora'}
+              </button>
             </div>
-          )}
-        </SectionCard>
+
+            {bitacoraAbierta ? (
+              <div className="mt-5 grid gap-3">
+                {actividad.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
+                    No hay movimientos registrados.
+                  </div>
+                ) : (
+                  actividad.map((item) => (
+                    <article
+                      key={item.id}
+                      className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                    >
+                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-100">
+                            {item.titulo || item.tipo || 'Actividad'}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            {item.descripcion || item.detalle || 'Movimiento registrado.'}
+                          </p>
+                        </div>
+
+                        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
+                          {item.tipo || 'nota'}
+                        </span>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </SectionCard>
 
         {estadoModalAbierto ? (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
