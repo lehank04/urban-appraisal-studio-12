@@ -7,9 +7,9 @@ import { PrioridadExpedienteINMOVAL } from './expedienteTypes';
 
 export function getEstadoExpedienteLabel(estado: EstadoExpedienteINMOVAL) {
   const labels: Record<EstadoExpedienteINMOVAL, string> = {
-    en_cotizacion: 'En proceso',
+    en_cotizacion: 'Nuevo',
     cotizacion_enviada: 'Cotización enviada',
-    cotizacion_aprobada: 'Cotización aprobada',
+    cotizacion_aprobada: 'Nuevo',
     pendiente_inspeccion: 'Pendiente de inspección',
     en_inspeccion: 'En inspección',
     en_elaboracion: 'En elaboración',

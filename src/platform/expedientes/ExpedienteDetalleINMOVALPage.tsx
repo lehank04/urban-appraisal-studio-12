@@ -51,8 +51,8 @@ function getEstadoLabel(value: unknown) {
   const estado = String(value || 'en_cotizacion');
 
   const labels: Record<string, string> = {
-    en_cotizacion: 'En proceso',
-    cotizacion_aprobada: 'Cotización aprobada',
+    en_cotizacion: 'Nuevo',
+    cotizacion_aprobada: 'Nuevo',
     abierto: 'Abierto',
     en_proceso: 'En proceso',
     inspeccion_programada: 'Inspección programada',
@@ -102,7 +102,7 @@ function normalizeExpediente(expediente: ExpedienteIndiceINMOVAL) {
 
   return {
     ...data,
-    estado: data.estado || 'en_proceso',
+    estado: data.estado || 'en_cotizacion',
     prioridad: data.prioridad || 'normal',
     estadoPago:
       data.estadoPago ||

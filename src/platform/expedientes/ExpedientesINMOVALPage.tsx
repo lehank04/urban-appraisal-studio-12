@@ -32,7 +32,7 @@ type TipoModuloFiltro = string | 'todos';
 type EstadoPagoFiltro = string | 'todos';
 
 const ESTADOS_EXPEDIENTE = [
-  { value: 'cotizacion_aprobada', label: 'Cotización aprobada' },
+  { value: 'en_cotizacion', label: 'Nuevo' },
   { value: 'abierto', label: 'Abierto' },
   { value: 'en_proceso', label: 'En proceso' },
   { value: 'inspeccion_programada', label: 'Inspección programada' },
@@ -41,6 +41,11 @@ const ESTADOS_EXPEDIENTE = [
   { value: 'listo_para_entrega', label: 'Listo para entrega' },
   { value: 'entregado', label: 'Entregado' },
   { value: 'cerrado', label: 'Cerrado' },
+];
+
+const ESTADOS_EXPEDIENTE_LEGACY = [
+  { value: 'cotizacion_aprobada', label: 'Nuevo' },
+  { value: 'cotizacion_enviada', label: 'Nuevo' },
 ];
 
 const PRIORIDADES: { value: PrioridadExpedienteINMOVAL; label: string }[] = [
@@ -75,7 +80,7 @@ function formatMoney(value: number, moneda?: MonedaINMOVAL) {
 function labelFromValue(value?: string) {
   if (!value) return 'Sin definir';
 
-  const all = [...ESTADOS_EXPEDIENTE, ...MODULOS, ...ESTADOS_PAGO, ...PRIORIDADES];
+  const all = [...ESTADOS_EXPEDIENTE, ...ESTADOS_EXPEDIENTE_LEGACY, ...MODULOS, ...ESTADOS_PAGO, ...PRIORIDADES];
   const match = all.find((item) => item.value === value);
 
   if (match) return match.label;
@@ -94,7 +99,7 @@ function estadoBadgeClass(estado?: string) {
     return 'border-sky-400/30 bg-sky-400/10 text-sky-100';
   }
 
-  if (estado === 'cotizacion_aprobada') {
+  if (estado === 'en_cotizacion' || estado === 'cotizacion_aprobada' || estado === 'cotizacion_enviada') {
     return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
   }
 
