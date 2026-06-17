@@ -189,6 +189,10 @@ export default function ExpedienteDetalleINMOVALPage() {
   const [bitacoraAbierta, setBitacoraAbierta] = useState(false);
   const [estadoModalAbierto, setEstadoModalAbierto] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
+  const [inspeccionEditorAbierto, setInspeccionEditorAbierto] = useState(false);
+  const [fechaInspeccionInput, setFechaInspeccionInput] = useState('');
+  const [motivoInspeccionInput, setMotivoInspeccionInput] = useState('');
+  const [inspeccionMensaje, setInspeccionMensaje] = useState('');
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -263,6 +267,67 @@ export default function ExpedienteDetalleINMOVALPage() {
     );
   }
 
+
+  function abrirProgramacionInspeccion() {
+    setFechaInspeccionInput(String(data.fechaInspeccion || todayISO()));
+    setMotivoInspeccionInput('');
+    setInspeccionMensaje('');
+    setInspeccionEditorAbierto(true);
+  }
+
+  function guardarProgramacionInspeccion() {
+    if (!fechaInspeccionInput) {
+      setInspeccionMensaje('Seleccioná una fecha para la inspección.');
+      return;
+    }
+
+    const yaEstabaProgramada = Boolean(data.fechaInspeccion);
+
+    guardarCambios(
+      {
+        fechaInspeccion: fechaInspeccionInput,
+        inspeccionRealizada: false,
+        fechaInspeccionRealizada: '',
+        inspeccionOrigen: data.inspeccionOrigen || 'Manual / plataforma',
+        inspeccionMotivo: motivoInspeccionInput,
+        estado: 'inspeccion_programada',
+      },
+      yaEstabaProgramada ? 'Inspección reprogramada' : 'Inspección programada'
+    );
+
+    setInspeccionEditorAbierto(false);
+    setInspeccionMensaje(
+      yaEstabaProgramada
+        ? 'Inspección reprogramada correctamente.'
+        : 'Inspección programada correctamente.'
+    );
+  }
+
+  function iniciarNuevaInspeccion() {
+    if (!data) return;
+
+    const versionActual = Number(
+      (data as any).inspeccionVersion ||
+        (data.inspeccionRealizada || data.fechaInspeccion ? 1 : 0)
+    );
+
+    guardarCambios(
+      {
+        inspeccionVersion: versionActual + 1,
+        inspeccionRealizada: false,
+        fechaInspeccion: '',
+        fechaInspeccionRealizada: '',
+        fechaEntregaEstimada: '',
+        inspeccionOrigen: 'Manual / plataforma',
+        inspeccionImportada: false,
+        archivoInspeccionId: undefined,
+        archivoInspeccionNombre: undefined,
+      },
+      'Nueva inspección iniciada'
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-7xl">
@@ -334,7 +399,7 @@ export default function ExpedienteDetalleINMOVALPage() {
               <DetailItem label="Origen" value={data.inspeccionOrigen || 'Manual / plataforma'} />
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <button
                 type="button"
                 onClick={marcarInspeccionRealizada}
@@ -346,11 +411,20 @@ export default function ExpedienteDetalleINMOVALPage() {
 
               <button
                 type="button"
-                disabled
-                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-500 disabled:cursor-not-allowed"
-                title="Pendiente para la integración con agenda o módulo técnico"
+                onClick={iniciarNuevaInspeccion}
+                className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20"
+                title="Borra la inspección anterior y permite iniciar una nueva desde cero"
               >
-                Reprogramar
+                Nueva inspección
+              </button>
+
+              <button
+                type="button"
+                onClick={abrirProgramacionInspeccion}
+                className="rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                title="Programar o reprogramar la fecha de inspección"
+              >
+                {data.fechaInspeccion ? 'Reprogramar' : 'Programar'}
               </button>
 
               <button
@@ -362,6 +436,57 @@ export default function ExpedienteDetalleINMOVALPage() {
                 Importar inspección
               </button>
             </div>
+
+            {inspeccionEditorAbierto ? (
+              <div data-inspeccion-editor-inmoval className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
+                  <label className="grid gap-2 text-sm text-slate-300">
+                    Fecha de inspección
+                    <input
+                      type="date"
+                      value={fechaInspeccionInput}
+                      onChange={(event) => setFechaInspeccionInput(event.target.value)}
+                      className="h-11 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-100 outline-none focus:border-sky-400"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm text-slate-300">
+                    Motivo / observaciones
+                    <input
+                      type="text"
+                      value={motivoInspeccionInput}
+                      onChange={(event) => setMotivoInspeccionInput(event.target.value)}
+                      placeholder="Ej. Cliente no disponible, lluvia, nueva visita requerida..."
+                      className="h-11 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-100 outline-none focus:border-sky-400"
+                    />
+                  </label>
+                </div>
+
+                {inspeccionMensaje ? (
+                  <p className="mt-3 text-sm text-sky-200">
+                    {inspeccionMensaje}
+                  </p>
+                ) : null}
+
+                <div className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setInspeccionEditorAbierto(false)}
+                    className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={guardarProgramacionInspeccion}
+                    className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-semibold text-sky-100 transition hover:bg-sky-400/20"
+                  >
+                    Guardar inspección
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </SectionCard>
 
           <SectionCard
