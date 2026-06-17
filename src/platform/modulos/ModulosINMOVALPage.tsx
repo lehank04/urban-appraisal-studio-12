@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Boxes,
   CheckCircle2,
@@ -11,6 +11,13 @@ import {
 } from 'lucide-react';
 
 type EstadoModulo = 'no_cargado' | 'cargado' | 'activo';
+
+type RolINMOVALTemporal = 'administrativo' | 'operativo';
+
+// Temporal: cuando exista gestión de usuarios, esto saldrá del usuario autenticado.
+const ROL_ACTUAL_INMOVAL: RolINMOVALTemporal = 'administrativo';
+
+const puedeAdministrarModulos = ROL_ACTUAL_INMOVAL === 'administrativo';
 
 type ModuloTecnicoPlataforma = {
   id: string;
@@ -165,6 +172,11 @@ export default function ModulosINMOVALPage() {
   }
 
   function cargarModulo(id: string) {
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede cargar módulos técnicos.');
+      return;
+    }
+
     actualizarModulo(id, {
       estado: 'cargado',
       version: 'Carga local preparada (.immod)',
@@ -172,14 +184,44 @@ export default function ModulosINMOVALPage() {
   }
 
   function activarModulo(id: string) {
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede activar módulos técnicos.');
+      return;
+    }
+
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede activar módulos técnicos.');
+      return;
+    }
+
     actualizarModulo(id, { estado: 'activo' });
   }
 
   function desactivarModulo(id: string) {
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede desactivar módulos técnicos.');
+      return;
+    }
+
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede desactivar módulos técnicos.');
+      return;
+    }
+
     actualizarModulo(id, { estado: 'cargado' });
   }
 
   function eliminarModulo(id: string) {
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede eliminar cargas de módulos técnicos.');
+      return;
+    }
+
+    if (!puedeAdministrarModulos) {
+      window.alert('Solo un usuario administrativo puede eliminar cargas de módulos técnicos.');
+      return;
+    }
+
     const modulo = modulos.find((item) => item.id === id);
 
     if (!modulo) return;
@@ -267,6 +309,11 @@ export default function ModulosINMOVALPage() {
             </div>
 
             <div className="rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-300">
+              Modo actual:{' '}
+              <span className="font-semibold text-slate-100">
+                {puedeAdministrarModulos ? 'Administrativo' : 'Operativo'}
+              </span>
+              <span className="mx-2 text-slate-600">·</span>
               Archivo esperado:{' '}
               <span className="font-semibold text-slate-100">.immod</span>
             </div>
@@ -352,7 +399,7 @@ export default function ModulosINMOVALPage() {
                   </button>
                 ) : null}
 
-                {modulo.estado === 'cargado' ? (
+                {puedeAdministrarModulos && modulo.estado === 'cargado' ? (
                   <button
                     type="button"
                     onClick={() => activarModulo(modulo.id)}
@@ -363,7 +410,7 @@ export default function ModulosINMOVALPage() {
                   </button>
                 ) : null}
 
-                {modulo.estado === 'activo' ? (
+                {puedeAdministrarModulos && modulo.estado === 'activo' ? (
                   <button
                     type="button"
                     onClick={() => desactivarModulo(modulo.id)}
@@ -374,7 +421,7 @@ export default function ModulosINMOVALPage() {
                   </button>
                 ) : null}
 
-                {modulo.estado !== 'no_cargado' ? (
+                {puedeAdministrarModulos && modulo.estado !== 'no_cargado' ? (
                   <button
                     type="button"
                     onClick={() => eliminarModulo(modulo.id)}
