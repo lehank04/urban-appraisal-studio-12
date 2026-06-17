@@ -269,33 +269,8 @@ export default function ExpedientesINMOVALPage() {
     reader.readAsText(file);
   }
 
-  function handleCambiarEstado(expediente: ExpedienteIndiceINMOVAL) {
-    const opciones = ESTADOS_EXPEDIENTE.map(
-      (item, index) => `${index + 1}. ${item.label} [${item.value}]`
-    ).join('\n');
-
-    const respuesta = window.prompt(
-      `Nuevo estado para ${expediente.codigo}:\n\n${opciones}\n\nEscribí el código del estado:`,
-      String(expediente.estado || '')
-    );
-
-    if (!respuesta) return;
-
-    const estado = respuesta.trim();
-    const existe = ESTADOS_EXPEDIENTE.some((item) => item.value === estado);
-
-    if (!existe) {
-      window.alert('Estado no válido.');
-      return;
-    }
-
-    upsertExpedienteIndiceINMOVAL({
-      ...expediente,
-      estado: estado as any,
-      actualizadoEn: new Date().toISOString(),
-    });
-
-    refrescar();
+  function handleCambiarEstado() {
+    // Estado controlado automáticamente por flujo.
   }
 
   function handleCambiarPrioridad(expediente: ExpedienteIndiceINMOVAL) {
@@ -451,7 +426,7 @@ export default function ExpedientesINMOVALPage() {
               <div className="group relative">
                 <button
                   type="button"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/50 text-slate-200 transition hover:bg-slate-800"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/50 text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <MoreHorizontal className="h-5 w-5" />
                 </button>
@@ -460,7 +435,7 @@ export default function ExpedientesINMOVALPage() {
                   <button
                     type="button"
                     onClick={() => importInputRef.current?.click()}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Upload className="h-4 w-4" />
                     Importar .imv
@@ -469,7 +444,7 @@ export default function ExpedientesINMOVALPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/configuracion-plataforma')}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Settings className="h-4 w-4" />
                     Configuración
@@ -691,7 +666,7 @@ export default function ExpedientesINMOVALPage() {
                   setMenuExpedienteId(null);
                   setMenuPosition(null);
                 }}
-                className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cerrar
               </button>
@@ -705,7 +680,7 @@ export default function ExpedientesINMOVALPage() {
                   setMenuPosition(null);
                   navigate('/expedientes-plataforma/' + expedienteMenuActivo.id);
                 }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FileText className="h-4 w-4" />
                 Abrir expediente
@@ -718,7 +693,7 @@ export default function ExpedientesINMOVALPage() {
                   setMenuPosition(null);
                   navigate('/expedientes-plataforma/' + expedienteMenuActivo.id + '?modo=editar');
                 }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="h-4 w-4" />
                 Editar expediente
@@ -733,10 +708,10 @@ export default function ExpedientesINMOVALPage() {
                   setMenuExpedienteId(null);
                   setMenuPosition(null);
                 }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Archive className="h-4 w-4" />
-                Cambiar estado
+                Estado controlado por flujo
               </button>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3">
@@ -776,7 +751,7 @@ export default function ExpedientesINMOVALPage() {
                   setMenuExpedienteId(null);
                   setMenuPosition(null);
                 }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800"
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Download className="h-4 w-4" />
                 Exportar .imv

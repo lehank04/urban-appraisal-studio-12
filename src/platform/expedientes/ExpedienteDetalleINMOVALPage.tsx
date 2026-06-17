@@ -19,6 +19,20 @@ import {
   upsertExpedienteIndiceINMOVAL,
 } from './expedienteIndexStorage';
 import type { ExpedienteIndiceINMOVAL } from './expedienteIndexTypes';
+
+const ESTADOS_EXPEDIENTE_MODAL_INMOVAL = [
+  { value: 'en_cotizacion', label: 'Nuevo' },
+  { value: 'abierto', label: 'Abierto' },
+  { value: 'en_proceso', label: 'En proceso' },
+  { value: 'inspeccion_programada', label: 'Inspección programada' },
+  { value: 'inspeccion_realizada', label: 'Inspección realizada' },
+  { value: 'avaluo_en_revision', label: 'Avalúo en revisión' },
+  { value: 'listo_para_entrega', label: 'Listo para entrega' },
+  { value: 'entregado', label: 'Entregado' },
+  { value: 'cerrado', label: 'Cerrado' },
+];
+
+
 import {
   getExpedienteActivityINMOVAL,
   registrarActividadExpedienteINMOVAL,
@@ -172,6 +186,8 @@ function SectionCard({
 }
 
 export default function ExpedienteDetalleINMOVALPage() {
+  const [estadoModalAbierto, setEstadoModalAbierto] = useState(false);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -194,7 +210,7 @@ export default function ExpedienteDetalleINMOVALPage() {
         <div className="mx-auto max-w-5xl">
           <Link
             to="/expedientes-plataforma"
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver a expedientes
@@ -268,7 +284,7 @@ export default function ExpedienteDetalleINMOVALPage() {
               <button
                 type="button"
                 onClick={() => navigate('/expedientes-plataforma')}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Volver
@@ -393,7 +409,7 @@ export default function ExpedienteDetalleINMOVALPage() {
                   'Referencia documental actualizada'
                 )
               }
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800"
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/50 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
               Guardar referencia
@@ -436,6 +452,74 @@ export default function ExpedienteDetalleINMOVALPage() {
             </div>
           )}
         </SectionCard>
+
+        {estadoModalAbierto ? (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-950 p-6 shadow-2xl shadow-black/50">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
+                    Expediente
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold text-slate-50">
+                    Estado controlado por flujo
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {data?.codigo || 'Expediente'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={cerrarModalEstado}
+                  className="rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              <label className="mt-6 grid gap-2 text-sm text-slate-300">
+                Estado operativo
+                <select
+                  value={estadoSeleccionado}
+                  onChange={(event) => setEstadoSeleccionado(event.target.value)}
+                  className="h-12 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+                >
+                  {ESTADOS_EXPEDIENTE_MODAL_INMOVAL.map((estado) => (
+                    <option key={estado.value} value={estado.value}>
+                      {estado.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm leading-6 text-slate-400">
+                Este estado controla el avance operativo del expediente. Más adelante
+                algunos cambios vendrán automáticamente desde el módulo técnico,
+                facturación o entrega.
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={cerrarModalEstado}
+                  className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={guardarEstadoDesdeModal}
+                  className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20"
+                >
+                  Guardar estado
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
       </div>
     </div>
   );
