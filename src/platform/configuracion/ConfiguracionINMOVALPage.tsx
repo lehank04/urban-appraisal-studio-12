@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Cloud,
@@ -18,6 +18,7 @@ import {
   resetConfiguracionPlataformaINMOVAL,
   saveConfiguracionPlataformaINMOVAL,
 } from './configuracionPlataformaStorage';
+import { RespaldoDatosINMOVALPanel } from './RespaldoDatosINMOVALPanel';
 
 function getEstadoClass(estado: EstadoConexionPlataformaINMOVAL) {
   if (estado === 'conectado') {
@@ -140,8 +141,9 @@ export default function ConfiguracionINMOVALPage() {
             </div>
           ) : null}
         </header>
+        <RespaldoDatosINMOVALPanel />
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-3">
+<section className="mt-6 grid gap-4 lg:grid-cols-3">
           <article className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
