@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Diagnósticos locales INMOVAL
+_debug_inmoval/
+debug-*.txt
+diagnostico-*.txt

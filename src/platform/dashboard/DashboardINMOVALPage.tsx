@@ -1,18 +1,40 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CalendarDays,
+  Boxes,
+  CheckCircle2,
   ClipboardList,
   FileText,
   Filter,
+  FolderKanban,
   Receipt,
   ScrollText,
   Send,
+  WalletCards,
 } from 'lucide-react';
 
 import { getExpedientesIndiceINMOVAL } from '@/platform/expedientes/expedienteIndexStorage';
 import { getAllExpedienteActivityINMOVAL } from '@/platform/expedientes/expedienteActivityStorage';
 import { formatMoneyINMOVAL, getEstadoExpedienteLabel } from '@/platform/expedientes/expedienteUiUtils';
+
+type CotizacionDashboard = {
+  id: string;
+  numero?: string;
+  estado?: string;
+  expedienteId?: string;
+  costoServicio?: number;
+  monto?: number;
+  total?: number;
+  moneda?: string;
+  creadoEn?: string;
+  fechaCotizacion?: string;
+  actualizadoEn?: string;
+};
+
+type ModuloDashboard = {
+  id: string;
+  estado?: string;
+};
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -27,11 +49,50 @@ function inDateRange(value: string | undefined, from: string, to: string) {
   if (!value) return true;
 
   const date = value.slice(0, 10);
+  return date >= from && date <= to;
+}
 
-  if (from && date < from) return false;
-  if (to && date > to) return false;
+function readLocalArray<T>(key: string): T[] {
+  if (typeof window === 'undefined') return [];
 
-  return true;
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getMontoCotizacion(cotizacion: CotizacionDashboard) {
+  return Number(
+    cotizacion.costoServicio ||
+      cotizacion.monto ||
+      cotizacion.total ||
+      0
+  );
+}
+
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold text-slate-50">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-400">{subtitle}</p>
+      </div>
+
+      {children}
+    </section>
+  );
 }
 
 function StatCard({
@@ -53,35 +114,15 @@ function StatCard({
             {titulo}
           </p>
           <p className="mt-3 text-3xl font-bold text-slate-50">{valor}</p>
-          <p className="mt-2 text-sm text-slate-400">{detalle}</p>
         </div>
 
-        <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sky-200">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200">
           {icon}
         </div>
       </div>
+
+      <p className="mt-3 text-sm leading-6 text-slate-400">{detalle}</p>
     </article>
-  );
-}
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-black/20">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold text-slate-50">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">{subtitle}</p>
-      </div>
-
-      {children}
-    </section>
   );
 }
 
@@ -91,6 +132,24 @@ export default function DashboardINMOVALPage() {
 
   const expedientes = useMemo(() => getExpedientesIndiceINMOVAL(), []);
   const bitacora = useMemo(() => getAllExpedienteActivityINMOVAL(), []);
+  const cotizaciones = useMemo(
+    () => readLocalArray<CotizacionDashboard>('inmoval_cotizaciones_v1'),
+    []
+  );
+  const modulos = useMemo(
+    () => readLocalArray<ModuloDashboard>('inmoval_modulos_tecnicos_estado_v1'),
+    []
+  );
+
+  const cotizacionesFiltradas = useMemo(() => {
+    return cotizaciones.filter((cotizacion) =>
+      inDateRange(
+        cotizacion.fechaCotizacion || cotizacion.creadoEn || cotizacion.actualizadoEn,
+        fechaInicio,
+        fechaFin
+      )
+    );
+  }, [cotizaciones, fechaInicio, fechaFin]);
 
   const expedientesFiltrados = useMemo(() => {
     return expedientes.filter((expediente) =>
@@ -104,40 +163,56 @@ export default function DashboardINMOVALPage() {
       .slice(0, 8);
   }, [bitacora, fechaInicio, fechaFin]);
 
-  const cotizacionesEnviadas = expedientesFiltrados.filter(
-    (expediente) => expediente.estado === 'cotizacion_enviada'
+  const cotizacionesEnviadas = cotizacionesFiltradas.filter(
+    (cotizacion) => cotizacion.estado === 'enviada'
   );
 
-  const cotizacionesAprobadasEnEspera = expedientesFiltrados.filter(
+  const cotizacionesAprobadasSinExpediente = cotizacionesFiltradas.filter(
+    (cotizacion) =>
+      cotizacion.estado === 'aprobada' && !cotizacion.expedienteId
+  );
+
+  const avaluosEnProceso = cotizacionesFiltradas.filter(
+    (cotizacion) =>
+      cotizacion.estado === 'avaluo_en_proceso' ||
+      cotizacion.estado === 'convertida' ||
+      Boolean(cotizacion.expedienteId)
+  );
+
+  const avaluosFinalizados = cotizacionesFiltradas.filter(
+    (cotizacion) => cotizacion.estado === 'avaluo_finalizado'
+  );
+
+  const facturasEmitidas = cotizacionesFiltradas.filter(
+    (cotizacion) => cotizacion.estado === 'factura_emitida'
+  );
+
+  const expedientesNuevos = expedientesFiltrados.filter(
     (expediente) =>
-      expediente.estado === 'cotizacion_aprobada' ||
-      expediente.estado === 'pendiente_inspeccion'
+      expediente.estado === 'en_cotizacion' ||
+      expediente.estado === 'cotizacion_aprobada'
   );
 
   const expedientesActivos = expedientesFiltrados.filter(
     (expediente) =>
-      !['cerrado', 'cancelado', 'entregado'].includes(expediente.estado)
-  );
-
-  const expedientesPrioridadAlta = expedientesFiltrados.filter(
-    (expediente) => expediente.prioridad === 'alta'
+      !['cerrado', 'cancelado', 'entregado'].includes(String(expediente.estado))
   );
 
   const expedientesEnRevision = expedientesFiltrados.filter(
     (expediente) =>
-      expediente.estado === 'en_revision' || expediente.estado === 'correcciones'
+      expediente.estado === 'en_revision' ||
+      expediente.estado === 'correcciones' ||
+      expediente.estado === 'avaluo_en_revision'
   );
 
   const expedientesPendientesEntrega = expedientesFiltrados.filter(
-    (expediente) => expediente.estado === 'aprobado'
-  );
-
-  const facturasPendientes = expedientesFiltrados.filter(
-    (expediente) => !expediente.facturaEmitida && expediente.costoServicio > 0
+    (expediente) =>
+      expediente.estado === 'aprobado' ||
+      expediente.estado === 'listo_para_entrega'
   );
 
   const pagosPendientes = expedientesFiltrados.filter(
-    (expediente) => expediente.estadoPago !== 'pagado' && expediente.saldo > 0
+    (expediente) => expediente.estadoPago !== 'pagado' && Number(expediente.saldo || 0) > 0
   );
 
   const totalSaldoPendiente = pagosPendientes.reduce(
@@ -145,7 +220,18 @@ export default function DashboardINMOVALPage() {
     0
   );
 
-  const monedaPrincipal = pagosPendientes[0]?.moneda || expedientesFiltrados[0]?.moneda || 'US$';
+  const montoCotizado = cotizacionesFiltradas.reduce(
+    (total, cotizacion) => total + getMontoCotizacion(cotizacion),
+    0
+  );
+
+  const monedaPrincipal =
+    cotizacionesFiltradas[0]?.moneda ||
+    pagosPendientes[0]?.moneda ||
+    expedientesFiltrados[0]?.moneda ||
+    'US$';
+
+  const modulosActivos = modulos.filter((modulo) => modulo.estado === 'activo');
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
@@ -160,8 +246,8 @@ export default function DashboardINMOVALPage() {
                 Centro INMOVAL
               </h1>
               <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
-                Resumen de cotizaciones, expedientes, facturas, pagos y bitácora
-                de la plataforma en el rango seleccionado.
+                Resumen operativo de cotizaciones, expedientes, avalúos, módulos,
+                pagos y bitácora de la plataforma en el rango seleccionado.
               </p>
             </div>
 
@@ -196,12 +282,11 @@ export default function DashboardINMOVALPage() {
           </div>
         </header>
 
-        {/* 1. COTIZACIONES */}
         <Section
           title="Cotizaciones"
-          subtitle="Seguimiento de cotizaciones enviadas y aprobadas en espera de expediente o inicio operativo."
+          subtitle="Seguimiento comercial real desde el módulo de cotizaciones."
         >
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <StatCard
               titulo="Enviadas"
               valor={cotizacionesEnviadas.length}
@@ -210,10 +295,17 @@ export default function DashboardINMOVALPage() {
             />
 
             <StatCard
-              titulo="Aprobadas / por iniciar"
-              valor={cotizacionesAprobadasEnEspera.length}
-              detalle="Aprobadas o listas para iniciar expediente."
+              titulo="Aprobadas"
+              valor={cotizacionesAprobadasSinExpediente.length}
+              detalle="Aprobadas pendientes de crear expediente."
               icon={<FileText className="h-5 w-5" />}
+            />
+
+            <StatCard
+              titulo="Monto cotizado"
+              valor={formatMoneyINMOVAL(montoCotizado, monedaPrincipal)}
+              detalle="Suma de cotizaciones dentro del rango."
+              icon={<WalletCards className="h-5 w-5" />}
             />
 
             <article className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-xl shadow-black/20">
@@ -225,112 +317,78 @@ export default function DashboardINMOVALPage() {
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
               >
                 <FileText className="h-4 w-4" />
-                Crear cotización
+                Ver cotizaciones
               </Link>
               <p className="mt-3 text-xs leading-5 text-slate-500">
-                Acceso directo para registrar o revisar cotizaciones antes del expediente.
+                Revisar propuestas, aprobaciones y expedientes vinculados.
               </p>
             </article>
           </div>
         </Section>
 
-        {/* 2. EXPEDIENTES */}
         <Section
-          title="Expedientes"
-          subtitle="Estado operativo de expedientes, prioridades, revisión y entregas."
+          title="Expedientes y avalúos"
+          subtitle="Estado operativo de expedientes y avance técnico."
         >
           <div className="grid gap-4 md:grid-cols-4">
             <StatCard
-              titulo="Activos"
-              valor={expedientesActivos.length}
-              detalle="Expedientes abiertos en operación."
-              icon={<ClipboardList className="h-5 w-5" />}
+              titulo="Nuevos"
+              valor={expedientesNuevos.length}
+              detalle="Expedientes recién abiertos."
+              icon={<FolderKanban className="h-5 w-5" />}
             />
 
             <StatCard
-              titulo="Prioridad alta"
-              valor={expedientesPrioridadAlta.length}
-              detalle="Casos que requieren atención inmediata."
-              icon={<CalendarDays className="h-5 w-5" />}
+              titulo="Avalúos en proceso"
+              valor={avaluosEnProceso.length}
+              detalle="Cotizaciones vinculadas a expediente o proceso técnico."
+              icon={<ClipboardList className="h-5 w-5" />}
             />
 
             <StatCard
               titulo="En revisión"
               valor={expedientesEnRevision.length}
-              detalle="Avalúos en revisión o corrección."
+              detalle="Expedientes con revisión o correcciones."
               icon={<ScrollText className="h-5 w-5" />}
             />
 
             <StatCard
-              titulo="Pendientes de entrega"
+              titulo="Por entregar"
               valor={expedientesPendientesEntrega.length}
-              detalle="Aprobados o listos para entregar."
-              icon={<FileText className="h-5 w-5" />}
+              detalle="Expedientes listos o aprobados para entrega."
+              icon={<CheckCircle2 className="h-5 w-5" />}
             />
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-2xl border border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-950/80 text-xs uppercase tracking-[0.14em] text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Expediente</th>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Prioridad</th>
-                  <th className="px-4 py-3">Entrega</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-950/40">
-                {expedientesFiltrados.slice(0, 6).map((expediente) => (
-                  <tr key={expediente.id}>
-                    <td className="px-4 py-3 font-medium text-slate-100">
-                      <Link
-                        to={`/expedientes-plataforma/${expediente.id}`}
-                        className="hover:text-sky-300"
-                      >
-                        {expediente.codigo}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {expediente.clienteNombre || 'Sin cliente'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {getEstadoExpedienteLabel(expediente.estado)}
-                    </td>
-                    <td className="px-4 py-3 capitalize text-slate-300">
-                      {expediente.prioridad}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {expediente.fechaEntregaEstimada || 'Sin fecha'}
-                    </td>
-                  </tr>
-                ))}
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <StatCard
+              titulo="Expedientes activos"
+              valor={expedientesActivos.length}
+              detalle="No cerrados, cancelados ni entregados."
+              icon={<FolderKanban className="h-5 w-5" />}
+            />
 
-                {expedientesFiltrados.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                      No hay expedientes en el rango seleccionado.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+            <StatCard
+              titulo="Avalúos finalizados"
+              valor={avaluosFinalizados.length}
+              detalle="Listos para habilitar facturación."
+              icon={<CheckCircle2 className="h-5 w-5" />}
+            />
+
+            <StatCard
+              titulo="Facturas emitidas"
+              valor={facturasEmitidas.length}
+              detalle="Cotizaciones que ya pasaron a factura emitida."
+              icon={<Receipt className="h-5 w-5" />}
+            />
           </div>
         </Section>
 
-        {/* 3. FACTURAS / PAGOS */}
         <Section
-          title="Facturas y pagos"
-          subtitle="Resumen de facturación pendiente, pagos pendientes y saldos por cobrar."
+          title="Pagos y módulos"
+          subtitle="Control financiero básico y disponibilidad técnica."
         >
           <div className="grid gap-4 md:grid-cols-3">
-            <StatCard
-              titulo="Facturas pendientes"
-              valor={facturasPendientes.length}
-              detalle="Expedientes con servicio registrado sin factura emitida."
-              icon={<Receipt className="h-5 w-5" />}
-            />
-
             <StatCard
               titulo="Pagos pendientes"
               valor={pagosPendientes.length}
@@ -341,51 +399,52 @@ export default function DashboardINMOVALPage() {
             <StatCard
               titulo="Saldo pendiente"
               valor={formatMoneyINMOVAL(totalSaldoPendiente, monedaPrincipal)}
-              detalle="Total pendiente en el rango filtrado."
-              icon={<Receipt className="h-5 w-5" />}
+              detalle="Total pendiente de cobro en el rango."
+              icon={<WalletCards className="h-5 w-5" />}
+            />
+
+            <StatCard
+              titulo="Módulos activos"
+              valor={modulosActivos.length}
+              detalle="Módulos técnicos disponibles para operación."
+              icon={<Boxes className="h-5 w-5" />}
             />
           </div>
         </Section>
 
-        {/* 4. BITÁCORA */}
         <Section
-          title="Bitácora"
-          subtitle="Últimos movimientos registrados en la plataforma dentro del rango seleccionado."
+          title="Bitácora reciente"
+          subtitle="Últimos movimientos registrados en expedientes."
         >
-          <div className="mb-4">
-            <Link
-              to="/expedientes-plataforma"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-            >
-              <ScrollText className="h-4 w-4" />
-              Abrir bitácora
-            </Link>
-          </div>
+          {bitacoraFiltrada.length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-sm text-slate-400">
+              No hay actividad registrada en el rango seleccionado.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {bitacoraFiltrada.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                >
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {item.titulo || item.tipo || 'Actividad'}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {item.descripcion || item.detalle || 'Movimiento registrado'}
+                      </p>
+                    </div>
 
-          <div className="grid gap-3">
-            {bitacoraFiltrada.map((item) => (
-              <article
-                key={item.id}
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
-              >
-                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                  <p className="font-medium text-slate-100">{item.titulo}</p>
-                  <p className="text-xs text-slate-500">{item.creadoEn}</p>
-                </div>
-                {item.descripcion ? (
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
-                    {item.descripcion}
-                  </p>
-                ) : null}
-              </article>
-            ))}
-
-            {bitacoraFiltrada.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
-                No hay movimientos registrados en el rango seleccionado.
-              </div>
-            ) : null}
-          </div>
+                    <div className="text-xs text-slate-500">
+                      {item.creadoEn?.slice(0, 10)}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </Section>
       </div>
     </main>

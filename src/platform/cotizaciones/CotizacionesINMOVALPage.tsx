@@ -99,6 +99,7 @@ type CotizacionINMOVALLocal = {
 };
 
 const STORAGE_KEY = 'inmoval_cotizaciones_v1';
+const EXPEDIENTES_INDICE_STORAGE_KEY_INMOVAL = 'inmoval_expedientes_indice_v1';
 
 const TERMINOS_BASE: TerminoCondicionCotizacion[] = [
   {
@@ -507,75 +508,48 @@ function revisarValorParaExpediente(
   return undefined;
 }
 
-function buscarExpedienteIdDeCotizacion(cotizacion: CotizacionINMOVALLocal) {
-  if (typeof window === 'undefined') return undefined;
+function leerExpedientesIndiceCotizacionINMOVAL() {
+  if (typeof window === 'undefined') return [];
 
+  try {
+    const raw = window.localStorage.getItem(EXPEDIENTES_INDICE_STORAGE_KEY_INMOVAL);
+    const parsed = raw ? JSON.parse(raw) : [];
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function buscarExpedienteIdDeCotizacion(cotizacion: CotizacionINMOVALLocal) {
   const numero = String(cotizacion.numero || '');
   const cotizacionId = String(cotizacion.id || '');
 
-  for (const key of Object.keys(window.localStorage)) {
-    if (!/expediente|expedientes|inmoval/i.test(key)) continue;
+  const expediente = leerExpedientesIndiceCotizacionINMOVAL().find((value: any) => {
+    const texto = [
+      value.cotizacionId,
+      value.cotizacionOrigenId,
+      value.cotizacionNumero,
+      value.numeroCotizacion,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-    const raw = window.localStorage.getItem(key);
-    if (!raw) continue;
+    return Boolean(
+      (cotizacionId && texto.includes(cotizacionId)) ||
+        (numero && texto.includes(numero))
+    );
+  });
 
-    try {
-      const parsed = JSON.parse(raw);
-
-      const found = revisarValorParaExpediente(parsed, (value) => {
-        const texto = [
-          value.cotizacionId,
-          value.cotizacionOrigenId,
-          value.cotizacionNumero,
-          value.numeroCotizacion,
-          value.notas,
-          value.observaciones,
-          value.descripcion,
-          value.titulo,
-          value.codigo,
-        ]
-          .filter(Boolean)
-          .join(' ');
-
-        return Boolean(
-          (cotizacionId && texto.includes(cotizacionId)) ||
-            (numero && texto.includes(numero))
-        );
-      });
-
-      if (found) return found;
-    } catch {
-      // Ignorar storage inválido
-    }
-  }
-
-  return undefined;
+  return expediente?.id ? String(expediente.id) : undefined;
 }
 
 function existeExpedienteINMOVAL(expedienteId?: string) {
-  if (typeof window === 'undefined') return false;
   if (!expedienteId) return false;
 
-  for (const key of Object.keys(window.localStorage)) {
-    if (!/expediente|expedientes|inmoval/i.test(key)) continue;
-
-    const raw = window.localStorage.getItem(key);
-    if (!raw) continue;
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      const found = revisarValorParaExpediente(parsed, (value) => {
-        return String(value?.id || '') === String(expedienteId);
-      });
-
-      if (found) return true;
-    } catch {
-      // Ignorar storage inválido
-    }
-  }
-
-  return false;
+  return leerExpedientesIndiceCotizacionINMOVAL().some(
+    (value: any) => String(value?.id || '') === String(expedienteId)
+  );
 }
 
 function getCotizaciones() {
