@@ -600,6 +600,386 @@ function estadoClass(estado: EstadoCotizacionINMOVAL) {
   return 'border-slate-500/40 bg-slate-500/10 text-slate-100';
 }
 
+
+function escapeHtmlCotizacionPDF(value: unknown) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function formatDateCotizacionPDF(value: string) {
+  if (!value) return '—';
+
+  const date = new Date(value + 'T00:00:00');
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString('es-NI', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit',
+  });
+}
+
+function buildCotizacionPDFHtml(cotizacion: CotizacionINMOVALLocal) {
+  const terminos =
+    cotizacion.terminosItems && cotizacion.terminosItems.length > 0
+      ? cotizacion.terminosItems
+          .filter((item) => item.incluido)
+          .map(
+            (item, index) => `
+              <div class="term">
+                <h3>${index + 1}. ${escapeHtmlCotizacionPDF(item.titulo)}</h3>
+                <p>${escapeHtmlCotizacionPDF(item.texto).replace(/\n/g, '<br />')}</p>
+              </div>
+            `
+          )
+          .join('')
+      : escapeHtmlCotizacionPDF(cotizacion.terminosCondiciones || '')
+          .split('\n\n')
+          .filter(Boolean)
+          .map((texto, index) => `
+            <div class="term">
+              <h3>${index + 1}. Condición</h3>
+              <p>${texto.replace(/\n/g, '<br />')}</p>
+            </div>
+          `)
+          .join('');
+
+  const monto = formatMoney(cotizacion.costoServicio, cotizacion.moneda);
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtmlCotizacionPDF(cotizacion.numero)} - Cotización INMOVAL</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 18mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: #0f172a;
+      background: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 100%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 3px solid #0f5ea8;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-name {
+      color: #0f5ea8;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .brand-subtitle {
+      color: #475569;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .doc-meta {
+      text-align: right;
+      min-width: 210px;
+    }
+
+    .doc-title {
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .doc-number {
+      margin-top: 6px;
+      color: #0f5ea8;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      border: 1px solid #dbe4ef;
+      border-radius: 14px;
+      padding: 14px;
+      background: #f8fafc;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      color: #0f5ea8;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .value {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .service {
+      margin: 18px 0;
+      border: 1px solid #dbe4ef;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .service-header {
+      display: grid;
+      grid-template-columns: 1fr 160px;
+      background: #0f5ea8;
+      color: white;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 11px;
+    }
+
+    .service-header div,
+    .service-row div {
+      padding: 12px 14px;
+    }
+
+    .service-row {
+      display: grid;
+      grid-template-columns: 1fr 160px;
+      border-top: 1px solid #dbe4ef;
+    }
+
+    .amount {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .total-box {
+      display: flex;
+      justify-content: flex-end;
+      margin: 18px 0 22px;
+    }
+
+    .total {
+      width: 280px;
+      border: 2px solid #0f5ea8;
+      border-radius: 16px;
+      padding: 14px;
+      text-align: right;
+      background: #eff6ff;
+    }
+
+    .total-label {
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .total-value {
+      margin-top: 4px;
+      color: #0f5ea8;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .terms {
+      margin-top: 18px;
+    }
+
+    .terms h2 {
+      color: #0f172a;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 8px;
+    }
+
+    .term {
+      break-inside: avoid;
+      margin-top: 12px;
+    }
+
+    .term h3 {
+      margin: 0 0 4px;
+      color: #0f5ea8;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .term p {
+      margin: 0;
+      color: #334155;
+      text-align: justify;
+    }
+
+    .footer {
+      margin-top: 36px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: end;
+    }
+
+    .signature {
+      border-top: 1px solid #0f172a;
+      padding-top: 8px;
+      text-align: center;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .note {
+      color: #64748b;
+      font-size: 10px;
+    }
+
+    @media print {
+      .no-print {
+        display: none;
+      }
+
+      body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="brand">
+        <div class="brand-name">INMOVAL</div>
+        <div class="brand-subtitle">Ingeniería · Inmuebles · Valoración</div>
+      </div>
+
+      <div class="doc-meta">
+        <div class="doc-title">Cotización</div>
+        <div class="doc-number">${escapeHtmlCotizacionPDF(cotizacion.numero)}</div>
+        <div style="margin-top: 10px;">Fecha: ${formatDateCotizacionPDF(cotizacion.fechaCotizacion)}</div>
+        <div>Válida hasta: ${formatDateCotizacionPDF(cotizacion.fechaValidez)}</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Cliente</h2>
+        <div class="row"><div class="label">Nombre</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteNombre)}</div></div>
+        <div class="row"><div class="label">Teléfono</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteTelefono || '—')}</div></div>
+        <div class="row"><div class="label">Correo</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteEmail || '—')}</div></div>
+        <div class="row"><div class="label">Dirección</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteDireccion || '—')}</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Inmueble / Servicio</h2>
+        <div class="row"><div class="label">Tipo</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.tipoInmuebleNombre)}</div></div>
+        <div class="row"><div class="label">Clasificación</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clasificacionInmuebleNombre)}</div></div>
+        <div class="row"><div class="label">Propósito</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.propositoAvaluoNombre)}</div></div>
+        <div class="row"><div class="label">Dirección</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.direccionInmueble)}</div></div>
+      </div>
+    </div>
+
+    <div class="service">
+      <div class="service-header">
+        <div>Descripción del servicio</div>
+        <div class="amount">Monto</div>
+      </div>
+      <div class="service-row">
+        <div>${escapeHtmlCotizacionPDF(cotizacion.descripcionServicio || 'Avalúo de inmueble')}</div>
+        <div class="amount">${escapeHtmlCotizacionPDF(monto)}</div>
+      </div>
+    </div>
+
+    <div class="total-box">
+      <div class="total">
+        <div class="total-label">Total cotizado</div>
+        <div class="total-value">${escapeHtmlCotizacionPDF(monto)}</div>
+      </div>
+    </div>
+
+    <div class="terms">
+      <h2>Términos y condiciones</h2>
+      ${terminos || '<p>—</p>'}
+    </div>
+
+    <div class="footer">
+      <div class="note">
+        Documento generado desde Plataforma INMOVAL. Esta cotización no constituye factura ni comprobante fiscal.
+      </div>
+
+      <div class="signature">
+        Responsable INMOVAL
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function () {
+      window.focus();
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+}
+
 function estadoOperativoCotizacion(
   cotizacion: CotizacionINMOVALLocal
 ): EstadoCotizacionINMOVAL {
@@ -1001,6 +1381,21 @@ export default function CotizacionesINMOVALPage() {
     setTerminosItems(terminosEdit);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+
+  function exportarCotizacionPDF(cotizacion: CotizacionINMOVALLocal) {
+    const html = buildCotizacionPDFHtml(cotizacion);
+    const popup = window.open('', '_blank', 'width=980,height=720');
+
+    if (!popup) {
+      window.alert('El navegador bloqueó la ventana de exportación. Permití ventanas emergentes para INMOVAL e intentá nuevamente.');
+      return;
+    }
+
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
   }
 
   function crearRevisionCotizacion(cotizacion: CotizacionINMOVALLocal) {
@@ -1644,6 +2039,18 @@ export default function CotizacionesINMOVALPage() {
                 <FileText className="h-4 w-4" />
                 Editar cotización
               </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportarCotizacionPDF(cotizacionMenuActiva);
+                    setMenuCotizacionId(null);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-left text-sm font-medium text-sky-100 hover:bg-sky-400/20"
+                >
+                  <FileText className="h-4 w-4" />
+                  Exportar PDF
+                </button>
 
               <button
                 type="button"
