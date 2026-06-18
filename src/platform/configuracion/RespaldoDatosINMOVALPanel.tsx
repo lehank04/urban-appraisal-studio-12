@@ -246,24 +246,34 @@ export function RespaldoDatosINMOVALPanel() {
   }
 
   function limpiarTodo() {
-    const keys = getInmovalStorageKeys();
+    if (typeof window === 'undefined') return;
 
-    if (keys.length === 0) {
-      setMensaje('No hay datos INMOVAL para limpiar.');
+    const totalLocal = window.localStorage.length;
+    const totalSession = window.sessionStorage.length;
+    const total = totalLocal + totalSession;
+
+    if (total === 0) {
+      setMensaje('No hay datos locales para limpiar.');
       return;
     }
 
     const confirmacion = window.prompt(
-      `Se eliminarán TODAS las claves locales de INMOVAL (${keys.length}).\n\nGenerá un respaldo .rem antes de continuar.\n\nEscribí LIMPIAR para confirmar:`
+      `Se eliminarán TODOS los datos locales de INMOVAL en este navegador.\n\nEsto incluye cotizaciones, expedientes, clientes, peritos, comparables, módulos, configuración, bitácoras, stores legacy y cualquier dato local del programa.\n\nSe recomienda generar un respaldo .rem antes de limpiar.\n\nEscribí LIMPIAR para confirmar:`
     );
 
-    if (confirmacion !== 'LIMPIAR') {
-      setMensaje('Limpieza total cancelada.');
+    if ((confirmacion || '').trim().toUpperCase() !== 'LIMPIAR') {
+      setMensaje('Limpieza cancelada.');
       return;
     }
 
-    removeStorageKeys(keys);
-    setMensaje(`Limpieza total completada: ${keys.length} clave(s) eliminada(s).`);
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+
+    setMensaje(`Limpieza total completada. Se eliminaron ${total} clave(s) locales.`);
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 500);
   }
 
   return (
