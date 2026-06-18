@@ -224,13 +224,36 @@ function createId() {
 
 function buildNumeroCotizacion() {
   const date = new Date();
-  const yyyy = date.getFullYear();
+  const yy = String(date.getFullYear()).slice(-2);
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
-  const hh = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
+  const fechaCorta = yy + mm + dd;
 
-  return 'COT-' + yyyy + mm + dd + '-' + hh + min;
+  let maxConsecutivo = 0;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const numero = String(item?.numero || '');
+          const match = numero.match(/^COT-(\d+)-\d{6}/i);
+
+          if (match) {
+            maxConsecutivo = Math.max(maxConsecutivo, Number(match[1] || 0));
+          }
+        }
+      }
+    } catch {
+      // Si falla la lectura, se usa el consecutivo base.
+    }
+  }
+
+  const consecutivo = String(maxConsecutivo + 1).padStart(4, '0');
+
+  return 'COT-' + consecutivo + '-' + fechaCorta;
 }
 
 function numeroDiasEnTextoCotizacion(dias: number) {
@@ -373,6 +396,86 @@ function readClientes(): CatalogOption[] {
   }
 
   return encontrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+
+
+const PDF_CONFIG_STORAGE_KEY_INMOVAL = 'inmoval_cotizaciones_pdf_config_v1';
+
+type CotizacionPDFConfigINMOVAL = {
+  nombreEmpresa: string;
+  subtituloEmpresa: string;
+  tituloDocumento: string;
+  subtituloDocumento: string;
+  mostrarTituloEmpresa: boolean;
+  mostrarSubtituloEmpresa: boolean;
+  mostrarFechaCotizacion: boolean;
+  mostrarFechaValidez: boolean;
+  mostrarHoraExportacion: boolean;
+  mostrarNumeroCotizacion: boolean;
+  responsableNombre: string;
+  responsableCargo: string;
+  mostrarResponsable: boolean;
+  mostrarFirma: boolean;
+  mostrarDatosPago: boolean;
+  banco: string;
+  numeroCuenta: string;
+  titularCuenta: string;
+  notaFiscal: string;
+  textoCierre: string;
+  terminosItems: TerminoCondicionCotizacion[];
+};
+
+function defaultCotizacionPDFConfigINMOVAL(): CotizacionPDFConfigINMOVAL {
+  return {
+    nombreEmpresa: 'INMOVAL',
+    subtituloEmpresa: 'Ingeniería · Inmuebles · Valoración',
+    tituloDocumento: 'hola.',
+    subtituloDocumento: 'ESTA ES SU COTIZACIÓN',
+    mostrarTituloEmpresa: true,
+    mostrarSubtituloEmpresa: true,
+    mostrarFechaCotizacion: true,
+    mostrarFechaValidez: true,
+    mostrarHoraExportacion: false,
+    mostrarNumeroCotizacion: true,
+    responsableNombre: 'Responsable INMOVAL',
+    responsableCargo: 'Firma autorizada',
+    mostrarResponsable: true,
+    mostrarFirma: true,
+    mostrarDatosPago: true,
+    banco: '',
+    numeroCuenta: '',
+    titularCuenta: '',
+    notaFiscal: 'Esta cotización no constituye factura ni comprobante fiscal.',
+    textoCierre: 'GRACIAS POR SU CONFIANZA',
+    terminosItems: cloneTerminos(TERMINOS_BASE),
+  };
+}
+
+function readCotizacionPDFConfigINMOVAL(): CotizacionPDFConfigINMOVAL {
+  if (typeof window === 'undefined') return defaultCotizacionPDFConfigINMOVAL();
+
+  try {
+    const raw = window.localStorage.getItem(PDF_CONFIG_STORAGE_KEY_INMOVAL);
+    if (!raw) return defaultCotizacionPDFConfigINMOVAL();
+
+    const parsed = JSON.parse(raw);
+    const base = defaultCotizacionPDFConfigINMOVAL();
+
+    return {
+      ...base,
+      ...parsed,
+      terminosItems:
+        Array.isArray(parsed.terminosItems) && parsed.terminosItems.length > 0
+          ? parsed.terminosItems
+          : base.terminosItems,
+    };
+  } catch {
+    return defaultCotizacionPDFConfigINMOVAL();
+  }
+}
+
+function getTerminosBaseCotizacionConfigurados() {
+  return readCotizacionPDFConfigINMOVAL().terminosItems;
 }
 
 function revisarValorParaExpediente(
@@ -624,32 +727,138 @@ function formatDateCotizacionPDF(value: string) {
   });
 }
 
+
 function buildCotizacionPDFHtml(cotizacion: CotizacionINMOVALLocal) {
-  const terminos =
+  const config = readCotizacionPDFConfigINMOVAL();
+  const exportadoEn = new Date();
+
+  const terminosFuente =
     cotizacion.terminosItems && cotizacion.terminosItems.length > 0
       ? cotizacion.terminosItems
-          .filter((item) => item.incluido)
+      : config.terminosItems;
+
+  const terminos = terminosFuente
+    .filter((item) => item.incluido)
+    .map(
+      (item, index) => `
+        <div class="term">
+          <h3>${index + 1}. ${escapeHtmlCotizacionPDF(item.titulo)}</h3>
+          <p>${escapeHtmlCotizacionPDF(item.texto).replace(/\\n/g, '<br />')}</p>
+        </div>
+      `
+    )
+    .join('');
+
+  const subtotal = Number(cotizacion.costoServicio || 0);
+
+  const gastosItemsRaw = Array.isArray((cotizacion as any).otrosGastosItems)
+    ? (cotizacion as any).otrosGastosItems
+    : [];
+
+  const gastosItems =
+    gastosItemsRaw.length > 0
+      ? gastosItemsRaw
+          .map((item: any) => ({
+            id: String(item.id || createId()),
+            concepto: String(item.concepto || 'Otro gasto / servicio'),
+            monto: Number(item.monto || 0),
+          }))
+          .filter((item: GastoCotizacionItem) => item.monto > 0)
+      : Number((cotizacion as any).otrosGastos || 0) > 0
+        ? [
+            {
+              id: createId(),
+              concepto: 'Otros gastos / servicios',
+              monto: Number((cotizacion as any).otrosGastos || 0),
+            },
+          ]
+        : [];
+
+  const otrosGastos = gastosItems.reduce(
+    (total: number, item: GastoCotizacionItem) => total + Number(item.monto || 0),
+    0
+  );
+
+  const aplicaIVA = Boolean((cotizacion as any).aplicaIVA);
+  const impuestos = aplicaIVA
+    ? Number(((subtotal + otrosGastos) * 0.15).toFixed(2))
+    : 0;
+
+  const subtotalFacturable = subtotal + otrosGastos;
+  const totalCotizado = subtotalFacturable + impuestos;
+
+  const monto = formatMoney(subtotal, cotizacion.moneda);
+  const montoOtrosGastos = formatMoney(otrosGastos, cotizacion.moneda);
+  const montoSubtotalFacturable = formatMoney(subtotalFacturable, cotizacion.moneda);
+  const montoImpuestos = formatMoney(impuestos, cotizacion.moneda);
+  const montoTotal = formatMoney(totalCotizado, cotizacion.moneda);
+
+  const filasOtrosGastosPDF =
+    gastosItems.length > 0
+      ? gastosItems
           .map(
-            (item, index) => `
-              <div class="term">
-                <h3>${index + 1}. ${escapeHtmlCotizacionPDF(item.titulo)}</h3>
-                <p>${escapeHtmlCotizacionPDF(item.texto).replace(/\n/g, '<br />')}</p>
-              </div>
-            `
+            (gasto: GastoCotizacionItem) => `
+      <div class="table-row secondary">
+        <div>Otro gasto / servicio: ${escapeHtmlCotizacionPDF(gasto.concepto)}</div>
+        <div class="right">1</div>
+        <div class="right">${escapeHtmlCotizacionPDF(formatMoney(gasto.monto, cotizacion.moneda))}</div>
+        <div class="right">${escapeHtmlCotizacionPDF(formatMoney(gasto.monto, cotizacion.moneda))}</div>
+      </div>`
           )
           .join('')
-      : escapeHtmlCotizacionPDF(cotizacion.terminosCondiciones || '')
-          .split('\n\n')
-          .filter(Boolean)
-          .map((texto, index) => `
-            <div class="term">
-              <h3>${index + 1}. Condición</h3>
-              <p>${texto.replace(/\n/g, '<br />')}</p>
-            </div>
-          `)
-          .join('');
+      : '';
+  const metaRows = [
+    config.mostrarNumeroCotizacion
+      ? ['COTIZACIÓN No.', cotizacion.numero]
+      : null,
+    config.mostrarFechaCotizacion
+      ? ['FECHA', formatDateCotizacionPDF(cotizacion.fechaCotizacion)]
+      : null,
+    config.mostrarFechaValidez
+      ? ['VALIDEZ', formatDateCotizacionPDF(cotizacion.fechaValidez)]
+      : null,
+    config.mostrarHoraExportacion
+      ? [
+          'EXPORTADO',
+          exportadoEn.toLocaleString('es-NI', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          }),
+        ]
+      : null,
 
-  const monto = formatMoney(cotizacion.costoServicio, cotizacion.moneda);
+  ]
+    .filter(Boolean)
+    .map(
+      (row) =>
+        `<div class="meta-row"><strong>${escapeHtmlCotizacionPDF((row as string[])[0])}</strong><span>${escapeHtmlCotizacionPDF((row as string[])[1])}</span></div>`
+    )
+    .join('');
+
+  const datosPago =
+    config.mostrarDatosPago && (config.banco || config.numeroCuenta || config.titularCuenta)
+      ? `
+        <section class="payment">
+          <h2>DATOS DE PAGO</h2>
+          <p>
+            ${config.banco ? '<strong>Banco:</strong> ' + escapeHtmlCotizacionPDF(config.banco) : ''}
+            ${config.numeroCuenta ? ' <strong>Cuenta:</strong> ' + escapeHtmlCotizacionPDF(config.numeroCuenta) : ''}
+            ${config.titularCuenta ? ' <strong>Titular:</strong> ' + escapeHtmlCotizacionPDF(config.titularCuenta) : ''}
+          </p>
+        </section>
+      `
+      : '';
+
+  const firma =
+    config.mostrarResponsable || config.mostrarFirma
+      ? `
+        <div class="signature">
+          ${config.mostrarFirma ? '<div class="signature-line"></div>' : ''}
+          ${config.mostrarResponsable ? `<strong>${escapeHtmlCotizacionPDF(config.responsableNombre)}</strong>` : ''}
+          ${config.mostrarResponsable ? `<span>${escapeHtmlCotizacionPDF(config.responsableCargo)}</span>` : ''}
+        </div>
+      `
+      : '';
 
   return `<!doctype html>
 <html lang="es">
@@ -657,318 +866,272 @@ function buildCotizacionPDFHtml(cotizacion: CotizacionINMOVALLocal) {
   <meta charset="utf-8" />
   <title>${escapeHtmlCotizacionPDF(cotizacion.numero)} - Cotización INMOVAL</title>
   <style>
-    @page {
-      size: letter;
-      margin: 18mm;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    @page { size: letter; margin: 18mm; }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      color: #0f172a;
+      color: #111827;
       background: #ffffff;
       font-family: Arial, Helvetica, sans-serif;
       font-size: 12px;
       line-height: 1.45;
     }
-
-    .page {
-      width: 100%;
-    }
-
     .header {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      border-bottom: 3px solid #0f5ea8;
-      padding-bottom: 18px;
-      margin-bottom: 22px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 36px;
+      margin-bottom: 30px;
     }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .hello {
+      font-size: 74px;
+      line-height: 0.86;
+      font-weight: 900;
+      letter-spacing: -0.08em;
     }
-
-    .brand-name {
-      color: #0f5ea8;
-      font-size: 30px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-
-    .brand-subtitle {
-      color: #475569;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-    }
-
-    .doc-meta {
-      text-align: right;
-      min-width: 210px;
-    }
-
-    .doc-title {
-      color: #0f172a;
-      font-size: 20px;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .doc-number {
-      margin-top: 6px;
-      color: #0f5ea8;
+    .hello-sub {
+      margin-top: 8px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 900;
+      text-transform: uppercase;
     }
-
-    .grid {
+    .company {
+      margin-bottom: 12px;
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .company-sub {
+      margin-top: -6px;
+      margin-bottom: 12px;
+      color: #475569;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .meta-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 10px;
+      padding: 3px 0;
+      font-size: 11px;
+    }
+    .meta-row strong {
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 18px;
+      gap: 48px;
+      margin-bottom: 28px;
     }
-
-    .card {
-      border: 1px solid #dbe4ef;
-      border-radius: 14px;
-      padding: 14px;
-      background: #f8fafc;
-    }
-
-    .card h2 {
-      margin: 0 0 10px;
-      color: #0f5ea8;
-      font-size: 13px;
+    h2 {
+      margin: 0 0 9px;
+      font-size: 14px;
+      font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
     }
-
-    .row {
+    p { margin: 0; }
+    .text-block p {
+      margin: 2px 0;
+    }
+    .rule {
+      border-top: 2px solid #111827;
+      margin: 26px 0 14px;
+    }
+    .table-header,
+    .table-row {
       display: grid;
-      grid-template-columns: 130px 1fr;
-      gap: 10px;
-      padding: 5px 0;
-      border-bottom: 1px solid #e2e8f0;
+      grid-template-columns: 1fr 90px 120px 120px;
+      gap: 18px;
+      align-items: start;
     }
-
-    .row:last-child {
-      border-bottom: none;
-    }
-
-    .label {
-      color: #64748b;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .value {
-      color: #0f172a;
-      font-weight: 600;
-    }
-
-    .service {
-      margin: 18px 0;
-      border: 1px solid #dbe4ef;
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    .service-header {
-      display: grid;
-      grid-template-columns: 1fr 160px;
-      background: #0f5ea8;
-      color: white;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    .table-header {
       font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      padding-bottom: 20px;
+    }
+    .table-row {
+      padding-bottom: 24px;
+      border-bottom: 1px solid #cbd5e1;
+      font-size: 13px;
     }
 
-    .service-header div,
-    .service-row div {
-      padding: 12px 14px;
-    }
-
-    .service-row {
-      display: grid;
-      grid-template-columns: 1fr 160px;
-      border-top: 1px solid #dbe4ef;
-    }
-
-    .amount {
-      text-align: right;
-      font-weight: 800;
-    }
-
-    .total-box {
-      display: flex;
-      justify-content: flex-end;
-      margin: 18px 0 22px;
-    }
-
-    .total {
-      width: 280px;
-      border: 2px solid #0f5ea8;
-      border-radius: 16px;
-      padding: 14px;
-      text-align: right;
-      background: #eff6ff;
-    }
-
-    .total-label {
+    .table-row.secondary {
       color: #475569;
       font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
     }
-
-    .total-value {
-      margin-top: 4px;
-      color: #0f5ea8;
-      font-size: 24px;
-      font-weight: 900;
+    .right { text-align: right; }
+    .middle {
+      display: grid;
+      grid-template-columns: 1fr 0.95fr;
+      gap: 54px;
+      margin-top: 22px;
     }
-
-    .terms {
-      margin-top: 18px;
+    .notes {
+      color: #334155;
     }
-
-    .terms h2 {
-      color: #0f172a;
-      font-size: 15px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+    .totals {
+      font-size: 13px;
+    }
+    .total-row {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 18px;
       border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 8px;
+      padding: 7px 0;
     }
-
+    .total-row.final {
+      border-bottom: none;
+      font-size: 15px;
+      font-weight: 900;
+      padding-top: 10px;
+    }
+    .terms {
+      margin-top: 28px;
+      border-top: 2px solid #111827;
+      padding-top: 18px;
+    }
     .term {
       break-inside: avoid;
-      margin-top: 12px;
+      margin-bottom: 12px;
     }
-
     .term h3 {
       margin: 0 0 4px;
-      color: #0f5ea8;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 900;
       text-transform: uppercase;
     }
-
     .term p {
-      margin: 0;
       color: #334155;
       text-align: justify;
     }
-
+    .payment {
+      margin-top: 20px;
+      border-top: 1px solid #111827;
+      border-bottom: 1px solid #111827;
+      padding: 10px 0;
+      font-size: 11px;
+    }
+    .payment h2 {
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
     .footer {
-      margin-top: 36px;
+      margin-top: 34px;
+      border-top: 2px solid #111827;
+      padding-top: 20px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 28px;
+      gap: 32px;
       align-items: end;
     }
-
-    .signature {
-      border-top: 1px solid #0f172a;
-      padding-top: 8px;
-      text-align: center;
-      color: #334155;
-      font-weight: 700;
-    }
-
-    .note {
-      color: #64748b;
+    .footer-note {
+      color: #475569;
       font-size: 10px;
     }
-
+    .signature {
+      text-align: center;
+    }
+    .signature-line {
+      border-top: 1px solid #111827;
+      margin-bottom: 8px;
+    }
+    .signature span {
+      display: block;
+      color: #64748b;
+      font-size: 11px;
+    }
+    .thanks {
+      margin-top: 10px;
+      font-size: 24px;
+      line-height: 1.1;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
     @media print {
-      .no-print {
-        display: none;
-      }
-
-      body {
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-      }
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="brand">
-        <div class="brand-name">INMOVAL</div>
-        <div class="brand-subtitle">Ingeniería · Inmuebles · Valoración</div>
-      </div>
-
-      <div class="doc-meta">
-        <div class="doc-title">Cotización</div>
-        <div class="doc-number">${escapeHtmlCotizacionPDF(cotizacion.numero)}</div>
-        <div style="margin-top: 10px;">Fecha: ${formatDateCotizacionPDF(cotizacion.fechaCotizacion)}</div>
-        <div>Válida hasta: ${formatDateCotizacionPDF(cotizacion.fechaValidez)}</div>
-      </div>
+  <div class="header">
+    <div>
+      <div class="hello">${escapeHtmlCotizacionPDF(config.tituloDocumento)}</div>
+      <div class="hello-sub">${escapeHtmlCotizacionPDF(config.subtituloDocumento)}</div>
     </div>
-
-    <div class="grid">
-      <div class="card">
-        <h2>Cliente</h2>
-        <div class="row"><div class="label">Nombre</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteNombre)}</div></div>
-        <div class="row"><div class="label">Teléfono</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteTelefono || '—')}</div></div>
-        <div class="row"><div class="label">Correo</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteEmail || '—')}</div></div>
-        <div class="row"><div class="label">Dirección</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clienteDireccion || '—')}</div></div>
-      </div>
-
-      <div class="card">
-        <h2>Inmueble / Servicio</h2>
-        <div class="row"><div class="label">Tipo</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.tipoInmuebleNombre)}</div></div>
-        <div class="row"><div class="label">Clasificación</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.clasificacionInmuebleNombre)}</div></div>
-        <div class="row"><div class="label">Propósito</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.propositoAvaluoNombre)}</div></div>
-        <div class="row"><div class="label">Dirección</div><div class="value">${escapeHtmlCotizacionPDF(cotizacion.direccionInmueble)}</div></div>
-      </div>
-    </div>
-
-    <div class="service">
-      <div class="service-header">
-        <div>Descripción del servicio</div>
-        <div class="amount">Monto</div>
-      </div>
-      <div class="service-row">
-        <div>${escapeHtmlCotizacionPDF(cotizacion.descripcionServicio || 'Avalúo de inmueble')}</div>
-        <div class="amount">${escapeHtmlCotizacionPDF(monto)}</div>
-      </div>
-    </div>
-
-    <div class="total-box">
-      <div class="total">
-        <div class="total-label">Total cotizado</div>
-        <div class="total-value">${escapeHtmlCotizacionPDF(monto)}</div>
-      </div>
-    </div>
-
-    <div class="terms">
-      <h2>Términos y condiciones</h2>
-      ${terminos || '<p>—</p>'}
-    </div>
-
-    <div class="footer">
-      <div class="note">
-        Documento generado desde Plataforma INMOVAL. Esta cotización no constituye factura ni comprobante fiscal.
-      </div>
-
-      <div class="signature">
-        Responsable INMOVAL
-      </div>
+    <div>
+      ${config.mostrarTituloEmpresa ? `<div class="company">${escapeHtmlCotizacionPDF(config.nombreEmpresa)}</div>` : ''}
+      ${config.mostrarSubtituloEmpresa ? `<div class="company-sub">${escapeHtmlCotizacionPDF(config.subtituloEmpresa)}</div>` : ''}
+      ${metaRows}
     </div>
   </div>
+
+  <section class="two-col">
+    <div class="text-block">
+      <h2>Cliente</h2>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.clienteNombre)}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.clienteDireccion || '—')}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.clienteTelefono || '—')}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.clienteEmail || '—')}</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Inmueble</h2>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.tipoInmuebleNombre)}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.clasificacionInmuebleNombre)}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.propositoAvaluoNombre)}</p>
+      <p>${escapeHtmlCotizacionPDF(cotizacion.direccionInmueble)}</p>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section>
+    <div class="table-header">
+      <div>Descripción</div>
+      <div class="right">Cant.</div>
+      <div class="right">Precio</div>
+      <div class="right">Total</div>
+    </div>
+    <div class="table-row">
+      <div>${escapeHtmlCotizacionPDF(cotizacion.descripcionServicio || 'Avalúo de inmueble')}</div>
+      <div class="right">1</div>
+      <div class="right">${escapeHtmlCotizacionPDF(monto)}</div>
+      <div class="right">${escapeHtmlCotizacionPDF(monto)}</div>
+    </div>
+    ${filasOtrosGastosPDF}
+  </section>
+
+  <section class="middle">
+    <div class="notes"></div>
+
+    <div class="totals">
+      ${`
+      <div class="total-row"><span>Subtotal servicio</span><strong class="right">${escapeHtmlCotizacionPDF(monto)}</strong></div>
+      ${otrosGastos > 0 ? `<div class="total-row"><span>Otros gastos</span><strong class="right">${escapeHtmlCotizacionPDF(montoOtrosGastos)}</strong></div>` : ''}
+      ${otrosGastos > 0 ? `<div class="total-row"><span>Subtotal</span><strong class="right">${escapeHtmlCotizacionPDF(montoSubtotalFacturable)}</strong></div>` : ''}
+      ${aplicaIVA ? `<div class="total-row"><span>IVA (15%)</span><strong class="right">${escapeHtmlCotizacionPDF(montoImpuestos)}</strong></div>` : ''}
+      <div class="total-row final"><span>Total</span><strong class="right">${escapeHtmlCotizacionPDF(montoTotal)}</strong></div>
+      `}
+    </div>
+  </section>
+
+  <section class="terms">
+    <h2>Términos y condiciones</h2>
+    ${terminos || '<p>—</p>'}
+  </section>
+
+  ${datosPago}
+
+  <footer class="footer">
+    <div>
+      <div class="footer-note">${escapeHtmlCotizacionPDF(config.notaFiscal)}</div>
+      <div class="thanks">${escapeHtmlCotizacionPDF(config.textoCierre)}</div>
+    </div>
+    ${firma}
+  </footer>
 
   <script>
     window.onload = function () {
@@ -979,6 +1142,7 @@ function buildCotizacionPDFHtml(cotizacion: CotizacionINMOVALLocal) {
 </body>
 </html>`;
 }
+
 
 function estadoOperativoCotizacion(
   cotizacion: CotizacionINMOVALLocal
@@ -1107,12 +1271,16 @@ export default function CotizacionesINMOVALPage() {
 
   const [descripcionServicio, setDescripcionServicio] = useState('Avalúo de inmueble');
   const [costoServicio, setCostoServicio] = useState('0');
+  const [otrosGastosItems, setOtrosGastosItems] = useState<GastoCotizacionItem[]>([]);
+  const [gastoConcepto, setGastoConcepto] = useState('');
+  const [gastoMonto, setGastoMonto] = useState('');
+  const [aplicaIVA, setAplicaIVA] = useState(false);
   const [moneda, setMoneda] = useState<MonedaCotizacionINMOVAL>('US$');
   const [fechaCotizacion, setFechaCotizacion] = useState(todayISO());
   const [fechaValidez, setFechaValidez] = useState(addDaysISO(todayISO(), 15));
   const [vigenciaDias, setVigenciaDias] = useState(15);
   const [terminosItems, setTerminosItems] =
-    useState<TerminoCondicionCotizacion[]>(cloneTerminos(TERMINOS_BASE));
+    useState<TerminoCondicionCotizacion[]>(cloneTerminos(getTerminosBaseCotizacionConfigurados()));
 
   const cotizacionMenuActiva = cotizaciones.find(
     (item) => item.id === menuCotizacionId
@@ -1166,6 +1334,7 @@ export default function CotizacionesINMOVALPage() {
   }
 
   function limpiarFormulario() {
+    setMostrarFormulario(false);
     setCotizacionEditandoId(null);
     setClienteModo(clientes.length > 0 ? 'base' : 'nuevo');
     setClienteId('');
@@ -1179,11 +1348,15 @@ export default function CotizacionesINMOVALPage() {
     setPropositoCodigo('');
     setDescripcionServicio('Avalúo de inmueble');
     setCostoServicio('0');
+    setOtrosGastosItems([]);
+    setGastoConcepto('');
+    setGastoMonto('');
+    setAplicaIVA(false);
     setMoneda('US$');
     setFechaCotizacion(todayISO());
     setVigenciaDias(15);
     setFechaValidez(addDaysISO(todayISO(), 15));
-    setTerminosItems(cloneTerminos(TERMINOS_BASE));
+    setTerminosItems(cloneTerminos(getTerminosBaseCotizacionConfigurados()));
   }
 
   function handleClienteBaseChange(id: string) {
@@ -1222,6 +1395,61 @@ export default function CotizacionesINMOVALPage() {
       .join('\n\n');
   }
 
+
+  function normalizarGastosCotizacion(items: GastoCotizacionItem[]) {
+    return items
+      .map((item) => ({
+        id: item.id || createId(),
+        concepto: String(item.concepto || '').trim() || 'Otro gasto / servicio',
+        monto: Number(item.monto || 0),
+      }))
+      .filter((item) => Number.isFinite(item.monto) && item.monto > 0);
+  }
+
+  function sumarOtrosGastosCotizacion(items: GastoCotizacionItem[]) {
+    return normalizarGastosCotizacion(items).reduce(
+      (total, item) => total + Number(item.monto || 0),
+      0
+    );
+  }
+
+  function calcularIVACotizacionLocal(costo: number, gastos: number, aplicar: boolean) {
+    if (!aplicar) return 0;
+
+    return Number(((Number(costo || 0) + Number(gastos || 0)) * 0.15).toFixed(2));
+  }
+
+  function agregarOtroGastoCotizacion() {
+    const concepto = gastoConcepto.trim();
+    const monto = Number(gastoMonto || 0);
+
+    if (!concepto) {
+      window.alert('Ingresá el concepto del gasto.');
+      return;
+    }
+
+    if (!Number.isFinite(monto) || monto <= 0) {
+      window.alert('Ingresá un monto válido para el gasto.');
+      return;
+    }
+
+    setOtrosGastosItems((items) => [
+      ...items,
+      {
+        id: createId(),
+        concepto,
+        monto,
+      },
+    ]);
+
+    setGastoConcepto('');
+    setGastoMonto('');
+  }
+
+  function quitarOtroGastoCotizacion(id: string) {
+    setOtrosGastosItems((items) => items.filter((item) => item.id !== id));
+  }
+
   function guardarCotizacion() {
     const costo = Number(costoServicio || 0);
 
@@ -1255,7 +1483,27 @@ export default function CotizacionesINMOVALPage() {
       return;
     }
 
+    const gastoPendienteMonto = Number(gastoMonto || 0);
+    const gastoPendiente =
+      gastoConcepto.trim() && Number.isFinite(gastoPendienteMonto) && gastoPendienteMonto > 0
+        ? [
+            {
+              id: createId(),
+              concepto: gastoConcepto.trim(),
+              monto: gastoPendienteMonto,
+            },
+          ]
+        : [];
+
+    const gastosValidados = normalizarGastosCotizacion([
+      ...otrosGastosItems,
+      ...gastoPendiente,
+    ]);
+
+    const gastos = sumarOtrosGastosCotizacion(gastosValidados);
+    const impuesto = calcularIVACotizacionLocal(costo, gastos, aplicaIVA);
     const ahora = nowISO();
+
     const cotizacionEditando = cotizaciones.find(
       (item) => item.id === cotizacionEditandoId
     );
@@ -1277,6 +1525,11 @@ export default function CotizacionesINMOVALPage() {
         propositoAvaluoNombre: proposito.nombre,
         descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
         costoServicio: costo,
+        otrosGastos: gastos,
+        otrosGastosItems: gastosValidados,
+        aplicaIVA,
+        ivaPorcentaje: 15,
+        impuestos: impuesto,
         moneda,
         terminosCondiciones: buildTerminosSeleccionados(),
         terminosItems: cloneTerminos(terminosItems),
@@ -1307,6 +1560,11 @@ export default function CotizacionesINMOVALPage() {
         propositoAvaluoNombre: proposito.nombre,
         descripcionServicio: descripcionServicio.trim() || 'Avalúo de inmueble',
         costoServicio: costo,
+        otrosGastos: gastos,
+        otrosGastosItems: gastosValidados,
+        aplicaIVA,
+        ivaPorcentaje: 15,
+        impuestos: impuesto,
         moneda,
         terminosCondiciones: buildTerminosSeleccionados(),
         terminosItems: cloneTerminos(terminosItems),
@@ -1319,9 +1577,8 @@ export default function CotizacionesINMOVALPage() {
       saveCotizaciones([nueva, ...cotizaciones]);
     }
 
-    refrescar();
     limpiarFormulario();
-    setMostrarFormulario(false);
+    refrescar();
   }
 
   function actualizarCotizacion(
@@ -1365,9 +1622,29 @@ export default function CotizacionesINMOVALPage() {
 
     setDescripcionServicio(cotizacion.descripcionServicio || 'Avalúo de inmueble');
     setCostoServicio(String(cotizacion.costoServicio || 0));
+
+    const gastosGuardados = Array.isArray((cotizacion as any).otrosGastosItems)
+      ? (cotizacion as any).otrosGastosItems
+      : [];
+
+    const gastosLegacy =
+      gastosGuardados.length === 0 && Number((cotizacion as any).otrosGastos || 0) > 0
+        ? [
+            {
+              id: createId(),
+              concepto: 'Otros gastos / servicios',
+              monto: Number((cotizacion as any).otrosGastos || 0),
+            },
+          ]
+        : [];
+
+    setOtrosGastosItems(normalizarGastosCotizacion([...gastosGuardados, ...gastosLegacy]));
+    setGastoConcepto('');
+    setGastoMonto('');
+    setAplicaIVA(Boolean((cotizacion as any).aplicaIVA || Number((cotizacion as any).impuestos || 0) > 0));
     setMoneda(cotizacion.moneda || 'US$');
     const fechaCotizacionEdit = cotizacion.fechaCotizacion || todayISO();
-    const terminosEdit = cloneTerminos(cotizacion.terminosItems || TERMINOS_BASE);
+    const terminosEdit = cloneTerminos(cotizacion.terminosItems || getTerminosBaseCotizacionConfigurados());
     const diasEdit =
       extraerDiasVigenciaCotizacion(terminosEdit) ||
       diffDaysISOCotizacion(
@@ -1696,6 +1973,94 @@ export default function CotizacionesINMOVALPage() {
                     className="h-11 rounded-xl border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-emerald-400"
                   />
                 </label>
+
+                  <div className="grid gap-3 md:col-span-2 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <div className="flex flex-col gap-1">
+                      <FieldLabel>Otros gastos / servicios</FieldLabel>
+                      <p className="text-xs text-slate-500">
+                        Detallá cada gasto que deba incluirse en la cotización. Podés presionar Agregar o simplemente guardar la cotización si ya escribiste concepto y monto.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
+                      <input
+                        type="text"
+                        value={gastoConcepto}
+                        onChange={(event) => setGastoConcepto(event.target.value)}
+                        className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none focus:border-sky-400"
+                        placeholder="Concepto. Ej. impresión, combustible, viático"
+                      />
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={gastoMonto}
+                        onChange={(event) => setGastoMonto(event.target.value)}
+                        className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none focus:border-sky-400"
+                        placeholder="Monto"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={agregarOtroGastoCotizacion}
+                        className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-semibold text-sky-100 transition hover:bg-sky-400/20"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+
+                    {otrosGastosItems.length > 0 ? (
+                      <div className="grid gap-2">
+                        {otrosGastosItems.map((gasto) => (
+                          <div
+                            key={gasto.id}
+                            className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-slate-100">
+                                {gasto.concepto}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {formatMoney(gasto.monto, moneda)}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => quitarOtroGastoCotizacion(gasto.id)}
+                              className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-400/20"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))}
+
+                        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-200">
+                          Total otros gastos: <strong>{formatMoney(sumarOtrosGastosCotizacion(otrosGastosItems), moneda)}</strong>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-500">
+                        No hay otros gastos agregados.
+                      </p>
+                    )}
+                  </div>
+
+                  <label className="md:col-span-2 flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={aplicaIVA}
+                      onChange={(event) => setAplicaIVA(event.target.checked)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <strong className="block text-slate-100">Aplicar IVA (15%)</strong>
+                      <span className="text-slate-500">
+                        El IVA se calcula automáticamente sobre costo del servicio + otros gastos.
+                      </span>
+                    </span>
+                  </label>
 
                 <label className="grid gap-2">
                   <FieldLabel>Moneda</FieldLabel>
