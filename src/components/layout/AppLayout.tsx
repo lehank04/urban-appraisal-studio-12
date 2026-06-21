@@ -70,14 +70,14 @@ const NAV_ITEMS: NavItem[] = [
     group: 'plataforma',
   },
   {
-    label: 'Módulos técnicos',
+    label: 'Módulos',
     to: '/modulos',
     icon: Boxes,
     description: 'Módulos técnicos disponibles',
     group: 'plataforma',
   },
   {
-    label: 'Base de comparables',
+    label: 'Comparables',
     to: '/comparables',
     icon: Database,
     description: 'Base local de comparables',
@@ -123,16 +123,8 @@ export function AppLayout() {
   const isStartPage =
     location.pathname === '/' || location.pathname === '/plataforma';
 
-  const groupedItems = NAV_ITEMS.reduce<Record<NavItem['group'], NavItem[]>>(
-    (acc, item) => {
-      acc[item.group].push(item);
-      return acc;
-    },
-    {
-      plataforma: [],
-      operacion: [],
-      catalogos: [],
-    }
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => item.to !== '/plataforma' && item.to !== '/configuracion-plataforma'
   );
 
   function handleBack() {
@@ -151,152 +143,138 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+    <div className="imv-root">
+      <header className="imv-topbar">
+        <div className="imv-topbar-inner">
           <div className="flex min-w-0 items-center gap-3">
             {!isStartPage ? (
               <button
                 type="button"
                 onClick={handleBack}
-                title="Volver a la pantalla anterior"
-                aria-label="Volver a la pantalla anterior"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 shadow-lg shadow-black/20 transition hover:bg-slate-800"
+                title="Volver"
+                aria-label="Volver"
+                className="imv-icon-button hidden sm:inline-flex"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
             ) : null}
 
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="inline-flex h-12 items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 text-left shadow-lg shadow-black/20 transition hover:bg-sky-400/20"
+            <NavLink
+              to="/plataforma"
+              onClick={handleNavClick}
+              className="imv-brand"
+            >
+              <div className="imv-brand-mark">
+                IN
+              </div>
+
+              <div className="hidden sm:block">
+                <p className="imv-brand-title">
+                  INMOVAL
+                </p>
+                <p className="imv-brand-subtitle">
+                  Mission Control
+                </p>
+              </div>
+            </NavLink>
+          </div>
+
+          <nav className="hidden flex-1 items-center justify-center xl:flex">
+            <div className="imv-command-bar">
+              {visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                const active =
+                  location.pathname === item.to ||
+                  (item.to !== '/' && location.pathname.startsWith(item.to + '/'));
+
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={handleNavClick}
+                    className={active ? 'imv-command-item imv-command-item-active' : 'imv-command-item'}
+                  >
+                    <Icon className="imv-command-icon" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+
+              <NavLink
+                to="/configuracion-plataforma"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'imv-command-item imv-command-item-active !px-3'
+                    : 'imv-command-item !px-3'
+                }
+                title="Configuración"
+                aria-label="Configuración"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500 text-sm font-black text-slate-950">
-                  IN
-                </div>
-
-                <div className="hidden sm:block">
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-200">
-                    INMOVAL
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Todas las pantallas
-                  </p>
-                </div>
-
-                <ChevronDown
-                  className={`h-4 w-4 text-sky-200 transition ${
-                    open ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {open ? (
-                <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(92vw,540px)] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/40">
-                  <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">
-                        Menú INMOVAL
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Plataforma, operación y catálogos
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setOpen(false)}
-                      className="rounded-xl border border-slate-700 bg-slate-950/60 p-2 text-slate-300 hover:bg-slate-800"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <nav className="max-h-[72vh] overflow-y-auto p-3">
-                    {(['plataforma', 'operacion', 'catalogos'] as const).map(
-                      (group) => (
-                        <div key={group} className="mb-3 last:mb-0">
-                          <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            {GROUP_LABELS[group]}
-                          </p>
-
-                          <div className="grid gap-2">
-                            {groupedItems[group].filter((item) => !item.label.startsWith('__HIDDEN__')).map((item) => {
-                              const Icon = item.icon;
-
-                              return (
-                                <NavLink
-                                  key={item.to}
-                                  to={item.to}
-                                  onClick={handleNavClick}
-                                  end={item.to === '/'}
-                                  className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm transition ${
-                                      isActive
-                                        ? 'border-sky-400/40 bg-sky-400/15 text-sky-100'
-                                        : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-800/80'
-                                    }`
-                                  }
-                                >
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60">
-                                    <Icon className="h-4 w-4" />
-                                  </div>
-
-                                  <div>
-                                    <p className="font-semibold">
-                                      {item.label}
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
-                                      {item.description}
-                                    </p>
-                                  </div>
-                                </NavLink>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </nav>
-                </div>
-              ) : null}
+                <Settings className="imv-command-icon" />
+              </NavLink>
             </div>
-          </div>
+          </nav>
 
-          <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-            <CurrentIcon className="hidden h-4 w-4 shrink-0 text-sky-300 sm:block" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="imv-topbar-current hidden lg:inline-flex">
+              <CurrentIcon className="h-3.5 w-3.5 text-[var(--imv-accent)]" />
+              <span className="max-w-[170px] truncate">
                 {currentPage.label}
-              </p>
-              <p className="hidden truncate text-xs text-slate-500 sm:block">
-                {currentPage.description}
-              </p>
+              </span>
             </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 sm:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+            <button
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+              className="imv-icon-button xl:hidden"
+              aria-label="Abrir menú INMOVAL"
+            >
+              {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
+
+        {open ? (
+          <div className="mx-auto mt-2 max-w-[1500px] overflow-hidden rounded-2xl border border-black bg-black shadow-2xl shadow-black/50 xl:hidden">
+            <nav className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-4">
+              {visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                const active =
+                  location.pathname === item.to ||
+                  (item.to !== '/' && location.pathname.startsWith(item.to + '/'));
+
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={handleNavClick}
+                    className={active ? 'imv-command-item imv-command-item-active !justify-start !py-3' : 'imv-command-item !justify-start !py-3'}
+                  >
+                    <Icon className="imv-command-icon" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+
+              <NavLink
+                to="/configuracion-plataforma"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'imv-command-item imv-command-item-active !justify-start !py-3'
+                    : 'imv-command-item !justify-start !py-3'
+                }
+              >
+                <Settings className="imv-command-icon" />
+                <span>Configuración</span>
+              </NavLink>
+            </nav>
+          </div>
+        ) : null}
       </header>
 
-      {open ? (
-        <button
-          type="button"
-          aria-label="Cerrar menú INMOVAL"
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 cursor-default bg-black/20"
-        />
-      ) : null}
-
-      <main>
+      <main className="imv-app-frame">
         <Outlet />
       </main>
     </div>

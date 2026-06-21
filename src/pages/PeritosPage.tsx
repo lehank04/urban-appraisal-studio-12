@@ -1,10 +1,8 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Plus, Trash2, UserCog, Pencil } from 'lucide-react';
 
 import { useStore } from '@/store/avaluoStore';
 import { Perito } from '@/store/types';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -187,129 +185,145 @@ export default function PeritosPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-6">
-      <header className="flex flex-col justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-slate-100 shadow-xl shadow-black/20 lg:flex-row lg:items-center">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-300">
-            Plataforma INMOVAL
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-            Peritos
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            {peritos.length} perito(s) o empresa(s) periciales registrados.
-          </p>
-        </div>
+    <main className="imv-page">
+      <div className="imv-page-inner">
+        <header className="imv-page-header flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+          <div>
+            <p className="imv-eyebrow">Plataforma INMOVAL</p>
 
-        <Button onClick={() => setOpenNuevo(true)}>
-          <Plus className="mr-1 h-4 w-4" />
-          Nuevo perito
-        </Button>
-      </header>
+            <h1 className="imv-title-xl mt-2 text-[clamp(2.2rem,5vw,4.2rem)]">
+              Peritos
+            </h1>
 
-      <Card className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-            placeholder="Buscar por nombre, NIPEV, empresa, teléfono o email..."
-            className="h-9 w-full rounded-md border border-input bg-background px-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </Card>
+            <p className="imv-muted mt-3 text-sm">
+              {peritos.length} perito(s) o empresa(s) periciales registrados.
+            </p>
+          </div>
 
-      {peritosFiltrados.length === 0 ? (
-        <Card className="border-dashed p-8">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-muted">
-              <UserCog className="h-6 w-6 text-muted-foreground" />
+          <button
+            type="button"
+            onClick={() => setOpenNuevo(true)}
+            className="imv-button imv-button-dark h-12 px-6 text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo perito
+          </button>
+        </header>
+
+        <section className="imv-panel p-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c696c]" />
+
+            <input
+              value={q}
+              onChange={(event) => setQ(event.target.value)}
+              placeholder="Buscar por nombre, NIPEV, empresa, teléfono o email..."
+              className="imv-input h-12 px-4 pl-11 text-sm"
+            />
+          </div>
+        </section>
+
+        {peritosFiltrados.length === 0 ? (
+          <section className="imv-empty-state">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-black/10 bg-white/60 text-[#101415]">
+              <UserCog className="h-6 w-6" />
             </div>
 
-            <div>
-              <h3 className="font-semibold">
-                {peritos.length === 0
-                  ? 'No hay peritos registrados'
-                  : 'No hay peritos que coincidan con la búsqueda'}
-              </h3>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                Registra peritos o empresas periciales para asignarlos a expedientes.
-              </p>
-            </div>
+            <h3 className="imv-title mt-5">
+              {peritos.length === 0
+                ? 'No hay peritos registrados'
+                : 'No hay peritos que coincidan con la búsqueda'}
+            </h3>
+
+            <p className="imv-muted mx-auto mt-2 max-w-md text-sm">
+              Registra peritos o empresas periciales para asignarlos a expedientes.
+            </p>
 
             {peritos.length === 0 ? (
-              <Button onClick={() => setOpenNuevo(true)}>
-                <Plus className="mr-1 h-4 w-4" />
+              <button
+                type="button"
+                onClick={() => setOpenNuevo(true)}
+                className="imv-button imv-button-dark mx-auto mt-5 h-12 px-6 text-sm"
+              >
+                <Plus className="h-4 w-4" />
                 Registrar perito
-              </Button>
+              </button>
             ) : null}
-          </div>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {peritosFiltrados.map((perito) => (
-            <Card key={perito.id} className="flex flex-col p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                    {perito.empresa || 'Perito / empresa pericial'}
+          </section>
+        ) : (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {peritosFiltrados.map((perito) => (
+              <article key={perito.id} className="imv-card flex flex-col">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="imv-eyebrow">
+                      {perito.empresa || 'Perito / empresa pericial'}
+                    </p>
+
+                    <h2 className="mt-2 truncate text-xl font-black tracking-[-0.035em] text-[#101415]">
+                      {perito.nombre}
+                    </h2>
+
+                    <p className="imv-muted mt-2 text-sm">
+                      {perito.cargo || 'Perito firmante'}
+                    </p>
                   </div>
 
-                  <div className="mt-1 truncate text-lg font-semibold">
-                    {perito.nombre}
-                  </div>
-
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {perito.cargo || 'Perito firmante'}
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-black/10 bg-white/60 text-[#101415]">
+                    <UserCog className="h-5 w-5" />
                   </div>
                 </div>
 
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-sky-500/10 text-sky-300">
-                  <UserCog className="h-5 w-5" />
+                <div className="imv-muted mt-5 grid gap-2 text-sm">
+                  <p>
+                    <strong className="text-[#101415]">NIPEV:</strong>{' '}
+                    {perito.registroSIBOIF || perito.registro || '—'}
+                  </p>
+                  <p>
+                    <strong className="text-[#101415]">Cédula:</strong>{' '}
+                    {perito.cedula || '—'}
+                  </p>
+                  <p>
+                    <strong className="text-[#101415]">Teléfono:</strong>{' '}
+                    {perito.telefono || '—'}
+                  </p>
+                  <p>
+                    <strong className="text-[#101415]">Correo:</strong>{' '}
+                    {perito.email || '—'}
+                  </p>
+                  <p>
+                    <strong className="text-[#101415]">Ciudad:</strong>{' '}
+                    {perito.ciudad || '—'}
+                  </p>
                 </div>
-              </div>
 
-              <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
-                <div>
-                  <span className="font-medium text-foreground">NIPEV:</span>{' '}
-                  {perito.registroSIBOIF || perito.registro || '—'}
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Cédula:</span>{' '}
-                  {perito.cedula || '—'}
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Teléfono:</span>{' '}
-                  {perito.telefono || '—'}
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Correo:</span>{' '}
-                  {perito.email || '—'}
-                </div>
-                <div>
-                  <span className="font-medium text-foreground">Ciudad:</span>{' '}
-                  {perito.ciudad || '—'}
-                </div>
-              </div>
+                <div className="mt-5 flex justify-end gap-2 border-t border-black/10 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setEditing(perito)}
+                    className="imv-button border border-black/10 bg-white/60 px-4 py-2 text-xs font-black text-[#101415]"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </button>
 
-              <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
-                <Button size="sm" variant="ghost" onClick={() => setEditing(perito)}>
-                  <Pencil className="mr-1 h-4 w-4" />
-                  Editar
-                </Button>
-
-                <Button size="sm" variant="ghost" onClick={() => eliminar(perito)}>
-                  <Trash2 className="mr-1 h-4 w-4" />
-                  Eliminar
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+                  <button
+                    type="button"
+                    onClick={() => eliminar(perito)}
+                    className="imv-button border border-black/10 bg-white/60 px-4 py-2 text-xs font-black text-[#101415]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </div>
 
       <Dialog open={openNuevo} onOpenChange={setOpenNuevo}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl border-black/10 bg-[#f4f5f2] text-[#101415] shadow-2xl">
           <DialogHeader>
             <DialogTitle>Nuevo perito</DialogTitle>
           </DialogHeader>
@@ -317,16 +331,27 @@ export default function PeritosPage() {
           <PeritoForm value={nuevo} onChange={setNuevo} />
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenNuevo(false)}>
+            <button
+              type="button"
+              onClick={() => setOpenNuevo(false)}
+              className="imv-button border border-black/10 bg-white/60 px-5 py-3 text-sm text-[#101415]"
+            >
               Cancelar
-            </Button>
-            <Button onClick={guardarNuevo}>Guardar perito</Button>
+            </button>
+
+            <button
+              type="button"
+              onClick={guardarNuevo}
+              className="imv-button imv-button-dark px-5 py-3 text-sm"
+            >
+              Guardar perito
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl border-black/10 bg-[#f4f5f2] text-[#101415] shadow-2xl">
           <DialogHeader>
             <DialogTitle>Editar perito</DialogTitle>
           </DialogHeader>
@@ -339,13 +364,24 @@ export default function PeritosPage() {
           ) : null}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="imv-button border border-black/10 bg-white/60 px-5 py-3 text-sm text-[#101415]"
+            >
               Cancelar
-            </Button>
-            <Button onClick={guardarEdicion}>Guardar cambios</Button>
+            </button>
+
+            <button
+              type="button"
+              onClick={guardarEdicion}
+              className="imv-button imv-button-dark px-5 py-3 text-sm"
+            >
+              Guardar cambios
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 }

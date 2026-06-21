@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Boxes,
@@ -84,10 +84,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-xl shadow-black/20">
+    <section className="imv-panel">
       <div className="mb-5">
-        <h2 className="text-xl font-bold text-slate-50">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">{subtitle}</p>
+        <h2 className="imv-title">{title}</h2>
+        <p className="imv-muted mt-2 text-sm leading-6">{subtitle}</p>
       </div>
 
       {children}
@@ -107,21 +107,23 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <article className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-xl shadow-black/20">
-      <div className="flex items-start justify-between gap-4">
+    <article className="imv-card relative min-h-[150px]">
+      <div className="flex items-start justify-between gap-4 pr-12">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+          <p className="imv-eyebrow">
             {titulo}
           </p>
-          <p className="mt-3 text-3xl font-bold text-slate-50">{valor}</p>
+          <p className="mt-4 text-5xl font-black leading-none tracking-[-0.06em] text-[#101415]">
+            {valor}
+          </p>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200">
+        <div className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/50 text-[#101415]">
           {icon}
         </div>
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-slate-400">{detalle}</p>
+      <p className="imv-muted mt-4 text-sm leading-6">{detalle}</p>
     </article>
   );
 }
@@ -234,47 +236,47 @@ export default function DashboardINMOVALPage() {
   const modulosActivos = modulos.filter((modulo) => modulo.estado === 'activo');
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
-      <div className="mx-auto grid max-w-7xl gap-6">
-        <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-black/20">
+    <main className="imv-page">
+      <div className="imv-page-inner">
+        <header className="imv-page-header">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-300">
+              <p className="imv-eyebrow">
                 Plataforma INMOVAL
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-50">
+              <h1 className="imv-title-xl mt-2">
                 Centro INMOVAL
               </h1>
-              <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
+              <p className="imv-muted mt-3 max-w-4xl text-sm leading-6">
                 Resumen operativo de cotizaciones, expedientes, avalúos, módulos,
                 pagos y bitácora de la plataforma en el rango seleccionado.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-200">
+            <div className="imv-card w-full max-w-md">
+              <div className="mb-3 flex items-center gap-2 text-sm font-black text-[#101415]">
                 <Filter className="h-4 w-4 text-sky-300" />
                 Filtrar por rango de fecha
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs text-slate-400">
+                <label className="grid gap-1 text-xs font-bold text-[#5c696c]">
                   Desde
                   <input
                     type="date"
                     value={fechaInicio}
                     onChange={(event) => setFechaInicio(event.target.value)}
-                    className="h-10 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-sky-400"
+                    className="imv-input h-11 px-4 text-sm font-semibold"
                   />
                 </label>
 
-                <label className="grid gap-1 text-xs text-slate-400">
+                <label className="grid gap-1 text-xs font-bold text-[#5c696c]">
                   Hasta
                   <input
                     type="date"
                     value={fechaFin}
                     onChange={(event) => setFechaFin(event.target.value)}
-                    className="h-10 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none focus:border-sky-400"
+                    className="imv-input h-11 px-4 text-sm font-semibold"
                   />
                 </label>
               </div>
@@ -308,18 +310,18 @@ export default function DashboardINMOVALPage() {
               icon={<WalletCards className="h-5 w-5" />}
             />
 
-            <article className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-xl shadow-black/20">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            <article className="imv-card relative min-h-[150px]">
+              <p className="imv-eyebrow">
                 Acción
               </p>
               <Link
                 to="/cotizaciones"
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100 transition hover:bg-sky-400/20"
+                className="imv-button imv-button-dark mt-4 w-full px-5 py-4 text-sm"
               >
                 <FileText className="h-4 w-4" />
                 Ver cotizaciones
               </Link>
-              <p className="mt-3 text-xs leading-5 text-slate-500">
+              <p className="imv-muted mt-3 text-xs leading-5">
                 Revisar propuestas, aprobaciones y expedientes vinculados.
               </p>
             </article>
@@ -417,7 +419,7 @@ export default function DashboardINMOVALPage() {
           subtitle="Últimos movimientos registrados en expedientes."
         >
           {bitacoraFiltrada.length === 0 ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-sm text-slate-400">
+            <div className="imv-empty-state text-sm">
               No hay actividad registrada en el rango seleccionado.
             </div>
           ) : (
@@ -425,19 +427,19 @@ export default function DashboardINMOVALPage() {
               {bitacoraFiltrada.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                  className="imv-card"
                 >
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-slate-100">
+                      <p className="text-sm font-black text-[#101415]">
                         {item.titulo || item.tipo || 'Actividad'}
                       </p>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="imv-muted mt-1 text-sm">
                         {item.descripcion || item.detalle || 'Movimiento registrado'}
                       </p>
                     </div>
 
-                    <div className="text-xs text-slate-500">
+                    <div className="imv-muted text-xs">
                       {item.creadoEn?.slice(0, 10)}
                     </div>
                   </div>
