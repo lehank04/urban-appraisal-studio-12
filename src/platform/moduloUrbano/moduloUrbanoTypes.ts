@@ -642,6 +642,7 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
     ambientesDetalle: [],
     comparablesBloque: crearComparablesBloqueVacio(),
     factoresHomologacion: [],
+    homologacionBloque: crearHomologacionBloqueVacio(),
     ambientes: { pendiente: true },
     fotografias: { pendiente: true },
     comparables: { pendiente: true },
