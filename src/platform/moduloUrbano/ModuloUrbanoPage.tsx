@@ -248,14 +248,17 @@ export default function ModuloUrbanoPage() {
         unitarios.push(base * factorGlobal);
         continue;
       }
-      // Fallback: usar snapshot del comparable cuando exista.
+      // Fallback: usar snapshot del comparable (payload literal) cuando exista.
       const snap = modulo.comparablesBloque.snapshots
         .filter((s) => s.comparableId === sel.comparableId)
         .slice(-1)[0];
       const baseKind = hc?.baseUnitaria ?? 'terreno';
-      const precio = snap?.precio ?? null;
-      const area = baseKind === 'terreno' ? snap?.areaTerreno : snap?.areaConstruccion;
-      if (precio != null && area && area > 0) {
+      const payload = (snap?.payload ?? {}) as Record<string, unknown>;
+      const precioRaw = payload['precio'];
+      const areaRaw = payload[baseKind === 'terreno' ? 'areaTerreno' : 'areaConstruccion'];
+      const precio = typeof precioRaw === 'number' ? precioRaw : null;
+      const area = typeof areaRaw === 'number' ? areaRaw : null;
+      if (precio != null && area != null && area > 0) {
         unitarios.push((precio / area) * factorGlobal);
       }
     }
