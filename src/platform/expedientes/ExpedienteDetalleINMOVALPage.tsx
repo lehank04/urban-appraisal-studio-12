@@ -1035,6 +1035,278 @@ export default function ExpedienteDetalleINMOVALPage() {
           </SectionShell>
         </div>
 
+        {/* ───────── E-07b · Editor financiero ───────── */}
+        {(() => {
+          const pagos = Array.isArray(data.pagos) ? data.pagos : [];
+          const gastosOp = Array.isArray(data.gastosOperativos) ? data.gastosOperativos : [];
+          const totalGastosOp = gastosOp.reduce(
+            (s: number, g: any) => s + Number(g?.monto || 0),
+            0
+          );
+          const utilidadProyectada = Number((totalFacturable - totalGastosOp).toFixed(2));
+          const utilidadReal = Number((montoPagado - totalGastosOp).toFixed(2));
+          return (
+            <div className="mt-6">
+              <SectionShell
+                code="E-07b"
+                eyebrow="Editor financiero"
+                title="Pagos, factura, gastos operativos y utilidad"
+                icon={<Wallet className="h-5 w-5" />}
+                accent="emerald"
+                right={
+                  <Chip tone={utilidadReal >= 0 ? 'emerald' : 'rose'}>
+                    Utilidad real: {money(utilidadReal, data.moneda)}
+                  </Chip>
+                }
+              >
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <Field label="Total facturable" value={money(totalFacturable, data.moneda)} />
+                  <Field label="Pagado" value={money(montoPagado, data.moneda)} />
+                  <Field label="Saldo" value={money(saldoFacturable, data.moneda)} />
+                  <Field label="Gastos operativos" value={money(totalGastosOp, data.moneda)} />
+                  <Field label="Utilidad proyectada" value={money(utilidadProyectada, data.moneda)} />
+                  <Field label="Utilidad real" value={money(utilidadReal, data.moneda)} />
+                  <Field
+                    label="Factura"
+                    value={
+                      data.facturaEmitida
+                        ? `${data.numeroFactura || 'Emitida'}${data.facturaFecha ? ` · ${data.facturaFecha}` : ''}`
+                        : 'No emitida'
+                    }
+                  />
+                  <Field label="Estado pago" value={getPagoLabel(data.estadoPago)} />
+                </div>
+
+                {finanzasMensaje ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-xs text-emerald-100">
+                    {finanzasMensaje}
+                  </div>
+                ) : null}
+
+                <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                  {/* Registrar pago */}
+                  <form
+                    onSubmit={registrarPago}
+                    className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-emerald-200">
+                        FIN-01
+                      </span>
+                      <p className="text-sm font-semibold text-emerald-100">Registrar pago</p>
+                    </div>
+                    <div className="grid gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={pagoMonto}
+                        onChange={(ev) => setPagoMonto(ev.target.value)}
+                        placeholder="Monto"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="date"
+                        value={pagoFecha}
+                        onChange={(ev) => setPagoFecha(ev.target.value)}
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="text"
+                        value={pagoMetodo}
+                        onChange={(ev) => setPagoMetodo(ev.target.value)}
+                        placeholder="Método (Transferencia, Efectivo, Cheque)"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="text"
+                        value={pagoReferencia}
+                        onChange={(ev) => setPagoReferencia(ev.target.value)}
+                        placeholder="Referencia / comprobante"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <button
+                        type="submit"
+                        className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/15 px-3 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-400/25"
+                      >
+                        <Plus className="h-4 w-4" /> Agregar pago
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Registrar gasto operativo */}
+                  <form
+                    onSubmit={registrarGastoOperativo}
+                    className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200">
+                        FIN-02
+                      </span>
+                      <p className="text-sm font-semibold text-amber-100">Gasto operativo</p>
+                    </div>
+                    <div className="grid gap-2">
+                      <input
+                        type="text"
+                        value={gastoConcepto}
+                        onChange={(ev) => setGastoConcepto(ev.target.value)}
+                        placeholder="Concepto"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={gastoMonto}
+                        onChange={(ev) => setGastoMonto(ev.target.value)}
+                        placeholder="Monto"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="date"
+                        value={gastoFecha}
+                        onChange={(ev) => setGastoFecha(ev.target.value)}
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="text"
+                        value={gastoCategoria}
+                        onChange={(ev) => setGastoCategoria(ev.target.value)}
+                        placeholder="Categoría"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <button
+                        type="submit"
+                        className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/15 px-3 py-2 text-sm font-medium text-amber-100 hover:bg-amber-400/25"
+                      >
+                        <Plus className="h-4 w-4" /> Agregar gasto
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Factura */}
+                  <form
+                    onSubmit={marcarFacturaEmitida}
+                    className="rounded-2xl border border-sky-400/20 bg-sky-400/5 p-4"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="rounded-md border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-sky-200">
+                        FIN-03
+                      </span>
+                      <p className="text-sm font-semibold text-sky-100">Factura emitida</p>
+                    </div>
+                    <div className="grid gap-2">
+                      <input
+                        type="text"
+                        value={facturaNumero}
+                        onChange={(ev) => setFacturaNumero(ev.target.value)}
+                        placeholder="Número de factura"
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      <input
+                        type="date"
+                        value={facturaFecha}
+                        onChange={(ev) => setFacturaFecha(ev.target.value)}
+                        className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                      />
+                      {data.facturaEmitida ? (
+                        <p className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-xs text-slate-300">
+                          Actual: <span className="font-mono text-slate-100">{data.numeroFactura || '—'}</span>
+                          {data.facturaFecha ? ` · ${data.facturaFecha}` : ''}
+                        </p>
+                      ) : null}
+                      <button
+                        type="submit"
+                        className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/40 bg-sky-400/15 px-3 py-2 text-sm font-medium text-sky-100 hover:bg-sky-400/25"
+                      >
+                        <Receipt className="h-4 w-4" /> Registrar factura
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Listas */}
+                <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-300">
+                      Pagos registrados · {pagos.length}
+                    </p>
+                    {pagos.length === 0 ? (
+                      <p className="text-xs text-slate-400">Aún no se han registrado pagos.</p>
+                    ) : (
+                      <ul className="space-y-2 text-xs text-slate-200">
+                        {pagos.map((p: any) => (
+                          <li
+                            key={p.id}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-mono text-emerald-200">{money(p.monto, data.moneda)}</p>
+                              <p className="text-[11px] text-slate-400">
+                                {p.fecha} · {p.metodo || 'Pago'}
+                                {p.referencia ? ` · ${p.referencia}` : ''}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => eliminarPago(p.id)}
+                              className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-1.5 text-rose-200 hover:bg-rose-400/20"
+                              title="Eliminar pago"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-300">
+                      Gastos operativos · {gastosOp.length}
+                    </p>
+                    {gastosOp.length === 0 ? (
+                      <p className="text-xs text-slate-400">Sin gastos operativos registrados.</p>
+                    ) : (
+                      <ul className="space-y-2 text-xs text-slate-200">
+                        {gastosOp.map((g: any) => (
+                          <li
+                            key={g.id}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-slate-100">{g.concepto}</p>
+                              <p className="text-[11px] text-slate-400">
+                                {g.fecha} · {g.categoria || 'Operativo'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-amber-200">{money(g.monto, data.moneda)}</span>
+                              <button
+                                type="button"
+                                onClick={() => eliminarGastoOperativo(g.id)}
+                                className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-1.5 text-rose-200 hover:bg-rose-400/20"
+                                title="Eliminar gasto"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center gap-2 text-[11px] text-slate-400">
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-300" />
+                  Utilidad proyectada = total facturable − gastos operativos. Utilidad real = pagos recibidos − gastos operativos.
+                </div>
+              </SectionShell>
+            </div>
+          );
+        })()}
+
         {/* ───────── Documentos ───────── */}
         <div className="mt-6">
           <SectionShell
