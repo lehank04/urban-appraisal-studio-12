@@ -67,7 +67,10 @@ export function upsertModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
  */
 export function ensureModuloUrbano(expedienteId: string): ModuloUrbanoExpediente {
   const existente = getModuloUrbanoPorExpediente(expedienteId);
-  if (existente) return existente;
+  if (existente) {
+    // Persiste forma migrada para que el storage refleje el esquema actual.
+    return upsertModuloUrbano(migrarModuloUrbano(existente));
+  }
   const nuevo = crearModuloUrbanoVacio(expedienteId);
   return upsertModuloUrbano(nuevo);
 }
