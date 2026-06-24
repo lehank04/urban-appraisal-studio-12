@@ -1870,7 +1870,272 @@ export default function ModuloUrbanoPage() {
             {seccionActiva === 'depreciacion' && (requiereConstruccion
               ? <PlaceholderSection titulo="Depreciación (F3)" />
               : <NoAplicaNotice motivo="Lote vacío: no aplica depreciación de construcción." />)}
-            {seccionActiva === 'calculo_final' && <PlaceholderSection titulo="Cálculo final (F4)" />}
+            {seccionActiva === 'calculo_final' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-sm font-semibold text-slate-200">Valor de terreno (F2C)</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                    Adopta un valor unitario a partir de la homologación preliminar y calcula el valor parcial de cada terreno del sujeto.
+                    {tipoRequiereConstruccion(modulo.identificacion.tipoInmueble)
+                      ? ' Para inmuebles con construcción, este monto es sólo la componente de terreno; la construcción se calculará en F3.'
+                      : ' Para lote vacío, este monto es la base principal del avalúo.'}
+                  </p>
+                </div>
+
+                {/* Advertencias */}
+                {(modulo.comparablesBloque.seleccionados.length < 3 ||
+                  valBloque.valorUnitarioAdoptado == null ||
+                  incluidos.length === 0) && (
+                  <div className="rounded-2xl border border-amber-400/30 bg-amber-500/5 p-3 text-[11px] text-amber-200 space-y-1">
+                    {modulo.comparablesBloque.seleccionados.length < 3 && (
+                      <p>⚠ Hay menos de 3 comparables seleccionados; la homologación es estadísticamente débil.</p>
+                    )}
+                    {valBloque.valorUnitarioAdoptado == null && (
+                      <p>⚠ No hay valor unitario adoptado todavía. Seleccioná un criterio y recalculá.</p>
+                    )}
+                    {incluidos.length === 0 && (
+                      <p>⚠ Ningún terreno está incluido en el cálculo del valor total.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Adopción */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Adopción de valor unitario</p>
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    <Field label="Criterio">
+                      <select
+                        className={inputClass()}
+                        value={valBloque.criterioAdopcion}
+                        onChange={(e) => patchValoracionTerrenoBloque({ criterioAdopcion: e.target.value as CriterioAdopcionHomologacion })}
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="promedio">Promedio homologado</option>
+                        <option value="mediana">Mediana homologada</option>
+                        <option value="manual">Manual</option>
+                      </select>
+                    </Field>
+                    <Field label="Valor unitario adoptado">
+                      <input
+                        type="number"
+                        className={inputClass()}
+                        value={valBloque.valorUnitarioAdoptado ?? ''}
+                        onChange={(e) => patchValoracionTerrenoBloque({ valorUnitarioAdoptado: e.target.value === '' ? null : Number(e.target.value) })}
+                        placeholder={valorUnitarioCriterio != null ? Number(valorUnitarioCriterio).toFixed(2) : '—'}
+                        readOnly={valBloque.criterioAdopcion !== 'manual' && valBloque.criterioAdopcion !== 'pendiente'}
+                      />
+                    </Field>
+                    <Field label="Unidad base">
+                      <select
+                        className={inputClass()}
+                        value={valBloque.unidadBase}
+                        onChange={(e) => patchValoracionTerrenoBloque({ unidadBase: e.target.value as UnidadBaseValor })}
+                      >
+                        {UNIDAD_BASE_VALOR_OPCIONES.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={recalcularValorUnitarioAdoptado}
+                        className="w-full rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs text-cyan-100 hover:bg-cyan-400/20"
+                      >
+                        Recalcular desde homologación
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <Field label="Justificación técnica del valor adoptado">
+                      <textarea
+                        rows={2}
+                        className={inputClass()}
+                        value={valBloque.justificacionTecnica}
+                        onChange={(e) => patchValoracionTerrenoBloque({ justificacionTecnica: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Observaciones técnicas">
+                      <textarea
+                        rows={2}
+                        className={inputClass()}
+                        value={valBloque.observaciones}
+                        onChange={(e) => patchValoracionTerrenoBloque({ observaciones: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                  <div className="mt-3 grid gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-3 sm:grid-cols-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">V.U. promedio (homol.)</p>
+                      <p className="text-sm text-slate-100">{promedioHomologado != null ? promedioHomologado.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">V.U. mediana (homol.)</p>
+                      <p className="text-sm text-slate-100">{medianaHomologada != null ? medianaHomologada.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">V.U. adoptado</p>
+                      <p className="text-sm font-semibold text-cyan-200">{valBloque.valorUnitarioAdoptado != null ? valBloque.valorUnitarioAdoptado.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabla de terrenos valorados */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Terrenos valorados ({valoracionRows.length})</p>
+                  {valoracionRows.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-4 text-xs text-slate-500">
+                      No hay terrenos registrados. Volvé a la sección <span className="text-slate-300">Terreno</span> y agregá al menos uno.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {valoracionRows.map((row) => {
+                        const { terreno: t, item, vuAplicado, factor, area, valorParcial } = row;
+                        const cargado = Boolean(item);
+                        return (
+                          <div key={t.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+                            <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-100">
+                                  {t.codigo || t.nombre || `Terreno ${t.id.slice(-4)}`}
+                                  <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">{t.tipo}</span>
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  Área registrada: {t.area != null ? `${t.area} ${t.unidad}` : '—'}
+                                </p>
+                              </div>
+                              {!cargado ? (
+                                <button
+                                  type="button"
+                                  onClick={() => ensureValoracionItem(t.id)}
+                                  className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[11px] text-cyan-100 hover:bg-cyan-400/20"
+                                >
+                                  Activar valoración
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => removeValoracionItem(t.id)}
+                                  className="text-[11px] text-rose-300 hover:text-rose-200"
+                                >
+                                  Quitar valoración
+                                </button>
+                              )}
+                            </div>
+                            {cargado && item && (
+                              <>
+                                <div className="grid gap-2 sm:grid-cols-12">
+                                  <div className="sm:col-span-2">
+                                    <label className="flex items-center gap-1 text-[11px] text-slate-300">
+                                      <input
+                                        type="checkbox"
+                                        checked={item.incluyeEnValorTerreno}
+                                        onChange={(e) => updateValoracionItem(t.id, { incluyeEnValorTerreno: e.target.checked })}
+                                      />
+                                      Incluir en total
+                                    </label>
+                                  </div>
+                                  <div className="sm:col-span-2">
+                                    <span className={labelClass()}>Área homologable</span>
+                                    <input
+                                      type="number"
+                                      className={inputClass()}
+                                      value={item.areaHomologable ?? ''}
+                                      onChange={(e) => updateValoracionItem(t.id, { areaHomologable: e.target.value === '' ? null : Number(e.target.value) })}
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-2">
+                                    <span className={labelClass()}>V.U. aplicado</span>
+                                    <input
+                                      type="number"
+                                      className={inputClass()}
+                                      value={item.valorUnitarioAplicado ?? ''}
+                                      onChange={(e) => updateValoracionItem(t.id, { valorUnitarioAplicado: e.target.value === '' ? null : Number(e.target.value) })}
+                                      placeholder={valBloque.valorUnitarioAdoptado != null ? String(valBloque.valorUnitarioAdoptado) : '—'}
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-2">
+                                    <span className={labelClass()}>Factor manual</span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      className={inputClass()}
+                                      value={item.factorAjusteManual ?? ''}
+                                      onChange={(e) => updateValoracionItem(t.id, { factorAjusteManual: e.target.value === '' ? null : Number(e.target.value) })}
+                                      placeholder="1.00"
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-4">
+                                    <span className={labelClass()}>Valor parcial</span>
+                                    <p className="rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-emerald-200">
+                                      {valorParcial != null ? valorParcial.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}
+                                    </p>
+                                  </div>
+                                  <div className="sm:col-span-12">
+                                    <span className={labelClass()}>Justificación del valor</span>
+                                    <input
+                                      className={inputClass()}
+                                      value={item.justificacionValor}
+                                      onChange={(e) => updateValoracionItem(t.id, { justificacionValor: e.target.value })}
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-12">
+                                    <span className={labelClass()}>Observaciones</span>
+                                    <input
+                                      className={inputClass()}
+                                      value={item.observaciones}
+                                      onChange={(e) => updateValoracionItem(t.id, { observaciones: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-[10px] text-slate-500">
+                                  Cálculo: área × valor unitario aplicado × factor ({factor || 1}) ={' '}
+                                  {area != null && vuAplicado != null
+                                    ? `${area} × ${vuAplicado} × ${factor || 1}`
+                                    : 'faltan datos'}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Resumen total */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Resumen del valor de terreno</p>
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Terrenos incluidos</p>
+                      <p className="text-sm font-semibold text-slate-100">{incluidos.length} / {valoracionRows.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Área total considerada</p>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {areaTotalConsiderada != null ? `${areaTotalConsiderada.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">V.U. adoptado</p>
+                      <p className="text-sm text-slate-100">
+                        {valBloque.valorUnitarioAdoptado != null ? valBloque.valorUnitarioAdoptado.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Valor total de terreno</p>
+                      <p className="text-base font-semibold text-emerald-200">
+                        {valorTerrenoTotal != null ? valorTerrenoTotal.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[11px] text-slate-500">
+                    F2C: cálculo preliminar del valor de terreno. No incluye costo de construcción, depreciación ni reposición (pendiente F3).
+                  </p>
+                </div>
+              </div>
+            )}
             {seccionActiva === 'informe' && <PlaceholderSection titulo="Informe (F5)" />}
             {seccionActiva === 'anexos' && <PlaceholderSection titulo="Anexos (F6)" />}
           </section>
