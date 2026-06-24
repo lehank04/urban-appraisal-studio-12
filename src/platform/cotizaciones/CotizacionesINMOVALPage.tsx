@@ -103,6 +103,12 @@ type CotizacionINMOVALLocal = {
   cotizacionOrigenNumero?: string;
   historialRevisiones?: CotizacionRevisionHistorial[];
 
+  otrosGastos?: number;
+  otrosGastosItems?: GastoCotizacionItem[];
+  aplicaIVA?: boolean;
+  ivaPorcentaje?: number;
+  impuestos?: number;
+
   creadoEn: string;
   actualizadoEn: string;
 };
