@@ -55,6 +55,7 @@ import {
   resumenComparable,
   type ComparableDisponible,
 } from './comparablesAdapter';
+import { advertenciaUnidad, nombreUnidad } from './unidadAreaUtils';
 
 const TIPO_INMUEBLE_OPCIONES: ReadonlyArray<{ value: TipoInmuebleUrbano; label: string }> = [
   { value: 'casa_habitacion', label: 'Casa de habitación' },
@@ -228,6 +229,89 @@ export default function ModuloUrbanoPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modulo?.identificacion.tipoInmueble]);
+
+  // F2C.1 — Persistencia predecible de totales calculados.
+  // Recalcula promedios/medianas de homologación y totales de valoración
+  // de terreno, y los persiste cuando cambian. Reemplaza al uso previo de
+  // `setTimeout(0)` durante el render (que violaba las reglas de hooks).
+  useEffect(() => {
+    if (!modulo) return;
+
+    // ── Homologación: promedio / mediana de precios unitarios homologados.
+    const unitarios: number[] = [];
+    for (const sel of modulo.comparablesBloque.seleccionados) {
+      const hc = modulo.homologacionBloque.comparables.find((c) => c.comparableId === sel.comparableId);
+      const factores = (hc?.factores ?? []).filter((f) => f.aplica && Number.isFinite(f.coeficiente));
+      const factorGlobal = factores.reduce((acc, f) => acc * (f.coeficiente || 1), 1);
+      const base = hc?.precioUnitarioBaseManual;
+      if (base != null && Number.isFinite(base)) {
+        unitarios.push(base * factorGlobal);
+        continue;
+      }
+      // Fallback: usar snapshot del comparable (payload literal) cuando exista.
+      const snap = modulo.comparablesBloque.snapshots
+        .filter((s) => s.comparableId === sel.comparableId)
+        .slice(-1)[0];
+      const baseKind = hc?.baseUnitaria ?? 'terreno';
+      const payload = (snap?.payload ?? {}) as Record<string, unknown>;
+      const precioRaw = payload['precio'];
+      const areaRaw = payload[baseKind === 'terreno' ? 'areaTerreno' : 'areaConstruccion'];
+      const precio = typeof precioRaw === 'number' ? precioRaw : null;
+      const area = typeof areaRaw === 'number' ? areaRaw : null;
+      if (precio != null && area != null && area > 0) {
+        unitarios.push((precio / area) * factorGlobal);
+      }
+    }
+    const promedio = unitarios.length
+      ? unitarios.reduce((a, b) => a + b, 0) / unitarios.length
+      : null;
+    let mediana: number | null = null;
+    if (unitarios.length) {
+      const arr = [...unitarios].sort((a, b) => a - b);
+      const mid = Math.floor(arr.length / 2);
+      mediana = arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+    }
+
+    // ── Valoración de terreno: total y área considerada.
+    const vb = modulo.valoracionTerrenoBloque;
+    const vuCriterio =
+      vb.criterioAdopcion === 'promedio' ? promedio :
+      vb.criterioAdopcion === 'mediana' ? mediana :
+      vb.criterioAdopcion === 'manual' ? vb.valorUnitarioAdoptado :
+      null;
+    let valorTerrenoTotal: number | null = null;
+    let areaTotalConsiderada: number | null = null;
+    for (const item of vb.items) {
+      if (!item.incluyeEnValorTerreno) continue;
+      const vu = item.valorUnitarioAplicado ?? vb.valorUnitarioAdoptado ?? vuCriterio ?? null;
+      const factor = item.factorAjusteManual ?? 1;
+      const area = item.areaHomologable;
+      if (area != null && Number.isFinite(area)) {
+        areaTotalConsiderada = (areaTotalConsiderada ?? 0) + area;
+        if (vu != null && Number.isFinite(vu)) {
+          valorTerrenoTotal = (valorTerrenoTotal ?? 0) + area * vu * (factor || 1);
+        }
+      }
+    }
+
+    const hb = modulo.homologacionBloque;
+    const needsHomolog = hb.valorUnitarioPromedio !== promedio || hb.valorUnitarioMediana !== mediana;
+    const needsVal = vb.valorTerrenoTotal !== valorTerrenoTotal || vb.areaTotalConsiderada !== areaTotalConsiderada;
+    if (!needsHomolog && !needsVal) return;
+
+    setModulo((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        homologacionBloque: needsHomolog
+          ? { ...prev.homologacionBloque, valorUnitarioPromedio: promedio, valorUnitarioMediana: mediana }
+          : prev.homologacionBloque,
+        valoracionTerrenoBloque: needsVal
+          ? { ...prev.valoracionTerrenoBloque, valorTerrenoTotal, areaTotalConsiderada }
+          : prev.valoracionTerrenoBloque,
+      };
+    });
+  }, [modulo]);
 
   if (!expedienteId) {
     return (
@@ -606,21 +690,9 @@ export default function ModuloUrbanoPage() {
     return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
   })();
 
-  // Sincroniza promedios/medianas al estado persistido cuando cambian.
-  // Nota: no usamos useEffect aquí porque este bloque vive después del early
-  // return de !modulo (Rules of Hooks). Se persistirá al siguiente render/guardado.
-  {
-    const hb = modulo.homologacionBloque;
-    if (hb.valorUnitarioPromedio !== promedioHomologado || hb.valorUnitarioMediana !== medianaHomologada) {
-      // Patch sincrónico en el siguiente tick para evitar setState en render.
-      setTimeout(() => {
-        patchHomologacionBloque({
-          valorUnitarioPromedio: promedioHomologado,
-          valorUnitarioMediana: medianaHomologada,
-        });
-      }, 0);
-    }
-  }
+  // F2C.1: la sincronización de promedios/medianas y totales de valoración
+  // se hace en el useEffect declarado al inicio del componente. Aquí sólo
+  // se derivan los valores en memoria para el render.
 
   // ── Valoración de terreno (F2C): cómputos preliminares ───────────────────
   const valBloque = modulo.valoracionTerrenoBloque;
@@ -638,7 +710,8 @@ export default function ModuloUrbanoPage() {
     const valorParcial = area != null && vuAplicado != null && Number.isFinite(area) && Number.isFinite(vuAplicado)
       ? area * vuAplicado * (factor || 1)
       : null;
-    return { terreno: t, item, vuAplicado, factor, area, valorParcial };
+    const aviso = advertenciaUnidad(t.unidad, valBloque.unidadBase);
+    return { terreno: t, item, vuAplicado, factor, area, valorParcial, aviso };
   });
 
   const incluidos = valoracionRows.filter((r) => r.item?.incluyeEnValorTerreno);
@@ -651,23 +724,18 @@ export default function ModuloUrbanoPage() {
     return (acc ?? 0) + r.area;
   }, null);
 
-  // Persistencia diferida de totales
-  if (
-    valBloque.valorTerrenoTotal !== valorTerrenoTotal ||
-    valBloque.areaTotalConsiderada !== areaTotalConsiderada
-  ) {
-    setTimeout(() => {
-      patchValoracionTerrenoBloque({ valorTerrenoTotal, areaTotalConsiderada });
-    }, 0);
-  }
-
-  function recalcularValorUnitarioAdoptado() {
+  function recalcularValoracionTerreno() {
+    // Recalcula y persiste el valor unitario adoptado según el criterio elegido.
+    // Los totales (valorTerrenoTotal, areaTotalConsiderada) ya se persisten
+    // automáticamente vía el useEffect superior cuando cambian.
     const next =
       valBloque.criterioAdopcion === 'promedio' ? promedioHomologado :
       valBloque.criterioAdopcion === 'mediana' ? medianaHomologada :
       valBloque.valorUnitarioAdoptado;
     patchValoracionTerrenoBloque({ valorUnitarioAdoptado: next });
   }
+  const recalcularValorUnitarioAdoptado = recalcularValoracionTerreno;
+
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
@@ -1990,7 +2058,7 @@ export default function ModuloUrbanoPage() {
                   ) : (
                     <div className="space-y-2">
                       {valoracionRows.map((row) => {
-                        const { terreno: t, item, vuAplicado, factor, area, valorParcial } = row;
+                        const { terreno: t, item, vuAplicado, factor, area, valorParcial, aviso } = row;
                         const cargado = Boolean(item);
                         return (
                           <div key={t.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
@@ -2001,8 +2069,13 @@ export default function ModuloUrbanoPage() {
                                   <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">{t.tipo}</span>
                                 </p>
                                 <p className="text-[11px] text-slate-500">
-                                  Área registrada: {t.area != null ? `${t.area} ${t.unidad}` : '—'}
+                                  Área registrada: {t.area != null ? `${t.area} ${nombreUnidad(t.unidad)}` : '—'}
                                 </p>
+                                {aviso && (
+                                  <p className="mt-1 rounded border border-amber-400/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-200">
+                                    ⚠ {aviso}
+                                  </p>
+                                )}
                               </div>
                               {!cargado ? (
                                 <button
