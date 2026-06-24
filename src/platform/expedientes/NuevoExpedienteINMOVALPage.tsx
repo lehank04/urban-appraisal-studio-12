@@ -787,6 +787,36 @@ export default function NuevoExpedienteINMOVALPage() {
       actualizadoEn: ahora,
     };
 
+    // ── Heredar estructura financiera de la cotización (si aplica) ──
+    if (cotizacionPrecarga) {
+      const gastosItems = Array.isArray(cotizacionPrecarga.otrosGastosItems)
+        ? cotizacionPrecarga.otrosGastosItems
+        : [];
+      const otrosGastosTotal =
+        gastosItems.length > 0
+          ? gastosItems.reduce((s, g) => s + Number(g.monto || 0), 0)
+          : Number(cotizacionPrecarga.otrosGastos || 0);
+      const aplicaIVA = Boolean(cotizacionPrecarga.aplicaIVA);
+      const ivaPorcentaje = Number(cotizacionPrecarga.ivaPorcentaje || 0);
+      const baseIVA = costo + otrosGastosTotal;
+      const impuestos = aplicaIVA
+        ? Number((baseIVA * (ivaPorcentaje / 100)).toFixed(2))
+        : 0;
+      const totalFacturable = Number((baseIVA + impuestos).toFixed(2));
+
+      expediente.cotizacionId = cotizacionPrecarga.id;
+      expediente.cotizacionNumero = cotizacionPrecarga.numero;
+      expediente.costoBaseServicio = costo;
+      expediente.otrosGastos = otrosGastosTotal;
+      expediente.otrosGastosItems = gastosItems;
+      expediente.aplicaIVA = aplicaIVA;
+      expediente.ivaPorcentaje = ivaPorcentaje;
+      expediente.impuestos = impuestos;
+      expediente.totalFacturable = totalFacturable;
+      expediente.saldo = totalFacturable;
+      expediente.estadoPago = totalFacturable > 0 ? 'pendiente' : 'no_aplica';
+    }
+
     upsertExpedienteIndiceINMOVAL(expediente);
 
     registrarActividadExpedienteINMOVAL({
