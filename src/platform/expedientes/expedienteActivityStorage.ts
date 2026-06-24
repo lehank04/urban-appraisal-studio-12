@@ -18,6 +18,7 @@ export type ExpedienteActivityINMOVAL = {
   tipo: TipoActividadExpedienteINMOVAL;
   titulo: string;
   descripcion?: string;
+  detalle?: string;
   usuarioNombre?: string;
   creadoEn: string;
 };
