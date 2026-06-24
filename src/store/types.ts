@@ -141,6 +141,7 @@ export interface DocumentoLegal {
   notario: string;
   areaTerrenoEscritura: number;
   areaTerrenoEscrituraVr2: number;
+  areaTerrenoCatastro?: number;
   numeroCatastral: string;
   numeroRegistral: string;
   numeroFinca?: string;
