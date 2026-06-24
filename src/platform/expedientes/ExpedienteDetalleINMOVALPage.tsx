@@ -162,7 +162,7 @@ function SectionShell({
   eyebrow: string;
   title: string;
   icon: React.ReactNode;
-  accent?: 'sky' | 'emerald' | 'amber' | 'violet' | 'rose' | 'cyan';
+  accent?: 'sky' | 'emerald' | 'amber' | 'violet' | 'rose' | 'cyan' | 'slate';
   children: React.ReactNode;
   right?: React.ReactNode;
 }) {
@@ -170,6 +170,7 @@ function SectionShell({
     sky: 'from-sky-500/15 to-transparent border-sky-400/20 text-sky-300',
     emerald: 'from-emerald-500/15 to-transparent border-emerald-400/20 text-emerald-300',
     amber: 'from-amber-500/15 to-transparent border-amber-400/20 text-amber-300',
+    slate: 'from-slate-500/10 to-transparent border-slate-700 text-slate-300',
     violet: 'from-violet-500/15 to-transparent border-violet-400/20 text-violet-300',
     rose: 'from-rose-500/15 to-transparent border-rose-400/20 text-rose-300',
     cyan: 'from-cyan-500/15 to-transparent border-cyan-400/20 text-cyan-300',
