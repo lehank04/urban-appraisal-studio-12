@@ -416,6 +416,61 @@ export interface ValoracionTerrenoBloque {
   areaTotalConsiderada: number | null;
 }
 
+// ── Valoración de construcción (F3A) ───────────────────────────────────────
+
+export type MetodoDepreciacionConstruccion =
+  | 'manual'
+  | 'lineal'
+  | 'ross_heidecke_pendiente';
+
+export const METODO_DEPRECIACION_OPCIONES: ReadonlyArray<{
+  value: MetodoDepreciacionConstruccion;
+  label: string;
+}> = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'lineal', label: 'Lineal (edad / vida útil)' },
+  { value: 'ross_heidecke_pendiente', label: 'Ross-Heidecke (pendiente F3B)' },
+];
+
+/**
+ * Valoración individual por construcción del sujeto. Se vincula a un
+ * ConstruccionItem por construccionId.
+ *
+ * `depreciacionPorcentaje` se almacena como fracción decimal (0.15 = 15 %).
+ */
+export interface ValoracionConstruccionItem {
+  id: string;
+  construccionId: string;
+  areaConstruida: number | null;
+  unidad: UnidadAreaUrbano;
+  valorUnitarioReposicion: number | null;
+  /** Derivado: areaConstruida × valorUnitarioReposicion */
+  valorReposicionNuevo: number | null;
+  edad: number | null;
+  vidaUtil: number | null;
+  estadoConservacion: string;
+  coeficienteConservacion: number | null;
+  metodoDepreciacion: MetodoDepreciacionConstruccion;
+  /** Fracción decimal 0–1; en manual se captura; en lineal se deriva de edad/vidaUtil. */
+  depreciacionPorcentaje: number | null;
+  /** Derivado: valorReposicionNuevo × depreciacionPorcentaje */
+  depreciacionMonto: number | null;
+  /** Derivado: valorReposicionNuevo − depreciacionMonto */
+  valorReposicionNeto: number | null;
+  observaciones: string;
+}
+
+export interface ValoracionConstruccionBloque {
+  /** Método por defecto al crear ítems nuevos. */
+  metodoDepreciacionDefault: MetodoDepreciacionConstruccion;
+  observaciones: string;
+  items: ValoracionConstruccionItem[];
+  /** Derivados, persistidos para informe/historial. */
+  totalReposicionNuevo: number | null;
+  totalDepreciacion: number | null;
+  totalReposicionNeto: number | null;
+}
+
 export interface PlaceholderModuloUrbano {
   pendiente: true;
   notas?: string;
@@ -449,6 +504,7 @@ export interface ModuloUrbanoExpediente {
   factoresHomologacion: FactorHomologacion[];
   homologacionBloque: HomologacionBloque;
   valoracionTerrenoBloque: ValoracionTerrenoBloque;
+  valoracionConstruccionBloque: ValoracionConstruccionBloque;
 
   // Placeholders (F2-F6)
   ambientes: PlaceholderModuloUrbano;
@@ -603,6 +659,40 @@ export function crearValoracionTerrenoBloqueVacio(): ValoracionTerrenoBloque {
   };
 }
 
+export function crearValoracionConstruccionItem(
+  construccionId: string,
+  metodoDefault: MetodoDepreciacionConstruccion = 'manual',
+): ValoracionConstruccionItem {
+  return {
+    id: uid('vci'),
+    construccionId,
+    areaConstruida: null,
+    unidad: 'm2',
+    valorUnitarioReposicion: null,
+    valorReposicionNuevo: null,
+    edad: null,
+    vidaUtil: null,
+    estadoConservacion: '',
+    coeficienteConservacion: null,
+    metodoDepreciacion: metodoDefault,
+    depreciacionPorcentaje: null,
+    depreciacionMonto: null,
+    valorReposicionNeto: null,
+    observaciones: '',
+  };
+}
+
+export function crearValoracionConstruccionBloqueVacio(): ValoracionConstruccionBloque {
+  return {
+    metodoDepreciacionDefault: 'manual',
+    observaciones: '',
+    items: [],
+    totalReposicionNuevo: null,
+    totalDepreciacion: null,
+    totalReposicionNeto: null,
+  };
+}
+
 export function crearHomologacionComparableVacio(
   comparableId: string,
   base: BaseUnitariaHomologacion = 'terreno',
@@ -711,6 +801,7 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
     factoresHomologacion: [],
     homologacionBloque: crearHomologacionBloqueVacio(),
     valoracionTerrenoBloque: crearValoracionTerrenoBloqueVacio(),
+    valoracionConstruccionBloque: crearValoracionConstruccionBloqueVacio(),
     ambientes: { pendiente: true },
     fotografias: { pendiente: true },
     comparables: { pendiente: true },
@@ -788,6 +879,29 @@ export function migrarModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
     if (m.valoracionTerrenoBloque.unidadBase == null) {
       m.valoracionTerrenoBloque.unidadBase = 'm2';
       changed = true;
+    }
+  }
+  if (!m.valoracionConstruccionBloque || typeof m.valoracionConstruccionBloque !== 'object') {
+    m.valoracionConstruccionBloque = crearValoracionConstruccionBloqueVacio();
+    changed = true;
+  } else {
+    if (!Array.isArray(m.valoracionConstruccionBloque.items)) {
+      m.valoracionConstruccionBloque.items = [];
+      changed = true;
+    }
+    if (m.valoracionConstruccionBloque.metodoDepreciacionDefault == null) {
+      m.valoracionConstruccionBloque.metodoDepreciacionDefault = 'manual';
+      changed = true;
+    }
+    for (const item of m.valoracionConstruccionBloque.items) {
+      if (item.metodoDepreciacion == null) {
+        item.metodoDepreciacion = 'manual';
+        changed = true;
+      }
+      if (item.unidad == null) {
+        item.unidad = 'm2';
+        changed = true;
+      }
     }
   }
   return changed ? { ...m } : m;

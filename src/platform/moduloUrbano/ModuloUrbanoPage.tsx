@@ -21,6 +21,8 @@ import {
   crearHomologacionComparableVacio,
   crearFactorHomologacionDetalle,
   crearValoracionTerrenoItem,
+  crearValoracionConstruccionItem,
+  METODO_DEPRECIACION_OPCIONES,
   FACTORES_HOMOLOGACION_DEF,
   UNIDAD_BASE_VALOR_OPCIONES,
   type AmbienteItem,
@@ -44,9 +46,18 @@ import {
   type TipoAmbienteUrbano,
   type UnidadAreaUrbano,
   type UnidadBaseValor,
+  type MetodoDepreciacionConstruccion,
+  type ValoracionConstruccionBloque,
+  type ValoracionConstruccionItem,
   type ValoracionTerrenoBloque,
   type ValoracionTerrenoItem,
 } from './moduloUrbanoTypes';
+import {
+  calcularValoracionConstruccionItem,
+  calcularTotalesValoracionConstruccion,
+  fraccionAPorcentajeUI,
+  porcentajeUIAFraccion,
+} from './valoracionConstruccionCalc';
 import { getExpedientesIndiceINMOVAL } from '../expedientes/expedienteIndexStorage';
 import {
   listarComparablesParaModuloUrbano,
@@ -295,9 +306,15 @@ export default function ModuloUrbanoPage() {
     }
 
     const hb = modulo.homologacionBloque;
+    const vcb = modulo.valoracionConstruccionBloque;
+    const totalesConstr = calcularTotalesValoracionConstruccion(vcb.items);
     const needsHomolog = hb.valorUnitarioPromedio !== promedio || hb.valorUnitarioMediana !== mediana;
     const needsVal = vb.valorTerrenoTotal !== valorTerrenoTotal || vb.areaTotalConsiderada !== areaTotalConsiderada;
-    if (!needsHomolog && !needsVal) return;
+    const needsValConstr =
+      vcb.totalReposicionNuevo !== totalesConstr.totalReposicionNuevo ||
+      vcb.totalDepreciacion !== totalesConstr.totalDepreciacion ||
+      vcb.totalReposicionNeto !== totalesConstr.totalReposicionNeto;
+    if (!needsHomolog && !needsVal && !needsValConstr) return;
 
     setModulo((prev) => {
       if (!prev) return prev;
@@ -309,6 +326,9 @@ export default function ModuloUrbanoPage() {
         valoracionTerrenoBloque: needsVal
           ? { ...prev.valoracionTerrenoBloque, valorTerrenoTotal, areaTotalConsiderada }
           : prev.valoracionTerrenoBloque,
+        valoracionConstruccionBloque: needsValConstr
+          ? { ...prev.valoracionConstruccionBloque, ...totalesConstr }
+          : prev.valoracionConstruccionBloque,
       };
     });
   }, [modulo]);
@@ -374,6 +394,10 @@ export default function ModuloUrbanoPage() {
       ...prev,
       construccionesDetalle: prev.construccionesDetalle.filter((c) => c.id !== id),
       ambientesDetalle: prev.ambientesDetalle.filter((a) => a.construccionId !== id),
+      valoracionConstruccionBloque: {
+        ...prev.valoracionConstruccionBloque,
+        items: prev.valoracionConstruccionBloque.items.filter((i) => i.construccionId !== id),
+      },
     } : prev);
   }
 
@@ -599,7 +623,68 @@ export default function ModuloUrbanoPage() {
     } : prev);
   }
 
-
+  // ── Valoración de construcción (F3A) ─────────────────────────────────────
+  function patchValoracionConstruccionBloque(patchV: Partial<ValoracionConstruccionBloque>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionConstruccionBloque: { ...prev.valoracionConstruccionBloque, ...patchV },
+    } : prev);
+  }
+  function ensureValoracionConstruccionItem(construccionId: string) {
+    setModulo((prev) => {
+      if (!prev) return prev;
+      if (prev.valoracionConstruccionBloque.items.some((i) => i.construccionId === construccionId)) {
+        return prev;
+      }
+      const construccion = prev.construccionesDetalle.find((c) => c.id === construccionId);
+      const nuevo = crearValoracionConstruccionItem(
+        construccionId,
+        prev.valoracionConstruccionBloque.metodoDepreciacionDefault,
+      );
+      if (construccion) {
+        if (construccion.areaConstruida != null) nuevo.areaConstruida = construccion.areaConstruida;
+        if (construccion.edadAparente != null) nuevo.edad = construccion.edadAparente;
+        else if (construccion.anioConstruccion != null) {
+          const edadCalc = new Date().getFullYear() - construccion.anioConstruccion;
+          if (edadCalc >= 0) nuevo.edad = edadCalc;
+        }
+        if (construccion.vidaUtilEstimada != null) nuevo.vidaUtil = construccion.vidaUtilEstimada;
+        if (construccion.estadoConservacion) nuevo.estadoConservacion = construccion.estadoConservacion;
+      }
+      return {
+        ...prev,
+        valoracionConstruccionBloque: {
+          ...prev.valoracionConstruccionBloque,
+          items: [...prev.valoracionConstruccionBloque.items, calcularValoracionConstruccionItem(nuevo)],
+        },
+      };
+    });
+  }
+  function updateValoracionConstruccionItem(
+    construccionId: string,
+    patchI: Partial<ValoracionConstruccionItem>,
+  ) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionConstruccionBloque: {
+        ...prev.valoracionConstruccionBloque,
+        items: prev.valoracionConstruccionBloque.items.map((i) =>
+          i.construccionId === construccionId
+            ? calcularValoracionConstruccionItem({ ...i, ...patchI })
+            : i,
+        ),
+      },
+    } : prev);
+  }
+  function removeValoracionConstruccionItem(construccionId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionConstruccionBloque: {
+        ...prev.valoracionConstruccionBloque,
+        items: prev.valoracionConstruccionBloque.items.filter((i) => i.construccionId !== construccionId),
+      },
+    } : prev);
+  }
 
   function guardar() {
     if (!modulo) return;
@@ -736,6 +821,316 @@ export default function ModuloUrbanoPage() {
   }
   const recalcularValorUnitarioAdoptado = recalcularValoracionTerreno;
 
+  // ── Valoración de construcción (F3A): cómputos preliminares ──────────────
+  const valConstrBloque = modulo.valoracionConstruccionBloque;
+  const valoracionConstruccionRows = modulo.construccionesDetalle.map((c) => {
+    const raw = valConstrBloque.items.find((i) => i.construccionId === c.id) ?? null;
+    const item = raw ? calcularValoracionConstruccionItem(raw) : null;
+    return { construccion: c, item };
+  });
+  const totalesConstruccion = calcularTotalesValoracionConstruccion(valConstrBloque.items);
+
+  function renderValoracionConstruccion(enfoque: 'costo' | 'depreciacion') {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+          <p className="text-sm font-semibold text-slate-200">
+            {enfoque === 'costo' ? 'Costo de reposición (F3A)' : 'Depreciación de construcción (F3A)'}
+          </p>
+          <p className="mt-1 text-[11px] leading-5 text-slate-500">
+            Valor de reposición nuevo (VRN), depreciación y VRN neto por construcción.
+            {enfoque === 'depreciacion'
+              ? ' En esta pestaña el foco es edad, vida útil, método y porcentaje de depreciación.'
+              : ' Capturá el valor unitario de reposición y el área construida por ítem.'}
+            {' '}No calcula todavía el valor final total del inmueble.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Parámetros del bloque</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Método de depreciación por defecto">
+              <select
+                className={inputClass()}
+                value={valConstrBloque.metodoDepreciacionDefault}
+                onChange={(e) => patchValoracionConstruccionBloque({
+                  metodoDepreciacionDefault: e.target.value as MetodoDepreciacionConstruccion,
+                })}
+              >
+                {METODO_DEPRECIACION_OPCIONES.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Observaciones del bloque">
+              <textarea
+                className={inputClass()}
+                rows={2}
+                value={valConstrBloque.observaciones}
+                onChange={(e) => patchValoracionConstruccionBloque({ observaciones: e.target.value })}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Construcciones valoradas ({valoracionConstruccionRows.length})
+          </p>
+          {valoracionConstruccionRows.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-700 p-4 text-xs text-slate-500">
+              No hay construcciones registradas. Volvé a la sección <span className="text-slate-300">Construcciones</span> y agregá al menos una.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {valoracionConstruccionRows.map(({ construccion: c, item }) => {
+                const cargado = Boolean(item);
+                const metodo = item?.metodoDepreciacion ?? valConstrBloque.metodoDepreciacionDefault;
+                const pctLineal =
+                  metodo === 'lineal' &&
+                  item?.edad != null &&
+                  item?.vidaUtil != null &&
+                  item.vidaUtil > 0
+                    ? Math.min(Math.max(item.edad / item.vidaUtil, 0), 1)
+                    : null;
+                return (
+                  <div key={c.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+                    <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-100">
+                          {c.codigo || c.nombre || `Construcción ${c.id.slice(-4)}`}
+                          {c.tipo && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">{c.tipo}</span>
+                          )}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Área registrada: {c.areaConstruida != null ? `${c.areaConstruida} m²` : '—'}
+                          {c.sistemaConstructivo ? ` · ${c.sistemaConstructivo}` : ''}
+                        </p>
+                      </div>
+                      {!cargado ? (
+                        <button
+                          type="button"
+                          onClick={() => ensureValoracionConstruccionItem(c.id)}
+                          className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[11px] text-cyan-100 hover:bg-cyan-400/20"
+                        >
+                          Activar valoración
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => removeValoracionConstruccionItem(c.id)}
+                          className="text-[11px] text-rose-300 hover:text-rose-200"
+                        >
+                          Quitar valoración
+                        </button>
+                      )}
+                    </div>
+
+                    {cargado && item && (
+                      <>
+                        <div className="grid gap-2 sm:grid-cols-12">
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>Área construida</span>
+                            <input
+                              type="number"
+                              className={inputClass()}
+                              value={item.areaConstruida ?? ''}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                areaConstruida: e.target.value === '' ? null : Number(e.target.value),
+                              })}
+                            />
+                          </div>
+                          <div className="sm:col-span-1">
+                            <span className={labelClass()}>Unidad</span>
+                            <select
+                              className={inputClass()}
+                              value={item.unidad}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                unidad: e.target.value as UnidadAreaUrbano,
+                              })}
+                            >
+                              {UNIDAD_AREA_OPCIONES.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>V.U. reposición</span>
+                            <input
+                              type="number"
+                              className={inputClass()}
+                              value={item.valorUnitarioReposicion ?? ''}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                valorUnitarioReposicion: e.target.value === '' ? null : Number(e.target.value),
+                              })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>Edad (años)</span>
+                            <input
+                              type="number"
+                              className={inputClass()}
+                              value={item.edad ?? ''}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                edad: e.target.value === '' ? null : Number(e.target.value),
+                              })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>Vida útil (años)</span>
+                            <input
+                              type="number"
+                              className={inputClass()}
+                              value={item.vidaUtil ?? ''}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                vidaUtil: e.target.value === '' ? null : Number(e.target.value),
+                              })}
+                            />
+                          </div>
+                          <div className="sm:col-span-3">
+                            <span className={labelClass()}>Estado conservación</span>
+                            <input
+                              className={inputClass()}
+                              value={item.estadoConservacion}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                estadoConservacion: e.target.value,
+                              })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>Coef. conservación</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              className={inputClass()}
+                              value={item.coeficienteConservacion ?? ''}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                coeficienteConservacion: e.target.value === '' ? null : Number(e.target.value),
+                              })}
+                              placeholder="Reservado F3B"
+                            />
+                          </div>
+                          <div className="sm:col-span-3">
+                            <span className={labelClass()}>Método depreciación</span>
+                            <select
+                              className={inputClass()}
+                              value={item.metodoDepreciacion}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                metodoDepreciacion: e.target.value as MetodoDepreciacionConstruccion,
+                              })}
+                            >
+                              {METODO_DEPRECIACION_OPCIONES.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className={labelClass()}>Depreciación %</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              className={inputClass()}
+                              value={
+                                metodo === 'lineal' && pctLineal != null
+                                  ? fraccionAPorcentajeUI(pctLineal)
+                                  : fraccionAPorcentajeUI(item.depreciacionPorcentaje)
+                              }
+                              readOnly={metodo === 'lineal'}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                depreciacionPorcentaje: porcentajeUIAFraccion(e.target.value),
+                              })}
+                              placeholder={metodo === 'ross_heidecke_pendiente' ? 'Manual hasta F3B' : '0–100'}
+                            />
+                          </div>
+                          <div className="sm:col-span-5">
+                            <span className={labelClass()}>Observaciones</span>
+                            <input
+                              className={inputClass()}
+                              value={item.observaciones}
+                              onChange={(e) => updateValoracionConstruccionItem(c.id, {
+                                observaciones: e.target.value,
+                              })}
+                            />
+                          </div>
+                        </div>
+
+                        {metodo === 'ross_heidecke_pendiente' && (
+                          <p className="mt-2 rounded border border-amber-400/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-200">
+                            Ross-Heidecke complejo pendiente (F3B). Se usa depreciación manual capturada o 0 %.
+                          </p>
+                        )}
+
+                        <div className="mt-3 grid gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-3">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">VRN</p>
+                            <p className="text-sm font-semibold text-slate-100">
+                              {item.valorReposicionNuevo != null
+                                ? item.valorReposicionNuevo.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                : '—'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">Depreciación</p>
+                            <p className="text-sm font-semibold text-amber-200">
+                              {item.depreciacionMonto != null
+                                ? item.depreciacionMonto.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                : '—'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">VRN neto</p>
+                            <p className="text-sm font-semibold text-emerald-200">
+                              {item.valorReposicionNeto != null
+                                ? item.valorReposicionNeto.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Totales del bloque</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">Total VRN</p>
+              <p className="text-sm font-semibold text-slate-100">
+                {(totalesConstruccion.totalReposicionNuevo ?? valConstrBloque.totalReposicionNuevo) != null
+                  ? (totalesConstruccion.totalReposicionNuevo ?? valConstrBloque.totalReposicionNuevo)!.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">Total depreciación</p>
+              <p className="text-sm font-semibold text-amber-200">
+                {(totalesConstruccion.totalDepreciacion ?? valConstrBloque.totalDepreciacion) != null
+                  ? (totalesConstruccion.totalDepreciacion ?? valConstrBloque.totalDepreciacion)!.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">Total VRN neto</p>
+              <p className="text-sm font-semibold text-emerald-200">
+                {(totalesConstruccion.totalReposicionNeto ?? valConstrBloque.totalReposicionNeto) != null
+                  ? (totalesConstruccion.totalReposicionNeto ?? valConstrBloque.totalReposicionNeto)!.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                  : '—'}
+              </p>
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            F3A: fórmulas permitidas — VRN = área × V.U.; depreciación = VRN × %; VRN neto = VRN − depreciación.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
@@ -1933,10 +2328,10 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
             {seccionActiva === 'costo_reposicion' && (requiereConstruccion
-              ? <PlaceholderSection titulo="Costo / reposición (F3)" />
+              ? renderValoracionConstruccion('costo')
               : <NoAplicaNotice motivo="Lote vacío: no aplica costo de reposición de construcción." />)}
             {seccionActiva === 'depreciacion' && (requiereConstruccion
-              ? <PlaceholderSection titulo="Depreciación (F3)" />
+              ? renderValoracionConstruccion('depreciacion')
               : <NoAplicaNotice motivo="Lote vacío: no aplica depreciación de construcción." />)}
             {seccionActiva === 'calculo_final' && (
               <div className="space-y-4">
