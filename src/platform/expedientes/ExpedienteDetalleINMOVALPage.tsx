@@ -343,6 +343,18 @@ export default function ExpedienteDetalleINMOVALPage() {
   const [fechaInspeccionInput, setFechaInspeccionInput] = useState('');
   const [motivoInspeccionInput, setMotivoInspeccionInput] = useState('');
   const [inspeccionMensaje, setInspeccionMensaje] = useState('');
+  // ── Editor financiero ──
+  const [pagoMonto, setPagoMonto] = useState('');
+  const [pagoFecha, setPagoFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [pagoMetodo, setPagoMetodo] = useState('Transferencia');
+  const [pagoReferencia, setPagoReferencia] = useState('');
+  const [gastoMonto, setGastoMonto] = useState('');
+  const [gastoConcepto, setGastoConcepto] = useState('');
+  const [gastoFecha, setGastoFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [gastoCategoria, setGastoCategoria] = useState('Operativo');
+  const [facturaNumero, setFacturaNumero] = useState('');
+  const [facturaFecha, setFacturaFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [finanzasMensaje, setFinanzasMensaje] = useState('');
   const { id } = useParams();
   const navigate = useNavigate();
 
