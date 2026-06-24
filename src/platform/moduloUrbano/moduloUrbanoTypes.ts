@@ -376,6 +376,46 @@ export interface HomologacionBloque {
   observacionesHomologacion: string;
 }
 
+// ── Valoración de terreno (F2C) ──────────────────────────────────────────────
+
+export type UnidadBaseValor = 'm2' | 'vara2' | 'mz' | 'ha';
+
+export const UNIDAD_BASE_VALOR_OPCIONES: ReadonlyArray<{ value: UnidadBaseValor; label: string }> = [
+  { value: 'm2', label: 'm²' },
+  { value: 'vara2', label: 'vara²' },
+  { value: 'mz', label: 'manzana' },
+  { value: 'ha', label: 'hectárea' },
+];
+
+/**
+ * Valoración individual por terreno del sujeto. Se vincula a un TerrenoItem por
+ * terrenoId. Permite incluir/excluir terrenos del cálculo final.
+ */
+export interface ValoracionTerrenoItem {
+  id: string;
+  terrenoId: string;
+  incluyeEnValorTerreno: boolean;
+  areaHomologable: number | null;
+  /** Si es null, se usa el valor unitario adoptado del bloque. */
+  valorUnitarioAplicado: number | null;
+  /** Si es null o 1, no se ajusta. */
+  factorAjusteManual: number | null;
+  justificacionValor: string;
+  observaciones: string;
+}
+
+export interface ValoracionTerrenoBloque {
+  criterioAdopcion: CriterioAdopcionHomologacion;
+  valorUnitarioAdoptado: number | null;
+  unidadBase: UnidadBaseValor;
+  justificacionTecnica: string;
+  observaciones: string;
+  items: ValoracionTerrenoItem[];
+  /** Derivados, persistidos para informe/historial. */
+  valorTerrenoTotal: number | null;
+  areaTotalConsiderada: number | null;
+}
+
 export interface PlaceholderModuloUrbano {
   pendiente: true;
   notas?: string;
