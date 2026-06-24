@@ -1,4 +1,3 @@
-@'
 import {
   InmovalFileExtension,
   InmovalFileKind,
@@ -46,4 +45,3 @@ export function stringifyInmovalFile(data: unknown) {
 export function buildInmovalMimeType() {
   return 'application/json;charset=utf-8';
 }
-'@ | Set-Content -Path "src\files\inmovalFileUtils.ts" -Encoding UTF8

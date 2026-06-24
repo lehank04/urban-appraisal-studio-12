@@ -1,4 +1,3 @@
-@'
 import { CotizacionINMOVAL } from '@/platform/cotizaciones/cotizacionTypes';
 import { ExpedienteINMOVAL } from '@/platform/expedientes/expedienteTypes';
 import { RevisionAvaluoINMOVAL } from '@/platform/expedientes/revisionTypes';
@@ -45,4 +44,3 @@ export function buildIMVFileName(expediente: ExpedienteINMOVAL) {
     codigo: expediente.codigo || expediente.id || 'EXPEDIENTE',
   });
 }
-'@ | Set-Content -Path "src\files\imv\imvBuilders.ts" -Encoding UTF8

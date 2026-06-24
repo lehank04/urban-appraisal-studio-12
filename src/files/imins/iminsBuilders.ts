@@ -1,4 +1,3 @@
-@'
 import { buildInmovalFileName } from '@/shared/storage/fileContracts';
 import { nowISO } from '@/shared/utils/dateUtils';
 import {
@@ -42,4 +41,3 @@ export function buildIMINSFileName(inspeccion: InspeccionCampoINMOVAL) {
     codigo: inspeccion.codigo || inspeccion.id || 'INSPECCION',
   });
 }
-'@ | Set-Content -Path "src\files\imins\iminsBuilders.ts" -Encoding UTF8

@@ -1,4 +1,3 @@
-@'
 import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
 import { buildInmovalFileName } from '@/shared/storage/fileContracts';
 import { nowISO } from '@/shared/utils/dateUtils';
@@ -41,4 +40,3 @@ export function buildIMMODFileName(manifest: ModuloTecnicoManifest) {
     codigo: manifest.id || 'MODULO',
   });
 }
-'@ | Set-Content -Path "src\files\immod\immodBuilders.ts" -Encoding UTF8
