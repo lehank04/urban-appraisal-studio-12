@@ -525,6 +525,54 @@ export function crearComparablesBloqueVacio(): ComparablesBloque {
   };
 }
 
+export function crearHomologacionBloqueVacio(): HomologacionBloque {
+  return {
+    comparables: [],
+    valorUnitarioPromedio: null,
+    valorUnitarioMediana: null,
+    valorUnitarioAdoptado: null,
+    criterioAdopcion: 'pendiente',
+    observacionesHomologacion: '',
+  };
+}
+
+export function crearHomologacionComparableVacio(
+  comparableId: string,
+  base: BaseUnitariaHomologacion = 'terreno',
+): HomologacionComparable {
+  return {
+    comparableId,
+    baseUnitaria: base,
+    precioBase: null,
+    precioUnitarioBaseManual: null,
+    observaciones: '',
+    factores: [],
+    fechaActualizacion: new Date().toISOString(),
+  };
+}
+
+export function crearFactorHomologacionDetalle(
+  comparableId: string,
+  tipo: TipoFactorHomologacion,
+  nombre?: string,
+): FactorHomologacionDetalle {
+  const def = FACTORES_HOMOLOGACION_DEF.find((d) => d.tipo === tipo);
+  return {
+    id: uid('fac'),
+    comparableId,
+    tipoFactor: tipo,
+    nombre: nombre ?? def?.nombre ?? 'Factor',
+    valorSujeto: '',
+    valorComparable: '',
+    coeficiente: 1,
+    ponderacion: null,
+    aplica: true,
+    justificacion: '',
+    origen: 'manual',
+    fechaActualizacion: new Date().toISOString(),
+  };
+}
+
 export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpediente {
   const now = new Date().toISOString();
   const estadosSeccion = SECCIONES_MODULO_URBANO.reduce(
