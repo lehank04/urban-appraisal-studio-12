@@ -2058,7 +2058,7 @@ export default function ModuloUrbanoPage() {
                   ) : (
                     <div className="space-y-2">
                       {valoracionRows.map((row) => {
-                        const { terreno: t, item, vuAplicado, factor, area, valorParcial } = row;
+                        const { terreno: t, item, vuAplicado, factor, area, valorParcial, aviso } = row;
                         const cargado = Boolean(item);
                         return (
                           <div key={t.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
@@ -2069,8 +2069,13 @@ export default function ModuloUrbanoPage() {
                                   <span className="ml-2 text-[10px] uppercase tracking-wide text-slate-500">{t.tipo}</span>
                                 </p>
                                 <p className="text-[11px] text-slate-500">
-                                  Área registrada: {t.area != null ? `${t.area} ${t.unidad}` : '—'}
+                                  Área registrada: {t.area != null ? `${t.area} ${nombreUnidad(t.unidad)}` : '—'}
                                 </p>
+                                {aviso && (
+                                  <p className="mt-1 rounded border border-amber-400/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-200">
+                                    ⚠ {aviso}
+                                  </p>
+                                )}
                               </div>
                               {!cargado ? (
                                 <button
