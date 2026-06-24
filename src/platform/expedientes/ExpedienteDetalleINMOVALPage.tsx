@@ -906,22 +906,22 @@ export default function ExpedienteDetalleINMOVALPage() {
               </Chip>
             }
           >
-            {!moduloVinculado ? (
-              <div className="mb-5 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4">
-                <p className="text-sm font-semibold text-amber-100">
-                  Módulo técnico pendiente de conexión
-                </p>
-                <p className="mt-1 text-xs leading-5 text-amber-100/80">
-                  Cuando se vincule el módulo técnico, las tarjetas inferiores se activarán como áreas de trabajo del avalúo.
-                </p>
-                <Link
-                  to="/modulos"
-                  className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-400/20"
-                >
-                  <Wrench className="h-3.5 w-3.5" /> Ir a Módulos técnicos
-                </Link>
-              </div>
-            ) : null}
+            <div className="mb-5 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
+              <p className="text-sm font-semibold text-cyan-100">
+                Módulo Técnico Urbano
+              </p>
+              <p className="mt-1 text-xs leading-5 text-cyan-100/80">
+                Captura técnica del avalúo urbano: identificación, legal, entorno, terreno,
+                construcciones y comparables. Cálculos y generación de informe se habilitarán
+                por fases.
+              </p>
+              <Link
+                to={`/expedientes-plataforma/${expediente.id}/modulo-urbano`}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs font-medium text-cyan-100 hover:bg-cyan-400/20"
+              >
+                <Wrench className="h-3.5 w-3.5" /> Abrir módulo urbano
+              </Link>
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
               {MODULO_TILES.map((t) => (
