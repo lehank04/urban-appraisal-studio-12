@@ -14,6 +14,8 @@ export function getEstadoExpedienteLabel(estado: EstadoExpedienteINMOVAL) {
     en_inspeccion: 'En inspección',
     en_elaboracion: 'En elaboración',
     en_revision: 'En revisión',
+    avaluo_en_revision: 'Avalúo en revisión',
+    listo_para_entrega: 'Listo para entrega',
     correcciones: 'Correcciones',
     aprobado: 'Aprobado',
     entregado: 'Entregado',
@@ -53,7 +55,9 @@ export function getModuloLabel(modulo: TipoModuloTecnico) {
     rural: 'Rural',
     maquinaria: 'Maquinaria',
     vehiculo: 'Vehículos',
+    vehiculos: 'Vehículos',
     especial: 'Especiales',
+    especiales: 'Especiales',
   };
 
   return labels[modulo];

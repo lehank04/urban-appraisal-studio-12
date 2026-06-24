@@ -269,7 +269,7 @@ export default function ExpedientesINMOVALPage() {
     reader.readAsText(file);
   }
 
-  function handleCambiarEstado() {
+  function handleCambiarEstado(_expediente?: ExpedienteIndiceINMOVAL) {
     // Estado controlado automáticamente por flujo.
   }
 

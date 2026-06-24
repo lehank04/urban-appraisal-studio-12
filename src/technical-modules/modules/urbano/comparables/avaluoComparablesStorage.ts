@@ -97,8 +97,8 @@ export function getAvaluoComparablesPorMercadoINMOVAL(
 export function addComparableToAvaluoINMOVAL(
   avaluoId: string,
   comparable: ComparableIndiceINMOVAL,
-  tipoMercado: TipoMercadoAvaluoINMOVAL,
-  origen: OrigenComparableAvaluoINMOVAL
+  tipoMercado: TipoMercadoAvaluoINMOVAL = 'construido',
+  origen: OrigenComparableAvaluoINMOVAL = 'base_datos'
 ) {
   const all = getAllAvaluoComparablesINMOVAL();
   const existente = all.find(

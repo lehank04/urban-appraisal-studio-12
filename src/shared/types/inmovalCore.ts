@@ -15,7 +15,9 @@ export type TipoModuloTecnico =
   | 'rural'
   | 'maquinaria'
   | 'vehiculo'
-  | 'especial';
+  | 'vehiculos'
+  | 'especial'
+  | 'especiales';
 
 export type EstadoModuloTecnico =
   | 'activo'
@@ -36,6 +38,8 @@ export type EstadoExpedienteINMOVAL =
   | 'en_inspeccion'
   | 'en_elaboracion'
   | 'en_revision'
+  | 'avaluo_en_revision'
+  | 'listo_para_entrega'
   | 'correcciones'
   | 'aprobado'
   | 'entregado'

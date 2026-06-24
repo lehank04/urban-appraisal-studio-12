@@ -22,6 +22,8 @@ import ExpedienteDetalleINMOVALPage from '@/platform/expedientes/ExpedienteDetal
 import CotizacionesINMOVALPage from '@/platform/cotizaciones/CotizacionesINMOVALPage';
 import ConfiguracionINMOVALPage from '@/platform/configuracion/ConfiguracionINMOVALPage';
 import ModulosINMOVALPage from '@/platform/modulos/ModulosINMOVALPage';
+import ModuloContablePage from '@/platform/contable/ModuloContablePage';
+import BibliotecaPage from '@/platform/biblioteca/BibliotecaPage';
 
 const queryClient = new QueryClient();
 
@@ -37,22 +39,28 @@ const App = () => (
             <Route path="/" element={<Navigate to="/plataforma" replace />} />
 
             <Route path="/plataforma" element={<DashboardINMOVALPage />} />
+
+            {/* Hubs nuevos */}
+            <Route path="/contable" element={<ModuloContablePage />} />
+            <Route path="/biblioteca" element={<BibliotecaPage />} />
+
+            {/* Expedientes y avalúos */}
             <Route path="/expedientes-plataforma" element={<ExpedientesINMOVALPage />} />
             <Route path="/expedientes-plataforma/configuracion" element={<ConfiguracionExpedientesINMOVALPage />} />
             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
             <Route path="/expedientes-plataforma/importar" element={<ImportarExpedienteIMVPage />} />
             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
+
+            {/* Operación financiera */}
             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
             <Route path="/cotizaciones/configuracion" element={<ConfiguracionCotizacionesINMOVALPage />} />
+
+            {/* Configuración */}
             <Route path="/configuracion-plataforma" element={<ConfiguracionINMOVALPage />} />
+
+            {/* Biblioteca / catálogos */}
             <Route path="/modulos" element={<ModulosINMOVALPage />} />
             <Route path="/comparables" element={<ComparablesINMOVALPage />} />
-
-            
-            
-            
-            
-
             <Route path="/clientes" element={<ClientesPage />} />
             <Route path="/peritos" element={<PeritosPage />} />
 

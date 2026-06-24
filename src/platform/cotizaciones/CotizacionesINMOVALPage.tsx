@@ -21,7 +21,16 @@ type EstadoCotizacionINMOVAL =
   | 'enviada'
   | 'aprobada'
   | 'rechazada'
-  | 'convertida';
+  | 'convertida'
+  | 'avaluo_en_proceso'
+  | 'avaluo_finalizado'
+  | 'factura_emitida';
+
+type GastoCotizacionItem = {
+  id: string;
+  concepto: string;
+  monto: number;
+};
 
 type MonedaCotizacionINMOVAL = 'US$' | 'C$';
 
@@ -93,6 +102,12 @@ type CotizacionINMOVALLocal = {
   cotizacionOrigenId?: string;
   cotizacionOrigenNumero?: string;
   historialRevisiones?: CotizacionRevisionHistorial[];
+
+  otrosGastos?: number;
+  otrosGastosItems?: GastoCotizacionItem[];
+  aplicaIVA?: boolean;
+  ivaPorcentaje?: number;
+  impuestos?: number;
 
   creadoEn: string;
   actualizadoEn: string;

@@ -189,6 +189,12 @@ export default function ExpedienteDetalleINMOVALPage() {
   const [bitacoraAbierta, setBitacoraAbierta] = useState(false);
   const [estadoModalAbierto, setEstadoModalAbierto] = useState(false);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
+  const cerrarModalEstado = () => setEstadoModalAbierto(false);
+  const guardarEstadoDesdeModal = () => {
+    // Estado controlado automáticamente por flujo; el cambio manual queda
+    // como acción no destructiva hasta que el módulo técnico tome el control.
+    setEstadoModalAbierto(false);
+  };
   const [inspeccionEditorAbierto, setInspeccionEditorAbierto] = useState(false);
   const [fechaInspeccionInput, setFechaInspeccionInput] = useState('');
   const [motivoInspeccionInput, setMotivoInspeccionInput] = useState('');
