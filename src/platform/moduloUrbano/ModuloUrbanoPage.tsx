@@ -622,6 +622,52 @@ export default function ModuloUrbanoPage() {
     }
   }
 
+  // ── Valoración de terreno (F2C): cómputos preliminares ───────────────────
+  const valBloque = modulo.valoracionTerrenoBloque;
+  const valorUnitarioCriterio =
+    valBloque.criterioAdopcion === 'promedio' ? promedioHomologado :
+    valBloque.criterioAdopcion === 'mediana' ? medianaHomologada :
+    valBloque.criterioAdopcion === 'manual' ? valBloque.valorUnitarioAdoptado :
+    null;
+
+  const valoracionRows = modulo.terrenos.map((t) => {
+    const item = valBloque.items.find((i) => i.terrenoId === t.id) ?? null;
+    const vuAplicado = item?.valorUnitarioAplicado ?? valBloque.valorUnitarioAdoptado ?? valorUnitarioCriterio ?? null;
+    const factor = item?.factorAjusteManual ?? 1;
+    const area = item?.areaHomologable ?? null;
+    const valorParcial = area != null && vuAplicado != null && Number.isFinite(area) && Number.isFinite(vuAplicado)
+      ? area * vuAplicado * (factor || 1)
+      : null;
+    return { terreno: t, item, vuAplicado, factor, area, valorParcial };
+  });
+
+  const incluidos = valoracionRows.filter((r) => r.item?.incluyeEnValorTerreno);
+  const valorTerrenoTotal = incluidos.reduce<number | null>((acc, r) => {
+    if (r.valorParcial == null) return acc;
+    return (acc ?? 0) + r.valorParcial;
+  }, null);
+  const areaTotalConsiderada = incluidos.reduce<number | null>((acc, r) => {
+    if (r.area == null) return acc;
+    return (acc ?? 0) + r.area;
+  }, null);
+
+  // Persistencia diferida de totales
+  if (
+    valBloque.valorTerrenoTotal !== valorTerrenoTotal ||
+    valBloque.areaTotalConsiderada !== areaTotalConsiderada
+  ) {
+    setTimeout(() => {
+      patchValoracionTerrenoBloque({ valorTerrenoTotal, areaTotalConsiderada });
+    }, 0);
+  }
+
+  function recalcularValorUnitarioAdoptado() {
+    const next =
+      valBloque.criterioAdopcion === 'promedio' ? promedioHomologado :
+      valBloque.criterioAdopcion === 'mediana' ? medianaHomologada :
+      valBloque.valorUnitarioAdoptado;
+    patchValoracionTerrenoBloque({ valorUnitarioAdoptado: next });
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
