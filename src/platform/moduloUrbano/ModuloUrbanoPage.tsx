@@ -418,6 +418,17 @@ export default function ModuloUrbanoPage() {
   ];
   const listoParaF2 = validaciones.every((v) => v.ok);
 
+  // Adaptador de comparables (F2A)
+  const comparablesDisponibles = useMemo(() => listarComparablesParaModuloUrbano(), [modulo.fechaActualizacion]);
+  const comparablesFiltrados = useMemo(
+    () => filtrarComparablesParaModuloUrbano(comparablesDisponibles, modulo.comparablesBloque.filtros),
+    [comparablesDisponibles, modulo.comparablesBloque.filtros],
+  );
+  const idsSeleccionados = new Set(modulo.comparablesBloque.seleccionados.map((s) => s.comparableId));
+  const idsDescartados = new Set(modulo.comparablesBloque.descartados.map((d) => d.comparableId));
+
+
+
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
