@@ -382,9 +382,100 @@ export default function ModuloUrbanoPage() {
   }
 
 
-
+  // ── Homologación (F2B) ───────────────────────────────────────────────────
+  function patchHomologacionBloque(patchH: Partial<HomologacionBloque>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: { ...prev.homologacionBloque, ...patchH },
+    } : prev);
+  }
+  function ensureHomologacionComparable(comparableId: string, base: BaseUnitariaHomologacion = 'terreno') {
+    setModulo((prev) => {
+      if (!prev) return prev;
+      if (prev.homologacionBloque.comparables.some((c) => c.comparableId === comparableId)) return prev;
+      return {
+        ...prev,
+        homologacionBloque: {
+          ...prev.homologacionBloque,
+          comparables: [...prev.homologacionBloque.comparables, crearHomologacionComparableVacio(comparableId, base)],
+        },
+      };
+    });
+  }
+  function updateHomologacionComparable(comparableId: string, patchHC: Partial<HomologacionComparable>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: {
+        ...prev.homologacionBloque,
+        comparables: prev.homologacionBloque.comparables.map((c) =>
+          c.comparableId === comparableId ? { ...c, ...patchHC, fechaActualizacion: new Date().toISOString() } : c,
+        ),
+      },
+    } : prev);
+  }
+  function removeHomologacionComparable(comparableId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: {
+        ...prev.homologacionBloque,
+        comparables: prev.homologacionBloque.comparables.filter((c) => c.comparableId !== comparableId),
+      },
+    } : prev);
+  }
+  function addFactorHomologacion(comparableId: string, tipo: TipoFactorHomologacion) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: {
+        ...prev.homologacionBloque,
+        comparables: prev.homologacionBloque.comparables.map((c) =>
+          c.comparableId === comparableId
+            ? { ...c, factores: [...c.factores, crearFactorHomologacionDetalle(comparableId, tipo)] }
+            : c,
+        ),
+      },
+    } : prev);
+  }
+  function updateFactorHomologacion(comparableId: string, factorId: string, patchF: Partial<FactorHomologacionDetalle>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: {
+        ...prev.homologacionBloque,
+        comparables: prev.homologacionBloque.comparables.map((c) =>
+          c.comparableId === comparableId
+            ? {
+                ...c,
+                factores: c.factores.map((f) =>
+                  f.id === factorId ? { ...f, ...patchF, fechaActualizacion: new Date().toISOString() } : f,
+                ),
+              }
+            : c,
+        ),
+      },
+    } : prev);
+  }
+  function removeFactorHomologacion(comparableId: string, factorId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      homologacionBloque: {
+        ...prev.homologacionBloque,
+        comparables: prev.homologacionBloque.comparables.map((c) =>
+          c.comparableId === comparableId ? { ...c, factores: c.factores.filter((f) => f.id !== factorId) } : c,
+        ),
+      },
+    } : prev);
+  }
 
   function guardar() {
+    if (!modulo) return;
+    setGuardando(true);
+    try {
+      const saved = upsertModuloUrbano(modulo);
+      setModulo(saved);
+    } finally {
+      setTimeout(() => setGuardando(false), 250);
+    }
+  }
+
     if (!modulo) return;
     setGuardando(true);
     try {
