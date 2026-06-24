@@ -143,6 +143,7 @@ export interface DocumentoLegal {
   areaTerrenoEscrituraVr2: number;
   numeroCatastral: string;
   numeroRegistral: string;
+  numeroFinca?: string;
   tomo: string;
   folio: string;
   asiento: string;
