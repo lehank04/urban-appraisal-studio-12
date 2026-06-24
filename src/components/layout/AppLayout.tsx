@@ -7,18 +7,13 @@ import {
 } from 'react-router-dom';
 import {
   ArrowLeft,
-  Boxes,
   ChevronDown,
   ClipboardList,
-  Database,
-  FileText,
   Gauge,
   Library,
   Menu,
   Receipt,
   Settings,
-  UserSquare2,
-  Users,
   X,
 } from 'lucide-react';
 
@@ -37,8 +32,12 @@ type NavItem = {
   group: NavGroupId;
 };
 
+// Sidebar = mapa de módulos principales. Las herramientas internas
+// (Cotizaciones, Comparables, Clientes, Peritos, Módulos técnicos,
+// Plantillas, Precios de obra, Criterios, Facturación, Cobros, Pagos,
+// Reportes, etc.) viven dentro de sus hubs respectivos y se acceden
+// desde la página del módulo, no desde el menú global.
 const NAV_ITEMS: NavItem[] = [
-  // Centro
   {
     label: 'Centro INMOVAL',
     to: '/plataforma',
@@ -46,24 +45,13 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Torre de control técnico y operativa',
     group: 'centro',
   },
-
-  // Módulo contable
   {
     label: 'Módulo Contable',
     to: '/contable',
     icon: Receipt,
-    description: 'Cotizaciones, facturación, cobros y pagos',
+    description: 'Cotizaciones, facturación, cobros, pagos y reportes',
     group: 'contable',
   },
-  {
-    label: 'Cotizaciones',
-    to: '/cotizaciones',
-    icon: FileText,
-    description: 'Propuestas y aprobaciones',
-    group: 'contable',
-  },
-
-  // Expedientes y avalúos
   {
     label: 'Expedientes y Avalúos',
     to: '/expedientes-plataforma',
@@ -71,53 +59,22 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Visión general del avalúo y módulo técnico',
     group: 'expedientes',
   },
-
-  // Biblioteca
   {
     label: 'Biblioteca',
     to: '/biblioteca',
     icon: Library,
-    description: 'Catálogos, comparables, módulos y plantillas',
+    description: 'Comparables, clientes, plantillas y recursos técnicos',
     group: 'biblioteca',
   },
-  {
-    label: 'Base de comparables',
-    to: '/comparables',
-    icon: Database,
-    description: 'Base local de comparables',
-    group: 'biblioteca',
-  },
-  {
-    label: 'Módulos técnicos',
-    to: '/modulos',
-    icon: Boxes,
-    description: 'Módulos técnicos disponibles',
-    group: 'biblioteca',
-  },
-  {
-    label: 'Clientes',
-    to: '/clientes',
-    icon: Users,
-    description: 'Clientes registrados',
-    group: 'biblioteca',
-  },
-  {
-    label: 'Peritos',
-    to: '/peritos',
-    icon: UserSquare2,
-    description: 'Peritos registrados',
-    group: 'biblioteca',
-  },
-
-  // Configuración
   {
     label: 'Configuración',
     to: '/configuracion-plataforma',
     icon: Settings,
-    description: 'Preferencias generales',
+    description: 'Empresa, peritos, módulos técnicos y respaldo',
     group: 'configuracion',
   },
 ];
+
 
 const GROUP_ORDER: NavGroupId[] = [
   'centro',
