@@ -82,6 +82,18 @@ function PlaceholderSection({ titulo }: { titulo: string }) {
   );
 }
 
+function NoAplicaNotice({ motivo }: { motivo: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+      <p className="text-sm font-semibold text-slate-300">No aplica para este tipo de inmueble</p>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{motivo}</p>
+      <p className="mt-2 text-[11px] text-slate-600">
+        Los datos previos no se borran; sólo se ocultan mientras el tipo de inmueble lo indique.
+      </p>
+    </div>
+  );
+}
+
 export default function ModuloUrbanoPage() {
   const { id } = useParams<{ id: string }>();
   const expedienteId = id ?? '';
