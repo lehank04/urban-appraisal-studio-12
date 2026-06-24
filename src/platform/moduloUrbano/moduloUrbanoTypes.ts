@@ -178,6 +178,8 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
       barrio: '',
       direccionExacta: '',
       coordenadasGps: '',
+      referencia: '',
+      distanciaCentroUrbanoKm: null,
     },
     legal: {
       numeroEscritura: '',
