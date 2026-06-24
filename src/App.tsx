@@ -22,6 +22,8 @@ import ExpedienteDetalleINMOVALPage from '@/platform/expedientes/ExpedienteDetal
 import CotizacionesINMOVALPage from '@/platform/cotizaciones/CotizacionesINMOVALPage';
 import ConfiguracionINMOVALPage from '@/platform/configuracion/ConfiguracionINMOVALPage';
 import ModulosINMOVALPage from '@/platform/modulos/ModulosINMOVALPage';
+import ModuloContablePage from '@/platform/contable/ModuloContablePage';
+import BibliotecaPage from '@/platform/biblioteca/BibliotecaPage';
 
 const queryClient = new QueryClient();
 
