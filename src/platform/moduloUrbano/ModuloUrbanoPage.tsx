@@ -812,12 +812,18 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
 
-            {seccionActiva === 'ambientes' && <PlaceholderSection titulo="Ambientes (F1: placeholder)" />}
+            {seccionActiva === 'ambientes' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Ambientes (F1: placeholder)" />
+              : <NoAplicaNotice motivo="Lote vacío: no hay ambientes a relevar." />)}
             {seccionActiva === 'fotografias' && <PlaceholderSection titulo="Fotografías (F1: placeholder)" />}
             {seccionActiva === 'comparables' && <PlaceholderSection titulo="Comparables (F2)" />}
             {seccionActiva === 'homologacion' && <PlaceholderSection titulo="Homologación (F2)" />}
-            {seccionActiva === 'costo_reposicion' && <PlaceholderSection titulo="Costo / reposición (F3)" />}
-            {seccionActiva === 'depreciacion' && <PlaceholderSection titulo="Depreciación (F3)" />}
+            {seccionActiva === 'costo_reposicion' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Costo / reposición (F3)" />
+              : <NoAplicaNotice motivo="Lote vacío: no aplica costo de reposición de construcción." />)}
+            {seccionActiva === 'depreciacion' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Depreciación (F3)" />
+              : <NoAplicaNotice motivo="Lote vacío: no aplica depreciación de construcción." />)}
             {seccionActiva === 'calculo_final' && <PlaceholderSection titulo="Cálculo final (F4)" />}
             {seccionActiva === 'informe' && <PlaceholderSection titulo="Informe (F5)" />}
             {seccionActiva === 'anexos' && <PlaceholderSection titulo="Anexos (F6)" />}
