@@ -476,15 +476,7 @@ export default function ModuloUrbanoPage() {
     }
   }
 
-    if (!modulo) return;
-    setGuardando(true);
-    try {
-      const saved = upsertModuloUrbano(modulo);
-      setModulo(saved);
-    } finally {
-      setTimeout(() => setGuardando(false), 250);
-    }
-  }
+
 
 
 
