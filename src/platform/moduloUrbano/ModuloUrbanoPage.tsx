@@ -299,6 +299,81 @@ export default function ModuloUrbanoPage() {
     setModulo((prev) => prev ? { ...prev, comparablesBloque: { ...prev.comparablesBloque, ...patchB } } : prev);
   }
 
+  function seleccionarComparable(comparable: ComparableDisponible, notas = '') {
+    setModulo((prev) => {
+      if (!prev) return prev;
+      // Si ya estaba descartado, lo quitamos de descartados.
+      const descartados = prev.comparablesBloque.descartados.filter((d) => d.comparableId !== comparable.id);
+      // Evitar duplicados en seleccionados.
+      if (prev.comparablesBloque.seleccionados.some((s) => s.comparableId === comparable.id)) {
+        return { ...prev, comparablesBloque: { ...prev.comparablesBloque, descartados } };
+      }
+      const seleccion = {
+        id: `sel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        comparableId: comparable.id,
+        fechaSeleccion: new Date().toISOString(),
+        notas,
+      };
+      const snapshot = crearSnapshotComparable(comparable);
+      return {
+        ...prev,
+        comparablesBloque: {
+          ...prev.comparablesBloque,
+          seleccionados: [...prev.comparablesBloque.seleccionados, seleccion],
+          descartados,
+          snapshots: [...prev.comparablesBloque.snapshots, snapshot],
+        },
+      };
+    });
+  }
+
+  function quitarSeleccionado(comparableId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      comparablesBloque: {
+        ...prev.comparablesBloque,
+        seleccionados: prev.comparablesBloque.seleccionados.filter((s) => s.comparableId !== comparableId),
+        // El snapshot se conserva como evidencia histórica.
+      },
+    } : prev);
+  }
+
+  function descartarComparable(comparable: ComparableDisponible, motivo: string) {
+    setModulo((prev) => {
+      if (!prev) return prev;
+      const seleccionados = prev.comparablesBloque.seleccionados.filter((s) => s.comparableId !== comparable.id);
+      if (prev.comparablesBloque.descartados.some((d) => d.comparableId === comparable.id)) {
+        return { ...prev, comparablesBloque: { ...prev.comparablesBloque, seleccionados } };
+      }
+      const descarte = {
+        id: `dsc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        comparableId: comparable.id,
+        motivo,
+        fechaDescarte: new Date().toISOString(),
+      };
+      return {
+        ...prev,
+        comparablesBloque: {
+          ...prev.comparablesBloque,
+          seleccionados,
+          descartados: [...prev.comparablesBloque.descartados, descarte],
+        },
+      };
+    });
+  }
+
+  function quitarDescartado(comparableId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      comparablesBloque: {
+        ...prev.comparablesBloque,
+        descartados: prev.comparablesBloque.descartados.filter((d) => d.comparableId !== comparableId),
+      },
+    } : prev);
+  }
+
+
+
 
   function guardar() {
     if (!modulo) return;
