@@ -862,7 +862,8 @@ export default function ModuloUrbanoPage() {
                     }
                   />
                 </Field>
-                </div>
+
+
 
                 {/* Lista relacional de terrenos (F1.6) */}
                 <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
