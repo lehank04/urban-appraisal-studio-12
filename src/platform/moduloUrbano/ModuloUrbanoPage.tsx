@@ -167,29 +167,8 @@ export default function ModuloUrbanoPage() {
     }
   }
 
-  // Auto-sincronización de aplicabilidad según tipo de inmueble. NO borra datos:
-  // sólo cambia el estado visual de las secciones de construcción.
-  useEffect(() => {
-    if (!modulo) return;
-    const requiere = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
-    let changed = false;
-    const next = { ...modulo.estadosSeccion };
-    for (const s of SECCIONES_SOLO_CONSTRUCCION) {
-      if (requiere) {
-        if (next[s] === 'no_aplica') {
-          next[s] = 'pendiente';
-          changed = true;
-        }
-      } else if (next[s] !== 'no_aplica') {
-        next[s] = 'no_aplica';
-        changed = true;
-      }
-    }
-    if (changed) {
-      setModulo({ ...modulo, estadosSeccion: next });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modulo?.identificacion.tipoInmueble]);
+
+
 
   const requiereConstruccion = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
   const estadoActual = modulo.estadosSeccion[seccionActiva];
