@@ -1500,7 +1500,267 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
 
-            {seccionActiva === 'homologacion' && <PlaceholderSection titulo="Homologación (F2)" />}
+            {seccionActiva === 'homologacion' && (
+              <div className="space-y-4">
+                {/* Resumen */}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
+                  <p className="text-xs text-slate-300">
+                    {homologacionRows.length} comparable(s) seleccionado(s) · {precioUnitariosHomologados.length} con valor unitario homologado
+                  </p>
+                  {homologacionRows.length < 3 && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200">
+                      ⚠ Recomendado: al menos 3 comparables para homologar
+                    </span>
+                  )}
+                </div>
+
+                {homologacionRows.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-slate-700 p-4 text-xs text-slate-500">
+                    No hay comparables seleccionados. Volvé a la sección <span className="text-slate-300">Comparables</span> para seleccionar al menos uno.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {homologacionRows.map((row) => {
+                      const { sel, comparable, hc, base, precioBase, precioUnitarioBase, factorGlobal, precioUnitarioHomologado } = row;
+                      const cargado = Boolean(hc);
+                      return (
+                        <div key={sel.comparableId} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-100">
+                                {comparable ? resumenComparable(comparable) : sel.comparableId}
+                              </p>
+                              <p className="text-[11px] text-slate-500">
+                                {comparable
+                                  ? `${[comparable.municipio, comparable.barrio].filter(Boolean).join(' · ') || comparable.ubicacion} · ${comparable.tipo}`
+                                  : 'Sólo snapshot histórico disponible'}
+                              </p>
+                            </div>
+                            {!cargado ? (
+                              <button
+                                type="button"
+                                onClick={() => ensureHomologacionComparable(sel.comparableId, 'terreno')}
+                                className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[11px] text-cyan-100 hover:bg-cyan-400/20"
+                              >
+                                Iniciar homologación
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => removeHomologacionComparable(sel.comparableId)}
+                                className="text-[11px] text-rose-300 hover:text-rose-200"
+                              >
+                                Quitar homologación
+                              </button>
+                            )}
+                          </div>
+
+                          {cargado && hc && (
+                            <>
+                              <div className="grid gap-3 sm:grid-cols-4">
+                                <Field label="Base unitaria">
+                                  <select
+                                    className={inputClass()}
+                                    value={hc.baseUnitaria}
+                                    onChange={(e) => updateHomologacionComparable(sel.comparableId, { baseUnitaria: e.target.value as BaseUnitariaHomologacion })}
+                                  >
+                                    <option value="terreno">Terreno (m²)</option>
+                                    <option value="construccion">Construcción (m²)</option>
+                                  </select>
+                                </Field>
+                                <Field label="Precio base">
+                                  <input
+                                    className={inputClass()}
+                                    value={precioBase ?? ''}
+                                    readOnly
+                                    placeholder="—"
+                                  />
+                                </Field>
+                                <Field label="P. unitario base (manual si falta)">
+                                  <input
+                                    type="number"
+                                    className={inputClass()}
+                                    value={hc.precioUnitarioBaseManual ?? ''}
+                                    onChange={(e) => updateHomologacionComparable(sel.comparableId, { precioUnitarioBaseManual: e.target.value === '' ? null : Number(e.target.value) })}
+                                    placeholder={precioUnitarioBase != null ? String(Number(precioUnitarioBase).toFixed(2)) : '—'}
+                                  />
+                                </Field>
+                                <Field label="Observaciones">
+                                  <input
+                                    className={inputClass()}
+                                    value={hc.observaciones}
+                                    onChange={(e) => updateHomologacionComparable(sel.comparableId, { observaciones: e.target.value })}
+                                  />
+                                </Field>
+                              </div>
+
+                              {/* Factores */}
+                              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+                                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Factores ({hc.factores.length})</p>
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      className="rounded-xl border border-slate-700 bg-slate-950/60 px-2 py-1 text-[11px] text-slate-100"
+                                      defaultValue=""
+                                      onChange={(e) => {
+                                        const t = e.target.value as TipoFactorHomologacion | '';
+                                        if (!t) return;
+                                        addFactorHomologacion(sel.comparableId, t);
+                                        e.currentTarget.value = '';
+                                      }}
+                                    >
+                                      <option value="">+ Agregar factor…</option>
+                                      {FACTORES_HOMOLOGACION_DEF.map((d) => (
+                                        <option key={d.tipo} value={d.tipo}>{d.nombre}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                {hc.factores.length === 0 ? (
+                                  <p className="rounded-lg border border-dashed border-slate-700 p-2 text-[11px] text-slate-500">Sin factores aún. Agregá uno desde el selector.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {hc.factores.map((f) => {
+                                      const fueraRango = f.aplica && (f.coeficiente < 0.7 || f.coeficiente > 1.3);
+                                      return (
+                                        <div key={f.id} className={`rounded-lg border p-2 ${fueraRango ? 'border-amber-400/40 bg-amber-500/5' : 'border-slate-800 bg-slate-950/40'}`}>
+                                          <div className="grid gap-2 sm:grid-cols-12">
+                                            <div className="sm:col-span-3">
+                                              <span className={labelClass()}>Factor</span>
+                                              <input
+                                                className={inputClass()}
+                                                value={f.nombre}
+                                                onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { nombre: e.target.value })}
+                                              />
+                                            </div>
+                                            <div className="sm:col-span-2">
+                                              <span className={labelClass()}>V. sujeto</span>
+                                              <input className={inputClass()} value={f.valorSujeto} onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { valorSujeto: e.target.value })} />
+                                            </div>
+                                            <div className="sm:col-span-2">
+                                              <span className={labelClass()}>V. comparable</span>
+                                              <input className={inputClass()} value={f.valorComparable} onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { valorComparable: e.target.value })} />
+                                            </div>
+                                            <div className="sm:col-span-1">
+                                              <span className={labelClass()}>Coef.</span>
+                                              <input
+                                                type="number"
+                                                step="0.01"
+                                                className={inputClass()}
+                                                value={f.coeficiente}
+                                                onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { coeficiente: Number(e.target.value) || 0 })}
+                                              />
+                                            </div>
+                                            <div className="sm:col-span-1">
+                                              <span className={labelClass()}>Pond.</span>
+                                              <input
+                                                type="number"
+                                                step="0.01"
+                                                className={inputClass()}
+                                                value={f.ponderacion ?? ''}
+                                                onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { ponderacion: e.target.value === '' ? null : Number(e.target.value) })}
+                                              />
+                                            </div>
+                                            <div className="sm:col-span-1 flex items-end gap-1">
+                                              <label className="flex items-center gap-1 text-[11px] text-slate-300">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={f.aplica}
+                                                  onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { aplica: e.target.checked })}
+                                                />
+                                                Aplica
+                                              </label>
+                                            </div>
+                                            <div className="sm:col-span-2 flex items-end justify-end">
+                                              <button type="button" onClick={() => removeFactorHomologacion(sel.comparableId, f.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                                            </div>
+                                            <div className="sm:col-span-12">
+                                              <span className={labelClass()}>Justificación / observación técnica</span>
+                                              <input className={inputClass()} value={f.justificacion} onChange={(e) => updateFactorHomologacion(sel.comparableId, f.id, { justificacion: e.target.value })} />
+                                            </div>
+                                          </div>
+                                          {fueraRango && (
+                                            <p className="mt-1 text-[11px] text-amber-200">⚠ Coeficiente fuera del rango sugerido 0.70–1.30; documentá la justificación.</p>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Resultado preliminar */}
+                              <div className="mt-3 grid gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-3 sm:grid-cols-3">
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Factor global</p>
+                                  <p className="text-sm font-semibold text-slate-100">{factorGlobal.toFixed(4)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wide text-slate-500">P. unitario base</p>
+                                  <p className="text-sm text-slate-100">{precioUnitarioBase != null ? precioUnitarioBase.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wide text-slate-500">P. unitario homologado</p>
+                                  <p className="text-sm font-semibold text-cyan-200">{precioUnitarioHomologado != null ? precioUnitarioHomologado.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Resumen estadístico */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Resumen preliminar</p>
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Promedio</p>
+                      <p className="text-sm font-semibold text-slate-100">{promedioHomologado != null ? promedioHomologado.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Mediana</p>
+                      <p className="text-sm font-semibold text-slate-100">{medianaHomologada != null ? medianaHomologada.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</p>
+                    </div>
+                    <Field label="Valor unitario adoptado (opcional)">
+                      <input
+                        type="number"
+                        className={inputClass()}
+                        value={modulo.homologacionBloque.valorUnitarioAdoptado ?? ''}
+                        onChange={(e) => patchHomologacionBloque({ valorUnitarioAdoptado: e.target.value === '' ? null : Number(e.target.value) })}
+                      />
+                    </Field>
+                    <Field label="Criterio de adopción">
+                      <select
+                        className={inputClass()}
+                        value={modulo.homologacionBloque.criterioAdopcion}
+                        onChange={(e) => patchHomologacionBloque({ criterioAdopcion: e.target.value as CriterioAdopcionHomologacion })}
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="promedio">Promedio</option>
+                        <option value="mediana">Mediana</option>
+                        <option value="manual">Manual</option>
+                      </select>
+                    </Field>
+                  </div>
+                  <div className="mt-3">
+                    <Field label="Observaciones de homologación">
+                      <textarea
+                        className={inputClass()}
+                        rows={2}
+                        value={modulo.homologacionBloque.observacionesHomologacion}
+                        onChange={(e) => patchHomologacionBloque({ observacionesHomologacion: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    F2B: cálculo preliminar de valor unitario. No adopta todavía valor final del terreno ni del inmueble. La decisión final se hará en F2C / F3.
+                  </p>
+                </div>
+              </div>
+            )}
             {seccionActiva === 'costo_reposicion' && (requiereConstruccion
               ? <PlaceholderSection titulo="Costo / reposición (F3)" />
               : <NoAplicaNotice motivo="Lote vacío: no aplica costo de reposición de construcción." />)}
