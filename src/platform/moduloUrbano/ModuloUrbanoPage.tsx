@@ -43,6 +43,9 @@ import {
   type TipoMejoraUrbana,
   type TipoAmbienteUrbano,
   type UnidadAreaUrbano,
+  type UnidadBaseValor,
+  type ValoracionTerrenoBloque,
+  type ValoracionTerrenoItem,
 } from './moduloUrbanoTypes';
 import { getExpedientesIndiceINMOVAL } from '../expedientes/expedienteIndexStorage';
 import {
