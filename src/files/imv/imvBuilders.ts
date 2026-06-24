@@ -44,4 +44,3 @@ export function buildIMVFileName(expediente: ExpedienteINMOVAL) {
     codigo: expediente.codigo || expediente.id || 'EXPEDIENTE',
   });
 }
-'@ | Set-Content -Path "src\files\imv\imvBuilders.ts" -Encoding UTF8

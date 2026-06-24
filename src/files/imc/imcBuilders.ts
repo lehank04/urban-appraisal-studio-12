@@ -37,4 +37,3 @@ export function buildIMCFileName(comparable: ComparableINMOVAL) {
     codigo: comparable.codigo || comparable.id || 'COMPARABLE',
   });
 }
-'@ | Set-Content -Path "src\files\imc\imcBuilders.ts" -Encoding UTF8

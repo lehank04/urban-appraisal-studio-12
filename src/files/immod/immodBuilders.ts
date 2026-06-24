@@ -40,4 +40,3 @@ export function buildIMMODFileName(manifest: ModuloTecnicoManifest) {
     codigo: manifest.id || 'MODULO',
   });
 }
-'@ | Set-Content -Path "src\files\immod\immodBuilders.ts" -Encoding UTF8
