@@ -65,6 +65,27 @@ export type ExpedienteIndiceINMOVAL = {
 
   facturaEmitida: boolean;
   numeroFactura?: string;
+  facturaFecha?: string;
+
+  // ── Movimientos financieros del expediente ──
+  pagos?: Array<{
+    id: string;
+    fecha: string;
+    monto: number;
+    metodo?: string;
+    referencia?: string;
+    nota?: string;
+    creadoEn: string;
+  }>;
+  gastosOperativos?: Array<{
+    id: string;
+    fecha: string;
+    concepto: string;
+    monto: number;
+    categoria?: string;
+    nota?: string;
+    creadoEn: string;
+  }>;
 
   revisionActivaCodigo?: string;
   totalRevisiones: number;
