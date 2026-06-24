@@ -441,6 +441,109 @@ export default function ModuloUrbanoPage() {
                     />
                   </Field>
                 </div>
+
+                {/* Ubicación */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Ubicación
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Departamento">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.departamento}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, departamento: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Municipio">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.municipio}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, municipio: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Distrito / comarca / zona">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.distrito}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, distrito: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Barrio / residencial / sector">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.barrio}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, barrio: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Dirección exacta">
+                        <input
+                          className={inputClass()}
+                          value={modulo.ubicacion.direccionExacta}
+                          onChange={(e) =>
+                            patch('ubicacion', {
+                              ...modulo.ubicacion,
+                              direccionExacta: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Coordenadas GPS (lat, lng)">
+                      <input
+                        className={inputClass()}
+                        placeholder="12.1364, -86.2514"
+                        value={modulo.ubicacion.coordenadasGps}
+                        onChange={(e) =>
+                          patch('ubicacion', {
+                            ...modulo.ubicacion,
+                            coordenadasGps: e.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Distancia al centro urbano (km)">
+                      <input
+                        type="number"
+                        step="0.1"
+                        className={inputClass()}
+                        value={modulo.ubicacion.distanciaCentroUrbanoKm ?? ''}
+                        onChange={(e) =>
+                          patch('ubicacion', {
+                            ...modulo.ubicacion,
+                            distanciaCentroUrbanoKm:
+                              e.target.value === '' ? null : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Referencia de ubicación">
+                        <textarea
+                          rows={2}
+                          className={inputClass()}
+                          placeholder="Del parque central 2 c. al norte…"
+                          value={modulo.ubicacion.referencia}
+                          onChange={(e) =>
+                            patch('ubicacion', {
+                              ...modulo.ubicacion,
+                              referencia: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
