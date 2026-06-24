@@ -285,13 +285,95 @@ export interface ComparablesBloque {
   snapshots: ComparableSnapshot[];
 }
 
-// Placeholder para fases posteriores
+// Placeholder reservado de F1.6 (no se elimina por compatibilidad)
 export interface FactorHomologacion {
   id: string;
   nombre: string;
   tipo: string;
   valor: number | null;
   observaciones: string;
+}
+
+// ── Homologación preliminar (F2B) ────────────────────────────────────────────
+
+export type TipoFactorHomologacion =
+  | 'superficie'
+  | 'ubicacion'
+  | 'ambientes'
+  | 'negociacion'
+  | 'tipo_zona'
+  | 'via_acceso'
+  | 'servicios'
+  | 'equipamiento'
+  | 'topografia'
+  | 'forma_posicion'
+  | 'conservacion'
+  | 'fuente_confiabilidad'
+  | 'manual'
+  | 'otro';
+
+export const FACTORES_HOMOLOGACION_DEF: ReadonlyArray<{
+  tipo: TipoFactorHomologacion;
+  nombre: string;
+}> = [
+  { tipo: 'superficie', nombre: 'Superficie' },
+  { tipo: 'ubicacion', nombre: 'Ubicación' },
+  { tipo: 'ambientes', nombre: 'Ambientes' },
+  { tipo: 'negociacion', nombre: 'Negociación / tiempo en mercado' },
+  { tipo: 'tipo_zona', nombre: 'Tipo de zona' },
+  { tipo: 'via_acceso', nombre: 'Vía de acceso' },
+  { tipo: 'servicios', nombre: 'Servicios públicos' },
+  { tipo: 'equipamiento', nombre: 'Equipamiento urbano' },
+  { tipo: 'topografia', nombre: 'Topografía' },
+  { tipo: 'forma_posicion', nombre: 'Forma / posición del terreno' },
+  { tipo: 'conservacion', nombre: 'Estado de conservación' },
+  { tipo: 'fuente_confiabilidad', nombre: 'Fuente / confiabilidad' },
+  { tipo: 'manual', nombre: 'Factor manual adicional' },
+];
+
+export type OrigenFactorHomologacion = 'manual' | 'catalogo' | 'calculado';
+
+export interface FactorHomologacionDetalle {
+  id: string;
+  comparableId: string;
+  tipoFactor: TipoFactorHomologacion;
+  nombre: string;
+  valorSujeto: string;
+  valorComparable: string;
+  coeficiente: number;
+  ponderacion: number | null;
+  aplica: boolean;
+  justificacion: string;
+  origen: OrigenFactorHomologacion;
+  fechaActualizacion: string;
+}
+
+export type BaseUnitariaHomologacion = 'terreno' | 'construccion';
+
+export interface HomologacionComparable {
+  comparableId: string;
+  baseUnitaria: BaseUnitariaHomologacion;
+  precioBase: number | null;
+  /** Si el comparable no trae precio unitario, el perito puede capturarlo. */
+  precioUnitarioBaseManual: number | null;
+  observaciones: string;
+  factores: FactorHomologacionDetalle[];
+  fechaActualizacion: string;
+}
+
+export type CriterioAdopcionHomologacion =
+  | 'pendiente'
+  | 'promedio'
+  | 'mediana'
+  | 'manual';
+
+export interface HomologacionBloque {
+  comparables: HomologacionComparable[];
+  valorUnitarioPromedio: number | null;
+  valorUnitarioMediana: number | null;
+  valorUnitarioAdoptado: number | null;
+  criterioAdopcion: CriterioAdopcionHomologacion;
+  observacionesHomologacion: string;
 }
 
 export interface PlaceholderModuloUrbano {
@@ -325,6 +407,7 @@ export interface ModuloUrbanoExpediente {
   ambientesDetalle: AmbienteItem[];
   comparablesBloque: ComparablesBloque;
   factoresHomologacion: FactorHomologacion[];
+  homologacionBloque: HomologacionBloque;
 
   // Placeholders (F2-F6)
   ambientes: PlaceholderModuloUrbano;
@@ -442,6 +525,54 @@ export function crearComparablesBloqueVacio(): ComparablesBloque {
   };
 }
 
+export function crearHomologacionBloqueVacio(): HomologacionBloque {
+  return {
+    comparables: [],
+    valorUnitarioPromedio: null,
+    valorUnitarioMediana: null,
+    valorUnitarioAdoptado: null,
+    criterioAdopcion: 'pendiente',
+    observacionesHomologacion: '',
+  };
+}
+
+export function crearHomologacionComparableVacio(
+  comparableId: string,
+  base: BaseUnitariaHomologacion = 'terreno',
+): HomologacionComparable {
+  return {
+    comparableId,
+    baseUnitaria: base,
+    precioBase: null,
+    precioUnitarioBaseManual: null,
+    observaciones: '',
+    factores: [],
+    fechaActualizacion: new Date().toISOString(),
+  };
+}
+
+export function crearFactorHomologacionDetalle(
+  comparableId: string,
+  tipo: TipoFactorHomologacion,
+  nombre?: string,
+): FactorHomologacionDetalle {
+  const def = FACTORES_HOMOLOGACION_DEF.find((d) => d.tipo === tipo);
+  return {
+    id: uid('fac'),
+    comparableId,
+    tipoFactor: tipo,
+    nombre: nombre ?? def?.nombre ?? 'Factor',
+    valorSujeto: '',
+    valorComparable: '',
+    coeficiente: 1,
+    ponderacion: null,
+    aplica: true,
+    justificacion: '',
+    origen: 'manual',
+    fechaActualizacion: new Date().toISOString(),
+  };
+}
+
 export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpediente {
   const now = new Date().toISOString();
   const estadosSeccion = SECCIONES_MODULO_URBANO.reduce(
@@ -511,6 +642,7 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
     ambientesDetalle: [],
     comparablesBloque: crearComparablesBloqueVacio(),
     factoresHomologacion: [],
+    homologacionBloque: crearHomologacionBloqueVacio(),
     ambientes: { pendiente: true },
     fotografias: { pendiente: true },
     comparables: { pendiente: true },
@@ -555,6 +687,22 @@ export function migrarModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
     if (!Array.isArray(m.comparablesBloque.snapshots)) {
       m.comparablesBloque.snapshots = [];
       changed = true;
+    }
+  }
+  if (!m.homologacionBloque || typeof m.homologacionBloque !== 'object') {
+    m.homologacionBloque = crearHomologacionBloqueVacio();
+    changed = true;
+  } else {
+    if (!Array.isArray(m.homologacionBloque.comparables)) {
+      m.homologacionBloque.comparables = [];
+      changed = true;
+    }
+    if (m.homologacionBloque.criterioAdopcion == null) {
+      m.homologacionBloque.criterioAdopcion = 'pendiente';
+      changed = true;
+    }
+    for (const hc of m.homologacionBloque.comparables) {
+      if (!Array.isArray(hc.factores)) { hc.factores = []; changed = true; }
     }
   }
   return changed ? { ...m } : m;
