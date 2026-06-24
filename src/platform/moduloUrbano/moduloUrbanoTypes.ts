@@ -73,6 +73,8 @@ export interface UbicacionModuloUrbano {
   barrio: string;
   direccionExacta: string;
   coordenadasGps: string;
+  referencia: string;
+  distanciaCentroUrbanoKm: number | null;
 }
 
 export interface LegalModuloUrbano {
