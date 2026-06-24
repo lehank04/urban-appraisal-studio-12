@@ -97,7 +97,11 @@ export function crearPreparacionTecnicaDesdeExpediente(
     titulo: expediente.titulo,
     clienteNombre: expediente.clienteNombre,
     peritoNombre: expediente.peritoNombre,
-    tipoModulo: expediente.tipoModulo,
+    tipoModulo: (expediente.tipoModulo === 'vehiculo'
+      ? 'vehiculos'
+      : expediente.tipoModulo === 'especial'
+        ? 'especiales'
+        : expediente.tipoModulo) as PreparacionModuloTecnicoINMOVAL['tipoModulo'],
     fechaPreparacion: nowISO(),
     fechaSolicitud: expediente.fechaSolicitud || todayISO(),
     fechaEntregaEstimada: expediente.fechaEntregaEstimada,
