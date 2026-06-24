@@ -689,5 +689,21 @@ export function migrarModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
       changed = true;
     }
   }
+  if (!m.homologacionBloque || typeof m.homologacionBloque !== 'object') {
+    m.homologacionBloque = crearHomologacionBloqueVacio();
+    changed = true;
+  } else {
+    if (!Array.isArray(m.homologacionBloque.comparables)) {
+      m.homologacionBloque.comparables = [];
+      changed = true;
+    }
+    if (m.homologacionBloque.criterioAdopcion == null) {
+      m.homologacionBloque.criterioAdopcion = 'pendiente';
+      changed = true;
+    }
+    for (const hc of m.homologacionBloque.comparables) {
+      if (!Array.isArray(hc.factores)) { hc.factores = []; changed = true; }
+    }
+  }
   return changed ? { ...m } : m;
 }
