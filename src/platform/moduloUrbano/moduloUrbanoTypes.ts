@@ -407,6 +407,7 @@ export interface ModuloUrbanoExpediente {
   ambientesDetalle: AmbienteItem[];
   comparablesBloque: ComparablesBloque;
   factoresHomologacion: FactorHomologacion[];
+  homologacionBloque: HomologacionBloque;
 
   // Placeholders (F2-F6)
   ambientes: PlaceholderModuloUrbano;
