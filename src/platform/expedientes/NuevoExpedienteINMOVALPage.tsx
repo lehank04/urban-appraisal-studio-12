@@ -61,6 +61,13 @@ type CotizacionPrecargaINMOVAL = {
   costoServicio?: number;
   moneda?: string;
   terminosCondiciones?: string;
+
+  // Financiero extendido
+  otrosGastos?: number;
+  otrosGastosItems?: Array<{ id: string; concepto: string; monto: number }>;
+  aplicaIVA?: boolean;
+  ivaPorcentaje?: number;
+  impuestos?: number;
 };
 
 const INSTITUCIONES_SOLICITANTES = [
