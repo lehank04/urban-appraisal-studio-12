@@ -3,6 +3,7 @@ import NuevoExpedienteINMOVALPage from '@/platform/expedientes/NuevoExpedienteIN
 import ConfiguracionCotizacionesINMOVALPage from '@/platform/cotizaciones/ConfiguracionCotizacionesINMOVALPage';
 import ImportarExpedienteIMVPage from '@/platform/expedientes/ImportarExpedienteIMVPage';
 import ComparablesINMOVALPage from '@/platform/comparables/ComparablesINMOVALPage';
+import ModuloUrbanoPage from '@/platform/moduloUrbano/ModuloUrbanoPage';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/expedientes-plataforma/nuevo" element={<NuevoExpedienteINMOVALPage />} />
             <Route path="/expedientes-plataforma/importar" element={<ImportarExpedienteIMVPage />} />
             <Route path="/expedientes-plataforma/:id" element={<ExpedienteDetalleINMOVALPage />} />
+            <Route path="/expedientes-plataforma/:id/modulo-urbano" element={<ModuloUrbanoPage />} />
 
             {/* Operación financiera */}
             <Route path="/cotizaciones" element={<CotizacionesINMOVALPage />} />
