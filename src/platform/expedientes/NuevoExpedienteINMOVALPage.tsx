@@ -819,6 +819,10 @@ export default function NuevoExpedienteINMOVALPage() {
 
     upsertExpedienteIndiceINMOVAL(expediente);
 
+    if (cotizacionPrecarga) {
+      marcarCotizacionComoAvaluoEnProcesoINMOVAL(cotizacionPrecarga.id, id);
+    }
+
     registrarActividadExpedienteINMOVAL({
       expedienteId: id,
       tipo: 'nota',
