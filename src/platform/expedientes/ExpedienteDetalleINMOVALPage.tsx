@@ -824,23 +824,46 @@ export default function ExpedienteDetalleINMOVALPage() {
             }
           >
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Costo base" value={money(data.costoServicio, data.moneda)} />
+              <Field label="Costo base" value={money(costoBase, data.moneda)} />
               <Field label="Otros gastos" value={money(otrosGastos, data.moneda)} />
-              <Field label="IVA" value={money(iva, data.moneda)} />
+              <Field
+                label={`IVA${data.ivaPorcentaje ? ` (${data.ivaPorcentaje}%)` : ''}`}
+                value={money(iva, data.moneda)}
+              />
               <Field label="Total facturable" value={money(totalFacturable, data.moneda)} />
-              <Field label="Pagado" value={money(data.montoPagado, data.moneda)} />
-              <Field label="Saldo" value={money(data.saldo, data.moneda)} />
+              <Field label="Pagado" value={money(montoPagado, data.moneda)} />
+              <Field label="Saldo" value={money(saldoFacturable, data.moneda)} />
             </div>
-            {Number(data.costoServicio) > 0 ? (
+            {otrosGastosItems.length > 0 ? (
+              <div className="mt-4 rounded-xl border border-slate-800/70 bg-slate-950/40 p-3">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                  Detalle otros gastos
+                </p>
+                <ul className="space-y-1 text-xs text-slate-300">
+                  {otrosGastosItems.map((g: any) => (
+                    <li key={g.id} className="flex justify-between gap-3">
+                      <span className="truncate">{g.concepto}</span>
+                      <span className="font-mono text-slate-200">{money(Number(g.monto || 0), data.moneda)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {data.cotizacionNumero ? (
+              <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                Origen cotización: {data.cotizacionNumero}
+              </p>
+            ) : null}
+            {totalFacturable > 0 ? (
               <div className="mt-4">
                 <div className="mb-2 flex items-center justify-between text-xs">
                   <span className="font-mono uppercase tracking-[0.18em] text-slate-500">Cobrado</span>
                   <span className="font-mono text-emerald-200">
-                    {Math.round((Number(data.montoPagado || 0) / Number(data.costoServicio)) * 100)}%
+                    {Math.round((montoPagado / totalFacturable) * 100)}%
                   </span>
                 </div>
                 <ProgressBar
-                  value={(Number(data.montoPagado || 0) / Number(data.costoServicio)) * 100}
+                  value={(montoPagado / totalFacturable) * 100}
                   tone="emerald"
                 />
               </div>
