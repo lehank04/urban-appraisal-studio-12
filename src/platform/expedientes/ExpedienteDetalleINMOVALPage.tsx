@@ -18,9 +18,14 @@ import {
   Map as MapIcon,
   Mountain,
   Package,
+  Plus,
+  Receipt,
   Save,
+  Trash2,
+  TrendingUp,
   Truck,
   UserRound,
+  Wallet,
   Wrench,
 } from 'lucide-react';
 
