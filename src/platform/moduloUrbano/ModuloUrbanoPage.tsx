@@ -157,7 +157,7 @@ export default function ModuloUrbanoPage() {
             </Link>
             <h1 className="mt-2 text-2xl font-semibold">Módulo Técnico Urbano</h1>
             <p className="text-xs text-slate-500">
-              Expediente: {expediente?.numeroExpediente ?? expedienteId} ·{' '}
+              Expediente: {expediente?.codigo ?? expedienteId} ·{' '}
               {expediente?.clienteNombre ?? 'Sin cliente'}
             </p>
           </div>
