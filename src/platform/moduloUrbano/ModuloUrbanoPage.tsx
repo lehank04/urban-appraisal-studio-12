@@ -34,6 +34,13 @@ import {
   type UnidadAreaUrbano,
 } from './moduloUrbanoTypes';
 import { getExpedientesIndiceINMOVAL } from '../expedientes/expedienteIndexStorage';
+import {
+  listarComparablesParaModuloUrbano,
+  filtrarComparablesParaModuloUrbano,
+  crearSnapshotComparable,
+  resumenComparable,
+  type ComparableDisponible,
+} from './comparablesAdapter';
 
 const TIPO_INMUEBLE_OPCIONES: ReadonlyArray<{ value: TipoInmuebleUrbano; label: string }> = [
   { value: 'casa_habitacion', label: 'Casa de habitación' },
