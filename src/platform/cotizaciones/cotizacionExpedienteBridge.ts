@@ -40,9 +40,25 @@ export function crearExpedienteIndiceDesdeCotizacion(
   const data = cotizacion as any;
   const ahora = nowISO();
 
-  const costoServicio = Number(data.total ?? data.costoServicio ?? 0);
+  const costoBase = Number(data.costoServicio ?? 0);
+  const gastosItems = Array.isArray(data.otrosGastosItems) ? data.otrosGastosItems : [];
+  const otrosGastos = Number(
+    data.otrosGastos ??
+      (gastosItems.length > 0
+        ? gastosItems.reduce((s: number, g: any) => s + Number(g?.monto || 0), 0)
+        : 0)
+  );
+  const aplicaIVA = Boolean(data.aplicaIVA);
+  const ivaPorcentaje = Number(data.ivaPorcentaje || 0);
+  const impuestos = Number(
+    data.impuestos ??
+      (aplicaIVA ? Number(((costoBase + otrosGastos) * (ivaPorcentaje / 100)).toFixed(2)) : 0)
+  );
+  const totalFacturable = Number(
+    data.total ?? Number((costoBase + otrosGastos + impuestos).toFixed(2))
+  );
   const montoPagado = 0;
-  const saldo = calcularSaldoExpediente(costoServicio, montoPagado);
+  const saldo = calcularSaldoExpediente(totalFacturable, montoPagado);
 
   const clasificacionCodigo = data.clasificacionInmuebleCodigo || '';
   const tipoModulo = moduloFromClasificacionCotizacion(clasificacionCodigo);
@@ -84,11 +100,21 @@ export function crearExpedienteIndiceDesdeCotizacion(
 
     fechaSolicitud: todayISO(),
 
-    costoServicio,
+    costoServicio: costoBase,
     montoPagado,
     saldo,
     moneda: data.moneda || 'US$',
-    estadoPago: calcularEstadoPagoExpediente(costoServicio, montoPagado),
+    estadoPago: calcularEstadoPagoExpediente(totalFacturable, montoPagado),
+
+    cotizacionId: data.id,
+    cotizacionNumero: data.numero,
+    costoBaseServicio: costoBase,
+    otrosGastos,
+    otrosGastosItems: gastosItems,
+    aplicaIVA,
+    ivaPorcentaje,
+    impuestos,
+    totalFacturable,
 
     facturaEmitida: false,
 
