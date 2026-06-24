@@ -12,6 +12,8 @@ import {
 } from './moduloUrbanoStorage';
 import {
   SECCIONES_MODULO_URBANO,
+  SECCIONES_SOLO_CONSTRUCCION,
+  tipoRequiereConstruccion,
   type EstadoSeccionModuloUrbano,
   type ModuloUrbanoExpediente,
   type SeccionModuloUrbano,
@@ -35,6 +37,7 @@ const ESTADO_TONE: Record<EstadoSeccionModuloUrbano, string> = {
   en_proceso: 'border-amber-400/30 bg-amber-500/10 text-amber-200',
   completo: 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200',
   requiere_revision: 'border-rose-400/30 bg-rose-500/10 text-rose-200',
+  no_aplica: 'border-slate-800 bg-slate-900/40 text-slate-500 italic',
 };
 
 function EstadoIcon({ estado }: { estado: EstadoSeccionModuloUrbano }) {
@@ -79,6 +82,18 @@ function PlaceholderSection({ titulo }: { titulo: string }) {
   );
 }
 
+function NoAplicaNotice({ motivo }: { motivo: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+      <p className="text-sm font-semibold text-slate-300">No aplica para este tipo de inmueble</p>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{motivo}</p>
+      <p className="mt-2 text-[11px] text-slate-600">
+        Los datos previos no se borran; sólo se ocultan mientras el tipo de inmueble lo indique.
+      </p>
+    </div>
+  );
+}
+
 export default function ModuloUrbanoPage() {
   const { id } = useParams<{ id: string }>();
   const expedienteId = id ?? '';
@@ -104,6 +119,30 @@ export default function ModuloUrbanoPage() {
     setModulo(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expedienteId]);
+
+  // Auto-sincronización de aplicabilidad según tipo de inmueble. NO borra datos:
+  // sólo cambia el estado visual de las secciones de construcción.
+  useEffect(() => {
+    if (!modulo) return;
+    const requiere = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
+    let changed = false;
+    const next = { ...modulo.estadosSeccion };
+    for (const s of SECCIONES_SOLO_CONSTRUCCION) {
+      if (requiere) {
+        if (next[s] === 'no_aplica') {
+          next[s] = 'pendiente';
+          changed = true;
+        }
+      } else if (next[s] !== 'no_aplica') {
+        next[s] = 'no_aplica';
+        changed = true;
+      }
+    }
+    if (changed) {
+      setModulo({ ...modulo, estadosSeccion: next });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modulo?.identificacion.tipoInmueble]);
 
   if (!expedienteId) {
     return (
@@ -140,7 +179,38 @@ export default function ModuloUrbanoPage() {
     }
   }
 
+
+
+
+  const requiereConstruccion = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
   const estadoActual = modulo.estadosSeccion[seccionActiva];
+
+  // Avance por secciones (excluye no_aplica)
+  const secciones = SECCIONES_MODULO_URBANO.map((s) => ({
+    ...s,
+    estado: modulo.estadosSeccion[s.key],
+  }));
+  const seccionesAplicables = secciones.filter((s) => s.estado !== 'no_aplica');
+  const seccionesCompletas = seccionesAplicables.filter((s) => s.estado === 'completo').length;
+  const avancePct = seccionesAplicables.length
+    ? Math.round((seccionesCompletas / seccionesAplicables.length) * 100)
+    : 0;
+
+  // Validaciones blandas para F2
+  const validaciones: { ok: boolean; label: string }[] = [
+    { ok: Boolean(expedienteId), label: 'Expediente vinculado' },
+    { ok: Boolean(modulo.identificacion.tipoInmueble), label: 'Tipo de inmueble' },
+    { ok: Boolean(modulo.ubicacion.municipio.trim()), label: 'Municipio (req. F2)' },
+    { ok: (modulo.terreno.areaTerreno ?? 0) > 0, label: 'Área de terreno (req. F2)' },
+    {
+      ok:
+        !requiereConstruccion ||
+        (modulo.construcciones.areaConstruidaPreliminar ?? 0) > 0,
+      label: 'Área construida (si aplica)',
+    },
+  ];
+  const listoParaF2 = validaciones.every((v) => v.ok);
+
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
@@ -170,6 +240,83 @@ export default function ModuloUrbanoPage() {
             <Save className="h-4 w-4" />
             {guardando ? 'Guardando…' : 'Guardar'}
           </button>
+        </div>
+
+        {/* Resumen superior */}
+        <div className="mb-6 grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 md:grid-cols-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Tipo de inmueble</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {TIPO_INMUEBLE_OPCIONES.find((o) => o.value === modulo.identificacion.tipoInmueble)
+                ?.label ?? '— Sin definir —'}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Propósito: {modulo.identificacion.propositoAvaluo || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Ubicación</p>
+            <p className="mt-1 text-sm text-slate-100">
+              {[modulo.ubicacion.municipio, modulo.ubicacion.departamento]
+                .filter(Boolean)
+                .join(', ') || '—'}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              {modulo.ubicacion.barrio || modulo.ubicacion.distrito || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Áreas</p>
+            <p className="mt-1 text-sm text-slate-100">
+              Terreno: {modulo.terreno.areaTerreno ?? '—'} m²
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Construcción:{' '}
+              {requiereConstruccion
+                ? `${modulo.construcciones.areaConstruidaPreliminar ?? '—'} m²`
+                : 'No aplica'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Avance técnico</p>
+            <div className="mt-2 h-2 w-full rounded-full bg-slate-800">
+              <div
+                className="h-2 rounded-full bg-cyan-400"
+                style={{ width: `${avancePct}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {seccionesCompletas}/{seccionesAplicables.length} secciones · {avancePct}%
+            </p>
+          </div>
+          <div className="md:col-span-4">
+            <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">
+              Validaciones para F2 (Comparables + Homologación)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {validaciones.map((v) => (
+                <span
+                  key={v.label}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${
+                    v.ok
+                      ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
+                      : 'border-amber-400/30 bg-amber-500/10 text-amber-200'
+                  }`}
+                >
+                  {v.ok ? '✓' : '○'} {v.label}
+                </span>
+              ))}
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  listoParaF2
+                    ? 'border-emerald-400/40 bg-emerald-500/20 text-emerald-100'
+                    : 'border-slate-700 bg-slate-900 text-slate-400'
+                }`}
+              >
+                {listoParaF2 ? 'Listo para F2' : 'Falta capturar mínimos'}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
@@ -305,6 +452,109 @@ export default function ModuloUrbanoPage() {
                       }
                     />
                   </Field>
+                </div>
+
+                {/* Ubicación */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Ubicación
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Departamento">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.departamento}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, departamento: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Municipio">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.municipio}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, municipio: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Distrito / comarca / zona">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.distrito}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, distrito: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label="Barrio / residencial / sector">
+                      <input
+                        className={inputClass()}
+                        value={modulo.ubicacion.barrio}
+                        onChange={(e) =>
+                          patch('ubicacion', { ...modulo.ubicacion, barrio: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Dirección exacta">
+                        <input
+                          className={inputClass()}
+                          value={modulo.ubicacion.direccionExacta}
+                          onChange={(e) =>
+                            patch('ubicacion', {
+                              ...modulo.ubicacion,
+                              direccionExacta: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Coordenadas GPS (lat, lng)">
+                      <input
+                        className={inputClass()}
+                        placeholder="12.1364, -86.2514"
+                        value={modulo.ubicacion.coordenadasGps}
+                        onChange={(e) =>
+                          patch('ubicacion', {
+                            ...modulo.ubicacion,
+                            coordenadasGps: e.target.value,
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="Distancia al centro urbano (km)">
+                      <input
+                        type="number"
+                        step="0.1"
+                        className={inputClass()}
+                        value={modulo.ubicacion.distanciaCentroUrbanoKm ?? ''}
+                        onChange={(e) =>
+                          patch('ubicacion', {
+                            ...modulo.ubicacion,
+                            distanciaCentroUrbanoKm:
+                              e.target.value === '' ? null : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Referencia de ubicación">
+                        <textarea
+                          rows={2}
+                          className={inputClass()}
+                          placeholder="Del parque central 2 c. al norte…"
+                          value={modulo.ubicacion.referencia}
+                          onChange={(e) =>
+                            patch('ubicacion', {
+                              ...modulo.ubicacion,
+                              referencia: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -490,7 +740,10 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
 
-            {seccionActiva === 'construcciones' && (
+            {seccionActiva === 'construcciones' && !requiereConstruccion && (
+              <NoAplicaNotice motivo="El tipo de inmueble seleccionado (lote vacío) no tiene construcciones que valuar." />
+            )}
+            {seccionActiva === 'construcciones' && requiereConstruccion && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Año de construcción">
                   <input
@@ -559,12 +812,18 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
 
-            {seccionActiva === 'ambientes' && <PlaceholderSection titulo="Ambientes (F1: placeholder)" />}
+            {seccionActiva === 'ambientes' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Ambientes (F1: placeholder)" />
+              : <NoAplicaNotice motivo="Lote vacío: no hay ambientes a relevar." />)}
             {seccionActiva === 'fotografias' && <PlaceholderSection titulo="Fotografías (F1: placeholder)" />}
             {seccionActiva === 'comparables' && <PlaceholderSection titulo="Comparables (F2)" />}
             {seccionActiva === 'homologacion' && <PlaceholderSection titulo="Homologación (F2)" />}
-            {seccionActiva === 'costo_reposicion' && <PlaceholderSection titulo="Costo / reposición (F3)" />}
-            {seccionActiva === 'depreciacion' && <PlaceholderSection titulo="Depreciación (F3)" />}
+            {seccionActiva === 'costo_reposicion' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Costo / reposición (F3)" />
+              : <NoAplicaNotice motivo="Lote vacío: no aplica costo de reposición de construcción." />)}
+            {seccionActiva === 'depreciacion' && (requiereConstruccion
+              ? <PlaceholderSection titulo="Depreciación (F3)" />
+              : <NoAplicaNotice motivo="Lote vacío: no aplica depreciación de construcción." />)}
             {seccionActiva === 'calculo_final' && <PlaceholderSection titulo="Cálculo final (F4)" />}
             {seccionActiva === 'informe' && <PlaceholderSection titulo="Informe (F5)" />}
             {seccionActiva === 'anexos' && <PlaceholderSection titulo="Anexos (F6)" />}

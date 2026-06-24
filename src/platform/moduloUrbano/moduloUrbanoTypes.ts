@@ -5,7 +5,21 @@ export type EstadoSeccionModuloUrbano =
   | 'pendiente'
   | 'en_proceso'
   | 'completo'
-  | 'requiere_revision';
+  | 'requiere_revision'
+  | 'no_aplica';
+
+/**
+ * Secciones que sólo aplican cuando el inmueble tiene construcción.
+ * Para lote vacío deben quedar marcadas como 'no_aplica'.
+ */
+export const SECCIONES_SOLO_CONSTRUCCION: ReadonlyArray<
+  'construcciones' | 'ambientes' | 'costo_reposicion' | 'depreciacion'
+> = ['construcciones', 'ambientes', 'costo_reposicion', 'depreciacion'];
+
+export function tipoRequiereConstruccion(tipo: TipoInmuebleUrbano | ''): boolean {
+  if (!tipo) return true; // por defecto se asume con construcción
+  return tipo !== 'lote_vacio';
+}
 
 export type TipoInmuebleUrbano =
   | 'casa_habitacion'
@@ -73,6 +87,8 @@ export interface UbicacionModuloUrbano {
   barrio: string;
   direccionExacta: string;
   coordenadasGps: string;
+  referencia: string;
+  distanciaCentroUrbanoKm: number | null;
 }
 
 export interface LegalModuloUrbano {
@@ -176,6 +192,8 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
       barrio: '',
       direccionExacta: '',
       coordenadasGps: '',
+      referencia: '',
+      distanciaCentroUrbanoKm: null,
     },
     legal: {
       numeroEscritura: '',
