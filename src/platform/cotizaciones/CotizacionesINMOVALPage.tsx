@@ -21,7 +21,16 @@ type EstadoCotizacionINMOVAL =
   | 'enviada'
   | 'aprobada'
   | 'rechazada'
-  | 'convertida';
+  | 'convertida'
+  | 'avaluo_en_proceso'
+  | 'avaluo_finalizado'
+  | 'factura_emitida';
+
+type GastoCotizacionItem = {
+  id: string;
+  concepto: string;
+  monto: number;
+};
 
 type MonedaCotizacionINMOVAL = 'US$' | 'C$';
 
