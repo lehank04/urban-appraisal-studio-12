@@ -773,5 +773,22 @@ export function migrarModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
       if (!Array.isArray(hc.factores)) { hc.factores = []; changed = true; }
     }
   }
+  if (!m.valoracionTerrenoBloque || typeof m.valoracionTerrenoBloque !== 'object') {
+    m.valoracionTerrenoBloque = crearValoracionTerrenoBloqueVacio();
+    changed = true;
+  } else {
+    if (!Array.isArray(m.valoracionTerrenoBloque.items)) {
+      m.valoracionTerrenoBloque.items = [];
+      changed = true;
+    }
+    if (m.valoracionTerrenoBloque.criterioAdopcion == null) {
+      m.valoracionTerrenoBloque.criterioAdopcion = 'pendiente';
+      changed = true;
+    }
+    if (m.valoracionTerrenoBloque.unidadBase == null) {
+      m.valoracionTerrenoBloque.unidadBase = 'm2';
+      changed = true;
+    }
+  }
   return changed ? { ...m } : m;
 }
