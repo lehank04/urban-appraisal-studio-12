@@ -76,7 +76,9 @@ export function registrarActividadExpedienteINMOVAL(params: {
   tipo: TipoActividadExpedienteINMOVAL;
   titulo: string;
   descripcion?: string;
+  detalle?: string;
   usuarioNombre?: string;
+  creadoEn?: string;
 }) {
   const activity: ExpedienteActivityINMOVAL = {
     id: createId(),
