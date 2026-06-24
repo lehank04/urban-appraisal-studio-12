@@ -96,6 +96,56 @@ function PlaceholderSection({ titulo }: { titulo: string }) {
   );
 }
 
+// ── Constantes de opciones para selects relacionales ────────────────────────
+const TIPO_TERRENO_OPCIONES: ReadonlyArray<{ value: TipoTerrenoUrbano; label: string }> = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'secundario', label: 'Secundario' },
+  { value: 'excedente', label: 'Excedente' },
+  { value: 'afectado', label: 'Afectado' },
+  { value: 'util', label: 'Útil' },
+  { value: 'registral', label: 'Registral' },
+  { value: 'catastral', label: 'Catastral' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const UNIDAD_AREA_OPCIONES: ReadonlyArray<{ value: UnidadAreaUrbano; label: string }> = [
+  { value: 'm2', label: 'm²' },
+  { value: 'vara2', label: 'vara²' },
+  { value: 'mz', label: 'mz' },
+  { value: 'ha', label: 'ha' },
+  { value: 'otro', label: 'otro' },
+];
+
+const TIPO_MEJORA_OPCIONES: ReadonlyArray<{ value: TipoMejoraUrbana; label: string }> = [
+  { value: 'cerco', label: 'Cerco' },
+  { value: 'muro', label: 'Muro' },
+  { value: 'porton', label: 'Portón' },
+  { value: 'patio', label: 'Patio' },
+  { value: 'losa', label: 'Losa' },
+  { value: 'cisterna', label: 'Cisterna' },
+  { value: 'pozo', label: 'Pozo' },
+  { value: 'tanque', label: 'Tanque' },
+  { value: 'piscina', label: 'Piscina' },
+  { value: 'jardin', label: 'Jardín' },
+  { value: 'estacionamiento', label: 'Estacionamiento' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const TIPO_AMBIENTE_OPCIONES: ReadonlyArray<{ value: TipoAmbienteUrbano; label: string }> = [
+  { value: 'dormitorio', label: 'Dormitorio' },
+  { value: 'sala', label: 'Sala' },
+  { value: 'comedor', label: 'Comedor' },
+  { value: 'cocina', label: 'Cocina' },
+  { value: 'bano', label: 'Baño' },
+  { value: 'estudio', label: 'Estudio' },
+  { value: 'oficina', label: 'Oficina' },
+  { value: 'patio_interior', label: 'Patio interior' },
+  { value: 'garaje', label: 'Garaje' },
+  { value: 'bodega_interna', label: 'Bodega interna' },
+  { value: 'otro', label: 'Otro' },
+];
+
+
 function NoAplicaNotice({ motivo }: { motivo: string }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
