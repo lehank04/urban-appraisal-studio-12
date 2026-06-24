@@ -230,6 +230,86 @@ export default function ModuloUrbanoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modulo?.identificacion.tipoInmueble]);
 
+  // F2C.1 — Persistencia predecible de totales calculados.
+  // Recalcula promedios/medianas de homologación y totales de valoración
+  // de terreno, y los persiste cuando cambian. Reemplaza al uso previo de
+  // `setTimeout(0)` durante el render (que violaba las reglas de hooks).
+  useEffect(() => {
+    if (!modulo) return;
+
+    // ── Homologación: promedio / mediana de precios unitarios homologados.
+    const unitarios: number[] = [];
+    for (const sel of modulo.comparablesBloque.seleccionados) {
+      const hc = modulo.homologacionBloque.comparables.find((c) => c.comparableId === sel.comparableId);
+      const factores = (hc?.factores ?? []).filter((f) => f.aplica && Number.isFinite(f.coeficiente));
+      const factorGlobal = factores.reduce((acc, f) => acc * (f.coeficiente || 1), 1);
+      const base = hc?.precioUnitarioBaseManual;
+      if (base != null && Number.isFinite(base)) {
+        unitarios.push(base * factorGlobal);
+        continue;
+      }
+      // Fallback: usar snapshot del comparable cuando exista.
+      const snap = modulo.comparablesBloque.snapshots
+        .filter((s) => s.comparableId === sel.comparableId)
+        .slice(-1)[0];
+      const baseKind = hc?.baseUnitaria ?? 'terreno';
+      const precio = snap?.precio ?? null;
+      const area = baseKind === 'terreno' ? snap?.areaTerreno : snap?.areaConstruccion;
+      if (precio != null && area && area > 0) {
+        unitarios.push((precio / area) * factorGlobal);
+      }
+    }
+    const promedio = unitarios.length
+      ? unitarios.reduce((a, b) => a + b, 0) / unitarios.length
+      : null;
+    let mediana: number | null = null;
+    if (unitarios.length) {
+      const arr = [...unitarios].sort((a, b) => a - b);
+      const mid = Math.floor(arr.length / 2);
+      mediana = arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+    }
+
+    // ── Valoración de terreno: total y área considerada.
+    const vb = modulo.valoracionTerrenoBloque;
+    const vuCriterio =
+      vb.criterioAdopcion === 'promedio' ? promedio :
+      vb.criterioAdopcion === 'mediana' ? mediana :
+      vb.criterioAdopcion === 'manual' ? vb.valorUnitarioAdoptado :
+      null;
+    let valorTerrenoTotal: number | null = null;
+    let areaTotalConsiderada: number | null = null;
+    for (const item of vb.items) {
+      if (!item.incluyeEnValorTerreno) continue;
+      const vu = item.valorUnitarioAplicado ?? vb.valorUnitarioAdoptado ?? vuCriterio ?? null;
+      const factor = item.factorAjusteManual ?? 1;
+      const area = item.areaHomologable;
+      if (area != null && Number.isFinite(area)) {
+        areaTotalConsiderada = (areaTotalConsiderada ?? 0) + area;
+        if (vu != null && Number.isFinite(vu)) {
+          valorTerrenoTotal = (valorTerrenoTotal ?? 0) + area * vu * (factor || 1);
+        }
+      }
+    }
+
+    const hb = modulo.homologacionBloque;
+    const needsHomolog = hb.valorUnitarioPromedio !== promedio || hb.valorUnitarioMediana !== mediana;
+    const needsVal = vb.valorTerrenoTotal !== valorTerrenoTotal || vb.areaTotalConsiderada !== areaTotalConsiderada;
+    if (!needsHomolog && !needsVal) return;
+
+    setModulo((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        homologacionBloque: needsHomolog
+          ? { ...prev.homologacionBloque, valorUnitarioPromedio: promedio, valorUnitarioMediana: mediana }
+          : prev.homologacionBloque,
+        valoracionTerrenoBloque: needsVal
+          ? { ...prev.valoracionTerrenoBloque, valorTerrenoTotal, areaTotalConsiderada }
+          : prev.valoracionTerrenoBloque,
+      };
+    });
+  }, [modulo]);
+
   if (!expedienteId) {
     return (
       <div className="p-6 text-sm text-slate-400">Expediente no especificado.</div>
