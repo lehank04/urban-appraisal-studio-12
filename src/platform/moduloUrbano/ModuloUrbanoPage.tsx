@@ -470,6 +470,53 @@ export default function ModuloUrbanoPage() {
     } : prev);
   }
 
+  // ── Valoración de terreno (F2C) ──────────────────────────────────────────
+  function patchValoracionTerrenoBloque(patchV: Partial<ValoracionTerrenoBloque>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionTerrenoBloque: { ...prev.valoracionTerrenoBloque, ...patchV },
+    } : prev);
+  }
+  function ensureValoracionItem(terrenoId: string) {
+    setModulo((prev) => {
+      if (!prev) return prev;
+      if (prev.valoracionTerrenoBloque.items.some((i) => i.terrenoId === terrenoId)) return prev;
+      const terreno = prev.terrenos.find((t) => t.id === terrenoId);
+      const nuevo = crearValoracionTerrenoItem(terrenoId);
+      // Precarga áreaHomologable con el área del terreno (en su unidad nativa)
+      if (terreno && terreno.area != null) nuevo.areaHomologable = terreno.area;
+      return {
+        ...prev,
+        valoracionTerrenoBloque: {
+          ...prev.valoracionTerrenoBloque,
+          items: [...prev.valoracionTerrenoBloque.items, nuevo],
+        },
+      };
+    });
+  }
+  function updateValoracionItem(terrenoId: string, patchI: Partial<ValoracionTerrenoItem>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionTerrenoBloque: {
+        ...prev.valoracionTerrenoBloque,
+        items: prev.valoracionTerrenoBloque.items.map((i) =>
+          i.terrenoId === terrenoId ? { ...i, ...patchI } : i,
+        ),
+      },
+    } : prev);
+  }
+  function removeValoracionItem(terrenoId: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      valoracionTerrenoBloque: {
+        ...prev.valoracionTerrenoBloque,
+        items: prev.valoracionTerrenoBloque.items.filter((i) => i.terrenoId !== terrenoId),
+      },
+    } : prev);
+  }
+
+
+
   function guardar() {
     if (!modulo) return;
     setGuardando(true);
