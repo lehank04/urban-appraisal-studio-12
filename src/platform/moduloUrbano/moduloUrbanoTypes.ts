@@ -376,6 +376,46 @@ export interface HomologacionBloque {
   observacionesHomologacion: string;
 }
 
+// ── Valoración de terreno (F2C) ──────────────────────────────────────────────
+
+export type UnidadBaseValor = 'm2' | 'vara2' | 'mz' | 'ha';
+
+export const UNIDAD_BASE_VALOR_OPCIONES: ReadonlyArray<{ value: UnidadBaseValor; label: string }> = [
+  { value: 'm2', label: 'm²' },
+  { value: 'vara2', label: 'vara²' },
+  { value: 'mz', label: 'manzana' },
+  { value: 'ha', label: 'hectárea' },
+];
+
+/**
+ * Valoración individual por terreno del sujeto. Se vincula a un TerrenoItem por
+ * terrenoId. Permite incluir/excluir terrenos del cálculo final.
+ */
+export interface ValoracionTerrenoItem {
+  id: string;
+  terrenoId: string;
+  incluyeEnValorTerreno: boolean;
+  areaHomologable: number | null;
+  /** Si es null, se usa el valor unitario adoptado del bloque. */
+  valorUnitarioAplicado: number | null;
+  /** Si es null o 1, no se ajusta. */
+  factorAjusteManual: number | null;
+  justificacionValor: string;
+  observaciones: string;
+}
+
+export interface ValoracionTerrenoBloque {
+  criterioAdopcion: CriterioAdopcionHomologacion;
+  valorUnitarioAdoptado: number | null;
+  unidadBase: UnidadBaseValor;
+  justificacionTecnica: string;
+  observaciones: string;
+  items: ValoracionTerrenoItem[];
+  /** Derivados, persistidos para informe/historial. */
+  valorTerrenoTotal: number | null;
+  areaTotalConsiderada: number | null;
+}
+
 export interface PlaceholderModuloUrbano {
   pendiente: true;
   notas?: string;
@@ -408,6 +448,7 @@ export interface ModuloUrbanoExpediente {
   comparablesBloque: ComparablesBloque;
   factoresHomologacion: FactorHomologacion[];
   homologacionBloque: HomologacionBloque;
+  valoracionTerrenoBloque: ValoracionTerrenoBloque;
 
   // Placeholders (F2-F6)
   ambientes: PlaceholderModuloUrbano;
@@ -536,6 +577,32 @@ export function crearHomologacionBloqueVacio(): HomologacionBloque {
   };
 }
 
+export function crearValoracionTerrenoItem(terrenoId: string): ValoracionTerrenoItem {
+  return {
+    id: uid('vti'),
+    terrenoId,
+    incluyeEnValorTerreno: true,
+    areaHomologable: null,
+    valorUnitarioAplicado: null,
+    factorAjusteManual: null,
+    justificacionValor: '',
+    observaciones: '',
+  };
+}
+
+export function crearValoracionTerrenoBloqueVacio(): ValoracionTerrenoBloque {
+  return {
+    criterioAdopcion: 'pendiente',
+    valorUnitarioAdoptado: null,
+    unidadBase: 'm2',
+    justificacionTecnica: '',
+    observaciones: '',
+    items: [],
+    valorTerrenoTotal: null,
+    areaTotalConsiderada: null,
+  };
+}
+
 export function crearHomologacionComparableVacio(
   comparableId: string,
   base: BaseUnitariaHomologacion = 'terreno',
@@ -643,6 +710,7 @@ export function crearModuloUrbanoVacio(expedienteId: string): ModuloUrbanoExpedi
     comparablesBloque: crearComparablesBloqueVacio(),
     factoresHomologacion: [],
     homologacionBloque: crearHomologacionBloqueVacio(),
+    valoracionTerrenoBloque: crearValoracionTerrenoBloqueVacio(),
     ambientes: { pendiente: true },
     fotografias: { pendiente: true },
     comparables: { pendiente: true },
@@ -703,6 +771,23 @@ export function migrarModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
     }
     for (const hc of m.homologacionBloque.comparables) {
       if (!Array.isArray(hc.factores)) { hc.factores = []; changed = true; }
+    }
+  }
+  if (!m.valoracionTerrenoBloque || typeof m.valoracionTerrenoBloque !== 'object') {
+    m.valoracionTerrenoBloque = crearValoracionTerrenoBloqueVacio();
+    changed = true;
+  } else {
+    if (!Array.isArray(m.valoracionTerrenoBloque.items)) {
+      m.valoracionTerrenoBloque.items = [];
+      changed = true;
+    }
+    if (m.valoracionTerrenoBloque.criterioAdopcion == null) {
+      m.valoracionTerrenoBloque.criterioAdopcion = 'pendiente';
+      changed = true;
+    }
+    if (m.valoracionTerrenoBloque.unidadBase == null) {
+      m.valoracionTerrenoBloque.unidadBase = 'm2';
+      changed = true;
     }
   }
   return changed ? { ...m } : m;
