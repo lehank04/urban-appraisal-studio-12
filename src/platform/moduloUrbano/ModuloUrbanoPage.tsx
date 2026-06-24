@@ -862,8 +862,105 @@ export default function ModuloUrbanoPage() {
                     }
                   />
                 </Field>
+                </div>
+
+                {/* Lista relacional de terrenos (F1.6) */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Terrenos</p>
+                      <p className="text-[11px] text-slate-500">Múltiples terrenos vinculados al expediente. Mejoras y construcciones pueden referenciar uno.</p>
+                    </div>
+                    <button type="button" onClick={addTerreno} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Terreno</button>
+                  </div>
+                  {modulo.terrenos.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin terrenos agregados.</p>
+                  )}
+                  <div className="space-y-3">
+                    {modulo.terrenos.map((t, idx) => (
+                      <div key={t.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-200">Terreno #{idx + 1} {t.codigo && `· ${t.codigo}`}</p>
+                          <button type="button" onClick={() => removeTerreno(t.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Field label="Código"><input className={inputClass()} value={t.codigo} onChange={(e) => updateTerreno(t.id, { codigo: e.target.value })} /></Field>
+                          <Field label="Nombre"><input className={inputClass()} value={t.nombre} onChange={(e) => updateTerreno(t.id, { nombre: e.target.value })} /></Field>
+                          <Field label="Tipo">
+                            <select className={inputClass()} value={t.tipo} onChange={(e) => updateTerreno(t.id, { tipo: e.target.value as TipoTerrenoUrbano })}>
+                              {TIPO_TERRENO_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Área"><input type="number" className={inputClass()} value={t.area ?? ''} onChange={(e) => updateTerreno(t.id, { area: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Unidad">
+                            <select className={inputClass()} value={t.unidad} onChange={(e) => updateTerreno(t.id, { unidad: e.target.value as UnidadAreaUrbano })}>
+                              {UNIDAD_AREA_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Frente (m)"><input type="number" className={inputClass()} value={t.frente ?? ''} onChange={(e) => updateTerreno(t.id, { frente: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Fondo (m)"><input type="number" className={inputClass()} value={t.fondo ?? ''} onChange={(e) => updateTerreno(t.id, { fondo: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Forma"><input className={inputClass()} value={t.forma} onChange={(e) => updateTerreno(t.id, { forma: e.target.value })} /></Field>
+                          <Field label="Topografía"><input className={inputClass()} value={t.topografia} onChange={(e) => updateTerreno(t.id, { topografia: e.target.value })} /></Field>
+                          <Field label="Uso actual"><input className={inputClass()} value={t.usoActual} onChange={(e) => updateTerreno(t.id, { usoActual: e.target.value })} /></Field>
+                          <Field label="Estado">
+                            <select className={inputClass()} value={t.estado} onChange={(e) => updateTerreno(t.id, { estado: e.target.value as 'activo' | 'descartado' })}>
+                              <option value="activo">Activo</option>
+                              <option value="descartado">Descartado</option>
+                            </select>
+                          </Field>
+                          <div className="sm:col-span-3"><Field label="Linderos"><textarea rows={2} className={inputClass()} value={t.linderos} onChange={(e) => updateTerreno(t.id, { linderos: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Afectaciones"><textarea rows={2} className={inputClass()} value={t.afectaciones} onChange={(e) => updateTerreno(t.id, { afectaciones: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={t.observaciones} onChange={(e) => updateTerreno(t.id, { observaciones: e.target.value })} /></Field></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mejoras / infraestructuras (F1.6) */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Mejoras / infraestructuras</p>
+                      <p className="text-[11px] text-slate-500">Vinculables opcionalmente a un terreno.</p>
+                    </div>
+                    <button type="button" onClick={addMejora} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Mejora</button>
+                  </div>
+                  {modulo.mejoras.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin mejoras registradas.</p>
+                  )}
+                  <div className="space-y-3">
+                    {modulo.mejoras.map((mej, idx) => (
+                      <div key={mej.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-200">Mejora #{idx + 1}</p>
+                          <button type="button" onClick={() => removeMejora(mej.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Field label="Tipo">
+                            <select className={inputClass()} value={mej.tipo} onChange={(e) => updateMejora(mej.id, { tipo: e.target.value as TipoMejoraUrbana })}>
+                              {TIPO_MEJORA_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Terreno vinculado">
+                            <select className={inputClass()} value={mej.terrenoId ?? ''} onChange={(e) => updateMejora(mej.id, { terrenoId: e.target.value || null })}>
+                              <option value="">— Sin vincular —</option>
+                              {modulo.terrenos.map((t) => (<option key={t.id} value={t.id}>{t.codigo || t.nombre || `Terreno ${t.id.slice(-4)}`}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Unidad"><input className={inputClass()} value={mej.unidad} onChange={(e) => updateMejora(mej.id, { unidad: e.target.value })} /></Field>
+                          <Field label="Cantidad"><input type="number" className={inputClass()} value={mej.cantidad ?? ''} onChange={(e) => updateMejora(mej.id, { cantidad: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Estado conservación"><input className={inputClass()} value={mej.estadoConservacion} onChange={(e) => updateMejora(mej.id, { estadoConservacion: e.target.value })} /></Field>
+                          <div className="sm:col-span-3"><Field label="Descripción"><textarea rows={2} className={inputClass()} value={mej.descripcion} onChange={(e) => updateMejora(mej.id, { descripcion: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={mej.observaciones} onChange={(e) => updateMejora(mej.id, { observaciones: e.target.value })} /></Field></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
+
 
             {seccionActiva === 'construcciones' && !requiereConstruccion && (
               <NoAplicaNotice motivo="El tipo de inmueble seleccionado (lote vacío) no tiene construcciones que valuar." />
