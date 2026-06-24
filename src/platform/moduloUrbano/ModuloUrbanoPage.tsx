@@ -232,6 +232,67 @@ export default function ModuloUrbanoPage() {
     );
   }
 
+  // ── Managers relacionales (F1.6) ──────────────────────────────────────────
+  function addTerreno() {
+    setModulo((prev) => prev ? { ...prev, terrenos: [...prev.terrenos, crearTerrenoVacio()] } : prev);
+  }
+  function updateTerreno(id: string, patchT: Partial<TerrenoItem>) {
+    setModulo((prev) => prev ? { ...prev, terrenos: prev.terrenos.map((t) => t.id === id ? { ...t, ...patchT } : t) } : prev);
+  }
+  function removeTerreno(id: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      terrenos: prev.terrenos.filter((t) => t.id !== id),
+      mejoras: prev.mejoras.map((m) => m.terrenoId === id ? { ...m, terrenoId: null } : m),
+      construccionesDetalle: prev.construccionesDetalle.map((c) => c.terrenoId === id ? { ...c, terrenoId: null } : c),
+    } : prev);
+  }
+
+  function addMejora() {
+    setModulo((prev) => prev ? { ...prev, mejoras: [...prev.mejoras, crearMejoraVacia()] } : prev);
+  }
+  function updateMejora(id: string, patchM: Partial<MejoraItem>) {
+    setModulo((prev) => prev ? { ...prev, mejoras: prev.mejoras.map((m) => m.id === id ? { ...m, ...patchM } : m) } : prev);
+  }
+  function removeMejora(id: string) {
+    setModulo((prev) => prev ? { ...prev, mejoras: prev.mejoras.filter((m) => m.id !== id) } : prev);
+  }
+
+  function addConstruccion() {
+    setModulo((prev) => prev ? { ...prev, construccionesDetalle: [...prev.construccionesDetalle, crearConstruccionVacia()] } : prev);
+  }
+  function updateConstruccion(id: string, patchC: Partial<ConstruccionItem>) {
+    setModulo((prev) => prev ? { ...prev, construccionesDetalle: prev.construccionesDetalle.map((c) => c.id === id ? { ...c, ...patchC } : c) } : prev);
+  }
+  function removeConstruccion(id: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      construccionesDetalle: prev.construccionesDetalle.filter((c) => c.id !== id),
+      ambientesDetalle: prev.ambientesDetalle.filter((a) => a.construccionId !== id),
+    } : prev);
+  }
+
+  function addAmbiente(construccionId: string) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: [...prev.ambientesDetalle, crearAmbienteVacio(construccionId)] } : prev);
+  }
+  function updateAmbiente(id: string, patchA: Partial<AmbienteItem>) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: prev.ambientesDetalle.map((a) => a.id === id ? { ...a, ...patchA } : a) } : prev);
+  }
+  function removeAmbiente(id: string) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: prev.ambientesDetalle.filter((a) => a.id !== id) } : prev);
+  }
+
+  function updateFiltrosComparables(patchF: Partial<FiltrosComparablesUrbano>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      comparablesBloque: { ...prev.comparablesBloque, filtros: { ...prev.comparablesBloque.filtros, ...patchF } },
+    } : prev);
+  }
+  function setComparablesBloque(patchB: Partial<ComparablesBloque>) {
+    setModulo((prev) => prev ? { ...prev, comparablesBloque: { ...prev.comparablesBloque, ...patchB } } : prev);
+  }
+
+
   function guardar() {
     if (!modulo) return;
     setGuardando(true);
