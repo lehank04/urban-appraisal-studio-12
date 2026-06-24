@@ -1247,32 +1247,120 @@ export default function ModuloUrbanoPage() {
                   </div>
                 </div>
 
+                {/* Resumen + aviso de mínimo */}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
+                  <p className="text-xs text-slate-300">
+                    {comparablesFiltrados.length} resultado(s) en la Biblioteca · {modulo.comparablesBloque.seleccionados.length} seleccionado(s) · {modulo.comparablesBloque.descartados.length} descartado(s)
+                  </p>
+                  {modulo.comparablesBloque.seleccionados.length < 3 && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200">
+                      ⚠ Recomendado: al menos 3 comparables seleccionados
+                    </span>
+                  )}
+                </div>
+
+                {/* Lista disponible desde Biblioteca */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Disponibles en Biblioteca</p>
+                  {comparablesDisponibles.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">
+                      La Biblioteca no tiene comparables registrados todavía. Agregalos desde Plataforma → Comparables.
+                    </p>
+                  ) : comparablesFiltrados.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Ningún comparable cumple los filtros actuales.</p>
+                  ) : (
+                    <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+                      {comparablesFiltrados.map((c) => {
+                        const sel = idsSeleccionados.has(c.id);
+                        const dsc = idsDescartados.has(c.id);
+                        return (
+                          <div key={c.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-slate-100">{resumenComparable(c)}</p>
+                              <p className="text-[11px] text-slate-400">
+                                {[c.municipio, c.barrio].filter(Boolean).join(' · ') || c.ubicacion} · {c.tipo} · {c.estado}
+                              </p>
+                              <p className="text-[11px] text-slate-500">
+                                {c.fecha || '—'} · Área T: {c.areaTerreno ?? '—'} · Área C: {c.areaConstruccion ?? '—'} · {c.moneda} {Number(c.precio || 0).toLocaleString('en-US')}
+                              </p>
+                            </div>
+                            <div className="flex flex-shrink-0 gap-2">
+                              <button
+                                type="button"
+                                disabled={sel}
+                                onClick={() => seleccionarComparable(c)}
+                                className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[11px] text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-40"
+                              >
+                                {sel ? 'Seleccionado' : 'Seleccionar'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={dsc}
+                                onClick={() => {
+                                  const motivo = window.prompt('Motivo del descarte:', '') ?? '';
+                                  if (motivo.trim()) descartarComparable(c, motivo.trim());
+                                }}
+                                className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-2 py-1 text-[11px] text-rose-100 hover:bg-rose-400/20 disabled:opacity-40"
+                              >
+                                {dsc ? 'Descartado' : 'Descartar'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid gap-3 lg:grid-cols-2">
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Comparables seleccionados</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Seleccionados ({modulo.comparablesBloque.seleccionados.length})</p>
                     {modulo.comparablesBloque.seleccionados.length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Aún no se ha conectado la biblioteca de comparables. Estructura lista para F2.</p>
+                      <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Ningún comparable seleccionado todavía.</p>
                     ) : (
-                      <ul className="space-y-1 text-xs text-slate-300">
-                        {modulo.comparablesBloque.seleccionados.map((s) => (<li key={s.id}>{s.comparableId} — {s.notas}</li>))}
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {modulo.comparablesBloque.seleccionados.map((s) => {
+                          const c = comparablesDisponibles.find((x) => x.id === s.comparableId);
+                          return (
+                            <li key={s.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-2">
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-100">{c ? resumenComparable(c) : s.comparableId}</p>
+                                <p className="text-[11px] text-slate-500">{s.fechaSeleccion.slice(0, 10)} · listo para homologación (F2B)</p>
+                              </div>
+                              <button type="button" onClick={() => quitarSeleccionado(s.comparableId)} className="text-[11px] text-rose-300 hover:text-rose-200">Quitar</button>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Comparables descartados</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Descartados ({modulo.comparablesBloque.descartados.length})</p>
                     {modulo.comparablesBloque.descartados.length === 0 ? (
                       <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin descartes registrados.</p>
                     ) : (
-                      <ul className="space-y-1 text-xs text-slate-300">
-                        {modulo.comparablesBloque.descartados.map((d) => (<li key={d.id}>{d.comparableId} — {d.motivo}</li>))}
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        {modulo.comparablesBloque.descartados.map((d) => {
+                          const c = comparablesDisponibles.find((x) => x.id === d.comparableId);
+                          return (
+                            <li key={d.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-2">
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-100">{c ? resumenComparable(c) : d.comparableId}</p>
+                                <p className="text-[11px] text-slate-500">{d.fechaDescarte.slice(0, 10)} · Motivo: {d.motivo}</p>
+                              </div>
+                              <button type="button" onClick={() => quitarDescartado(d.comparableId)} className="text-[11px] text-slate-300 hover:text-slate-100">Quitar</button>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
                 </div>
 
                 <p className="text-[11px] text-slate-500">
-                  Snapshots almacenados: {modulo.comparablesBloque.snapshots.length}. Al seleccionar comparables desde Biblioteca (F2) se generará una copia inmutable para conservar evidencia histórica.
+                  Snapshots inmutables guardados: {modulo.comparablesBloque.snapshots.length}. Cada selección genera una copia conservada en el módulo aunque el comparable cambie luego en la Biblioteca.
                 </p>
+
               </div>
             )}
 
