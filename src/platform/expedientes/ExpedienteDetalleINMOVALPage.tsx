@@ -494,6 +494,121 @@ export default function ExpedienteDetalleINMOVALPage() {
     );
   }
 
+  // ── Editor financiero: handlers ──
+  function makeFinId(prefix: string) {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  }
+
+  function registrarPago(e: FormEvent) {
+    e.preventDefault();
+    const monto = Number(pagoMonto);
+    if (!Number.isFinite(monto) || monto <= 0) {
+      setFinanzasMensaje('Ingresá un monto válido para el pago.');
+      return;
+    }
+    const nuevo = {
+      id: makeFinId('pago'),
+      fecha: pagoFecha || todayISO(),
+      monto: Number(monto.toFixed(2)),
+      metodo: pagoMetodo.trim() || undefined,
+      referencia: pagoReferencia.trim() || undefined,
+      creadoEn: nowISO(),
+    };
+    const pagosActuales = Array.isArray((data as any).pagos) ? (data as any).pagos : [];
+    guardarCambios(
+      { pagos: [...pagosActuales, nuevo] },
+      `Pago registrado: ${money(nuevo.monto, data.moneda)}`
+    );
+    registrarActividadExpedienteINMOVAL({
+      expedienteId: expediente!.id,
+      tipo: 'pago',
+      titulo: `Pago recibido ${money(nuevo.monto, data.moneda)}`,
+      descripcion: `${nuevo.metodo || 'Pago'}${nuevo.referencia ? ` · Ref: ${nuevo.referencia}` : ''} · Fecha: ${nuevo.fecha}`,
+    });
+    setActividad(getExpedienteActivityINMOVAL(expediente!.id));
+    setPagoMonto('');
+    setPagoReferencia('');
+    setFinanzasMensaje('Pago registrado correctamente.');
+  }
+
+  function eliminarPago(pagoId: string) {
+    const pagosActuales = Array.isArray((data as any).pagos) ? (data as any).pagos : [];
+    const pago = pagosActuales.find((p: any) => p.id === pagoId);
+    guardarCambios(
+      { pagos: pagosActuales.filter((p: any) => p.id !== pagoId) },
+      pago ? `Pago eliminado: ${money(pago.monto, data.moneda)}` : 'Pago eliminado'
+    );
+  }
+
+  function registrarGastoOperativo(e: FormEvent) {
+    e.preventDefault();
+    const monto = Number(gastoMonto);
+    if (!Number.isFinite(monto) || monto <= 0 || !gastoConcepto.trim()) {
+      setFinanzasMensaje('Ingresá concepto y monto válido para el gasto.');
+      return;
+    }
+    const nuevo = {
+      id: makeFinId('gasto'),
+      fecha: gastoFecha || todayISO(),
+      concepto: gastoConcepto.trim(),
+      monto: Number(monto.toFixed(2)),
+      categoria: gastoCategoria.trim() || 'Operativo',
+      creadoEn: nowISO(),
+    };
+    const actuales = Array.isArray((data as any).gastosOperativos) ? (data as any).gastosOperativos : [];
+    guardarCambios(
+      { gastosOperativos: [...actuales, nuevo] },
+      `Gasto operativo: ${nuevo.concepto} · ${money(nuevo.monto, data.moneda)}`
+    );
+    registrarActividadExpedienteINMOVAL({
+      expedienteId: expediente!.id,
+      tipo: 'nota',
+      titulo: `Gasto operativo ${money(nuevo.monto, data.moneda)}`,
+      descripcion: `${nuevo.concepto} · ${nuevo.categoria} · Fecha: ${nuevo.fecha}`,
+    });
+    setActividad(getExpedienteActivityINMOVAL(expediente!.id));
+    setGastoMonto('');
+    setGastoConcepto('');
+    setFinanzasMensaje('Gasto registrado correctamente.');
+  }
+
+  function eliminarGastoOperativo(gastoId: string) {
+    const actuales = Array.isArray((data as any).gastosOperativos) ? (data as any).gastosOperativos : [];
+    const gasto = actuales.find((g: any) => g.id === gastoId);
+    guardarCambios(
+      { gastosOperativos: actuales.filter((g: any) => g.id !== gastoId) },
+      gasto ? `Gasto eliminado: ${gasto.concepto}` : 'Gasto eliminado'
+    );
+  }
+
+  function marcarFacturaEmitida(e: FormEvent) {
+    e.preventDefault();
+    if (!facturaNumero.trim()) {
+      setFinanzasMensaje('Ingresá el número de factura.');
+      return;
+    }
+    guardarCambios(
+      {
+        facturaEmitida: true,
+        numeroFactura: facturaNumero.trim(),
+        facturaFecha: facturaFecha || todayISO(),
+      },
+      `Factura emitida ${facturaNumero.trim()}`
+    );
+    registrarActividadExpedienteINMOVAL({
+      expedienteId: expediente!.id,
+      tipo: 'facturacion',
+      titulo: `Factura emitida ${facturaNumero.trim()}`,
+      descripcion: `Fecha: ${facturaFecha || todayISO()}`,
+    });
+    setActividad(getExpedienteActivityINMOVAL(expediente!.id));
+    setFacturaNumero('');
+    setFinanzasMensaje('Factura registrada correctamente.');
+  }
+
+
+
   const diasEntrega = diasHasta(data.fechaEntregaEstimada);
   const inspeccionEstado = data.inspeccionRealizada
     ? { texto: 'Realizada', tone: 'emerald' as const }
