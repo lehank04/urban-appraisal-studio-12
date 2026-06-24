@@ -510,36 +510,35 @@ export default function ModuloUrbanoPage() {
   ];
   const listoParaF2 = validaciones.every((v) => v.ok);
 
-  // Adaptador de comparables (F2A)
-  const comparablesDisponibles = useMemo(() => listarComparablesParaModuloUrbano(), [modulo.fechaActualizacion]);
-  const comparablesFiltrados = useMemo(
-    () => filtrarComparablesParaModuloUrbano(comparablesDisponibles, modulo.comparablesBloque.filtros),
-    [comparablesDisponibles, modulo.comparablesBloque.filtros],
+  // Adaptador de comparables (F2A) — sin useMemo para no romper Rules of Hooks
+  // (este bloque vive después del early return de !modulo).
+  const comparablesDisponibles = listarComparablesParaModuloUrbano();
+  const comparablesFiltrados = filtrarComparablesParaModuloUrbano(
+    comparablesDisponibles,
+    modulo.comparablesBloque.filtros,
   );
   const idsSeleccionados = new Set(modulo.comparablesBloque.seleccionados.map((s) => s.comparableId));
   const idsDescartados = new Set(modulo.comparablesBloque.descartados.map((d) => d.comparableId));
 
   // Homologación (F2B): cómputos preliminares
   const seleccionadosDelBloque = modulo.comparablesBloque.seleccionados;
-  const homologacionRows = useMemo(() => {
-    return seleccionadosDelBloque.map((sel) => {
-      const comparable = comparablesDisponibles.find((x) => x.id === sel.comparableId);
-      const snapshot = modulo.comparablesBloque.snapshots
-        .filter((s) => s.comparableId === sel.comparableId)
-        .slice(-1)[0];
-      const hc = modulo.homologacionBloque.comparables.find((c) => c.comparableId === sel.comparableId);
-      const base = hc?.baseUnitaria ?? 'terreno';
-      const precioBase = comparable?.precio ?? null;
-      const areaRef = base === 'terreno' ? comparable?.areaTerreno : comparable?.areaConstruccion;
-      const precioUnitarioLib = base === 'terreno' ? comparable?.precioUnitarioTerreno : comparable?.precioUnitarioConstruccion;
-      const precioUnitarioCalc = precioBase != null && areaRef && areaRef > 0 ? precioBase / areaRef : null;
-      const precioUnitarioBase = hc?.precioUnitarioBaseManual ?? precioUnitarioLib ?? precioUnitarioCalc ?? null;
-      const factoresActivos = (hc?.factores ?? []).filter((f) => f.aplica && Number.isFinite(f.coeficiente));
-      const factorGlobal = factoresActivos.reduce((acc, f) => acc * (f.coeficiente || 1), 1);
-      const precioUnitarioHomologado = precioUnitarioBase != null ? precioUnitarioBase * factorGlobal : null;
-      return { sel, comparable, snapshot, hc, base, precioBase, precioUnitarioBase, factorGlobal, precioUnitarioHomologado };
-    });
-  }, [seleccionadosDelBloque, comparablesDisponibles, modulo.comparablesBloque.snapshots, modulo.homologacionBloque.comparables]);
+  const homologacionRows = seleccionadosDelBloque.map((sel) => {
+    const comparable = comparablesDisponibles.find((x) => x.id === sel.comparableId);
+    const snapshot = modulo.comparablesBloque.snapshots
+      .filter((s) => s.comparableId === sel.comparableId)
+      .slice(-1)[0];
+    const hc = modulo.homologacionBloque.comparables.find((c) => c.comparableId === sel.comparableId);
+    const base = hc?.baseUnitaria ?? 'terreno';
+    const precioBase = comparable?.precio ?? null;
+    const areaRef = base === 'terreno' ? comparable?.areaTerreno : comparable?.areaConstruccion;
+    const precioUnitarioLib = base === 'terreno' ? comparable?.precioUnitarioTerreno : comparable?.precioUnitarioConstruccion;
+    const precioUnitarioCalc = precioBase != null && areaRef && areaRef > 0 ? precioBase / areaRef : null;
+    const precioUnitarioBase = hc?.precioUnitarioBaseManual ?? precioUnitarioLib ?? precioUnitarioCalc ?? null;
+    const factoresActivos = (hc?.factores ?? []).filter((f) => f.aplica && Number.isFinite(f.coeficiente));
+    const factorGlobal = factoresActivos.reduce((acc, f) => acc * (f.coeficiente || 1), 1);
+    const precioUnitarioHomologado = precioUnitarioBase != null ? precioUnitarioBase * factorGlobal : null;
+    return { sel, comparable, snapshot, hc, base, precioBase, precioUnitarioBase, factorGlobal, precioUnitarioHomologado };
+  });
 
   const precioUnitariosHomologados = homologacionRows
     .map((r) => r.precioUnitarioHomologado)
@@ -556,14 +555,20 @@ export default function ModuloUrbanoPage() {
   })();
 
   // Sincroniza promedios/medianas al estado persistido cuando cambian.
-  useEffect(() => {
-    if (!modulo) return;
+  // Nota: no usamos useEffect aquí porque este bloque vive después del early
+  // return de !modulo (Rules of Hooks). Se persistirá al siguiente render/guardado.
+  {
     const hb = modulo.homologacionBloque;
     if (hb.valorUnitarioPromedio !== promedioHomologado || hb.valorUnitarioMediana !== medianaHomologada) {
-      patchHomologacionBloque({ valorUnitarioPromedio: promedioHomologado, valorUnitarioMediana: medianaHomologada });
+      // Patch sincrónico en el siguiente tick para evitar setState en render.
+      setTimeout(() => {
+        patchHomologacionBloque({
+          valorUnitarioPromedio: promedioHomologado,
+          valorUnitarioMediana: medianaHomologada,
+        });
+      }, 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promedioHomologado, medianaHomologada]);
+  }
 
 
   return (
