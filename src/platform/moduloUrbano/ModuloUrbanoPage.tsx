@@ -230,6 +230,83 @@ export default function ModuloUrbanoPage() {
           </button>
         </div>
 
+        {/* Resumen superior */}
+        <div className="mb-6 grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 md:grid-cols-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Tipo de inmueble</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {TIPO_INMUEBLE_OPCIONES.find((o) => o.value === modulo.identificacion.tipoInmueble)
+                ?.label ?? '— Sin definir —'}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Propósito: {modulo.identificacion.propositoAvaluo || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Ubicación</p>
+            <p className="mt-1 text-sm text-slate-100">
+              {[modulo.ubicacion.municipio, modulo.ubicacion.departamento]
+                .filter(Boolean)
+                .join(', ') || '—'}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              {modulo.ubicacion.barrio || modulo.ubicacion.distrito || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Áreas</p>
+            <p className="mt-1 text-sm text-slate-100">
+              Terreno: {modulo.terreno.areaTerreno ?? '—'} m²
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Construcción:{' '}
+              {requiereConstruccion
+                ? `${modulo.construcciones.areaConstruidaPreliminar ?? '—'} m²`
+                : 'No aplica'}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">Avance técnico</p>
+            <div className="mt-2 h-2 w-full rounded-full bg-slate-800">
+              <div
+                className="h-2 rounded-full bg-cyan-400"
+                style={{ width: `${avancePct}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {seccionesCompletas}/{seccionesAplicables.length} secciones · {avancePct}%
+            </p>
+          </div>
+          <div className="md:col-span-4">
+            <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">
+              Validaciones para F2 (Comparables + Homologación)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {validaciones.map((v) => (
+                <span
+                  key={v.label}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${
+                    v.ok
+                      ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
+                      : 'border-amber-400/30 bg-amber-500/10 text-amber-200'
+                  }`}
+                >
+                  {v.ok ? '✓' : '○'} {v.label}
+                </span>
+              ))}
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  listoParaF2
+                    ? 'border-emerald-400/40 bg-emerald-500/20 text-emerald-100'
+                    : 'border-slate-700 bg-slate-900 text-slate-400'
+                }`}
+              >
+                {listoParaF2 ? 'Listo para F2' : 'Falta capturar mínimos'}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
           {/* Sidebar de secciones */}
           <nav className="space-y-1">
