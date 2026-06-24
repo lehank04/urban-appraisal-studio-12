@@ -3,6 +3,7 @@
 
 import {
   crearModuloUrbanoVacio,
+  migrarModuloUrbano,
   type ModuloUrbanoExpediente,
 } from './moduloUrbanoTypes';
 
@@ -14,7 +15,8 @@ function readAll(): ModuloUrbanoExpediente[] {
     const raw = window.localStorage.getItem(STORAGE_KEY_MODULO_URBANO);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ModuloUrbanoExpediente[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as ModuloUrbanoExpediente[]).map(migrarModuloUrbano);
   } catch {
     return [];
   }
