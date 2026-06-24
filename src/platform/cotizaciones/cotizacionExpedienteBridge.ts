@@ -87,18 +87,7 @@ export function crearExpedienteIndiceDesdeCotizacion(
     costoServicio,
     montoPagado,
     saldo,
-    moneda: data.moneda || 'US
-
-export function crearExpedienteDeCotizacionAprobada(
-  cotizacion: CotizacionINMOVAL
-) {
-  const expediente = crearExpedienteIndiceDesdeCotizacion(cotizacion);
-
-  upsertExpedienteIndiceINMOVAL(expediente);
-
-  return expediente;
-}
-,
+    moneda: data.moneda || 'US$',
     estadoPago: calcularEstadoPagoExpediente(costoServicio, montoPagado),
 
     facturaEmitida: false,
