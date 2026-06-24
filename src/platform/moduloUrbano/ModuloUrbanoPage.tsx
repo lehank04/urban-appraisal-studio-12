@@ -690,21 +690,9 @@ export default function ModuloUrbanoPage() {
     return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
   })();
 
-  // Sincroniza promedios/medianas al estado persistido cuando cambian.
-  // Nota: no usamos useEffect aquí porque este bloque vive después del early
-  // return de !modulo (Rules of Hooks). Se persistirá al siguiente render/guardado.
-  {
-    const hb = modulo.homologacionBloque;
-    if (hb.valorUnitarioPromedio !== promedioHomologado || hb.valorUnitarioMediana !== medianaHomologada) {
-      // Patch sincrónico en el siguiente tick para evitar setState en render.
-      setTimeout(() => {
-        patchHomologacionBloque({
-          valorUnitarioPromedio: promedioHomologado,
-          valorUnitarioMediana: medianaHomologada,
-        });
-      }, 0);
-    }
-  }
+  // F2C.1: la sincronización de promedios/medianas y totales de valoración
+  // se hace en el useEffect declarado al inicio del componente. Aquí sólo
+  // se derivan los valores en memoria para el render.
 
   // ── Valoración de terreno (F2C): cómputos preliminares ───────────────────
   const valBloque = modulo.valoracionTerrenoBloque;
@@ -722,7 +710,8 @@ export default function ModuloUrbanoPage() {
     const valorParcial = area != null && vuAplicado != null && Number.isFinite(area) && Number.isFinite(vuAplicado)
       ? area * vuAplicado * (factor || 1)
       : null;
-    return { terreno: t, item, vuAplicado, factor, area, valorParcial };
+    const aviso = advertenciaUnidad(t.unidad, valBloque.unidadBase);
+    return { terreno: t, item, vuAplicado, factor, area, valorParcial, aviso };
   });
 
   const incluidos = valoracionRows.filter((r) => r.item?.incluyeEnValorTerreno);
@@ -735,23 +724,18 @@ export default function ModuloUrbanoPage() {
     return (acc ?? 0) + r.area;
   }, null);
 
-  // Persistencia diferida de totales
-  if (
-    valBloque.valorTerrenoTotal !== valorTerrenoTotal ||
-    valBloque.areaTotalConsiderada !== areaTotalConsiderada
-  ) {
-    setTimeout(() => {
-      patchValoracionTerrenoBloque({ valorTerrenoTotal, areaTotalConsiderada });
-    }, 0);
-  }
-
-  function recalcularValorUnitarioAdoptado() {
+  function recalcularValoracionTerreno() {
+    // Recalcula y persiste el valor unitario adoptado según el criterio elegido.
+    // Los totales (valorTerrenoTotal, areaTotalConsiderada) ya se persisten
+    // automáticamente vía el useEffect superior cuando cambian.
     const next =
       valBloque.criterioAdopcion === 'promedio' ? promedioHomologado :
       valBloque.criterioAdopcion === 'mediana' ? medianaHomologada :
       valBloque.valorUnitarioAdoptado;
     patchValoracionTerrenoBloque({ valorUnitarioAdoptado: next });
   }
+  const recalcularValorUnitarioAdoptado = recalcularValoracionTerreno;
+
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
