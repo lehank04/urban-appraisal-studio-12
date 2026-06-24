@@ -1,4 +1,3 @@
-@'
 import { ModuloTecnicoManifest } from '@/shared/types/inmovalCore';
 import { buildInmovalFileName } from '@/shared/storage/fileContracts';
 import { nowISO } from '@/shared/utils/dateUtils';

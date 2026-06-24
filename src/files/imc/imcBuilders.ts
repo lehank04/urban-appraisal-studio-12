@@ -1,4 +1,3 @@
-@'
 import { ComparableINMOVAL } from '@/comparables/types/comparableTypes';
 import { buildInmovalFileName } from '@/shared/storage/fileContracts';
 import { nowISO } from '@/shared/utils/dateUtils';

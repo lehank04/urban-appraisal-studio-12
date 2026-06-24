@@ -1,4 +1,3 @@
-@'
 import { CotizacionINMOVAL } from '@/platform/cotizaciones/cotizacionTypes';
 import { ExpedienteINMOVAL } from '@/platform/expedientes/expedienteTypes';
 import { RevisionAvaluoINMOVAL } from '@/platform/expedientes/revisionTypes';
