@@ -367,9 +367,20 @@ export default function ExpedienteDetalleINMOVALPage() {
   const alertas = computeAlertas(data, Number(data.saldo || 0));
   const moduloVinculado = Boolean(data.avaluoTecnicoId || data.moduloTecnicoVinculado);
   const codigoExp = String(data.codigo || data.numero || data.id).slice(0, 24);
-  const iva = Number(data.iva || 0);
-  const otrosGastos = Number(data.otrosGastos || 0);
-  const totalFacturable = Number(data.totalFacturable || data.costoServicio || 0) + iva + otrosGastos;
+  const costoBase = Number(data.costoBaseServicio ?? data.costoServicio ?? 0);
+  const otrosGastosItems = Array.isArray(data.otrosGastosItems) ? data.otrosGastosItems : [];
+  const otrosGastos = Number(
+    data.otrosGastos ??
+      (otrosGastosItems.length > 0
+        ? otrosGastosItems.reduce((s: number, g: any) => s + Number(g?.monto || 0), 0)
+        : 0)
+  );
+  const iva = Number(data.impuestos ?? data.iva ?? 0);
+  const totalFacturable = Number(
+    data.totalFacturable ?? (costoBase + otrosGastos + iva)
+  );
+  const montoPagado = Number(data.montoPagado || 0);
+  const saldoFacturable = Math.max(0, totalFacturable - montoPagado);
 
   // ───── Mutations (preservadas) ─────
   function guardarCambios(cambios: Record<string, any>, titulo: string) {
