@@ -740,7 +740,10 @@ export default function ModuloUrbanoPage() {
               </div>
             )}
 
-            {seccionActiva === 'construcciones' && (
+            {seccionActiva === 'construcciones' && !requiereConstruccion && (
+              <NoAplicaNotice motivo="El tipo de inmueble seleccionado (lote vacío) no tiene construcciones que valuar." />
+            )}
+            {seccionActiva === 'construcciones' && requiereConstruccion && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Año de construcción">
                   <input
