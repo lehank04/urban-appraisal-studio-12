@@ -519,7 +519,51 @@ export default function ModuloUrbanoPage() {
   const idsSeleccionados = new Set(modulo.comparablesBloque.seleccionados.map((s) => s.comparableId));
   const idsDescartados = new Set(modulo.comparablesBloque.descartados.map((d) => d.comparableId));
 
+  // Homologación (F2B): cómputos preliminares
+  const seleccionadosDelBloque = modulo.comparablesBloque.seleccionados;
+  const homologacionRows = useMemo(() => {
+    return seleccionadosDelBloque.map((sel) => {
+      const comparable = comparablesDisponibles.find((x) => x.id === sel.comparableId);
+      const snapshot = modulo.comparablesBloque.snapshots
+        .filter((s) => s.comparableId === sel.comparableId)
+        .slice(-1)[0];
+      const hc = modulo.homologacionBloque.comparables.find((c) => c.comparableId === sel.comparableId);
+      const base = hc?.baseUnitaria ?? 'terreno';
+      const precioBase = comparable?.precio ?? null;
+      const areaRef = base === 'terreno' ? comparable?.areaTerreno : comparable?.areaConstruccion;
+      const precioUnitarioLib = base === 'terreno' ? comparable?.precioUnitarioTerreno : comparable?.precioUnitarioConstruccion;
+      const precioUnitarioCalc = precioBase != null && areaRef && areaRef > 0 ? precioBase / areaRef : null;
+      const precioUnitarioBase = hc?.precioUnitarioBaseManual ?? precioUnitarioLib ?? precioUnitarioCalc ?? null;
+      const factoresActivos = (hc?.factores ?? []).filter((f) => f.aplica && Number.isFinite(f.coeficiente));
+      const factorGlobal = factoresActivos.reduce((acc, f) => acc * (f.coeficiente || 1), 1);
+      const precioUnitarioHomologado = precioUnitarioBase != null ? precioUnitarioBase * factorGlobal : null;
+      return { sel, comparable, snapshot, hc, base, precioBase, precioUnitarioBase, factorGlobal, precioUnitarioHomologado };
+    });
+  }, [seleccionadosDelBloque, comparablesDisponibles, modulo.comparablesBloque.snapshots, modulo.homologacionBloque.comparables]);
 
+  const precioUnitariosHomologados = homologacionRows
+    .map((r) => r.precioUnitarioHomologado)
+    .filter((v): v is number => v != null && Number.isFinite(v));
+
+  const promedioHomologado = precioUnitariosHomologados.length
+    ? precioUnitariosHomologados.reduce((a, b) => a + b, 0) / precioUnitariosHomologados.length
+    : null;
+  const medianaHomologada = (() => {
+    if (!precioUnitariosHomologados.length) return null;
+    const arr = [...precioUnitariosHomologados].sort((a, b) => a - b);
+    const mid = Math.floor(arr.length / 2);
+    return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+  })();
+
+  // Sincroniza promedios/medianas al estado persistido cuando cambian.
+  useEffect(() => {
+    if (!modulo) return;
+    const hb = modulo.homologacionBloque;
+    if (hb.valorUnitarioPromedio !== promedioHomologado || hb.valorUnitarioMediana !== medianaHomologada) {
+      patchHomologacionBloque({ valorUnitarioPromedio: promedioHomologado, valorUnitarioMediana: medianaHomologada });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promedioHomologado, medianaHomologada]);
 
 
   return (
