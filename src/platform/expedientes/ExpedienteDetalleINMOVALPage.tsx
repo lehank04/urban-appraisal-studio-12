@@ -117,24 +117,34 @@ function diasHasta(fecha?: string): number | null {
 function normalizeExpediente(expediente: ExpedienteIndiceINMOVAL) {
   const data = expediente as any;
   const costoServicio = Number(data.costoServicio || 0);
-  const montoPagado = Number(data.montoPagado || 0);
-  const saldo =
-    typeof data.saldo === 'number'
-      ? data.saldo
-      : Math.max(0, costoServicio - montoPagado);
+  const totalFacturableRaw = Number(
+    data.totalFacturable ??
+      Number(data.costoBaseServicio ?? costoServicio) +
+        Number(data.otrosGastos || 0) +
+        Number(data.impuestos || 0)
+  );
+  const baseFacturable = totalFacturableRaw > 0 ? totalFacturableRaw : costoServicio;
+  const pagos = Array.isArray(data.pagos) ? data.pagos : [];
+  const montoPagado = pagos.length > 0
+    ? Number(pagos.reduce((s: number, p: any) => s + Number(p?.monto || 0), 0).toFixed(2))
+    : Number(data.montoPagado || 0);
+  const saldo = Math.max(0, Number((baseFacturable - montoPagado).toFixed(2)));
 
   return {
     ...data,
     estado: data.estado || 'en_cotizacion',
     prioridad: data.prioridad || 'normal',
     estadoPago:
-      data.estadoPago ||
-      (saldo <= 0 && costoServicio > 0
-        ? 'pagado'
-        : montoPagado > 0
-          ? 'parcial'
-          : 'pendiente'),
+      baseFacturable <= 0
+        ? 'no_aplica'
+        : saldo <= 0
+          ? 'pagado'
+          : montoPagado > 0
+            ? 'parcial'
+            : 'pendiente',
     costoServicio,
+    pagos,
+    gastosOperativos: Array.isArray(data.gastosOperativos) ? data.gastosOperativos : [],
     montoPagado,
     saldo,
     moneda: data.moneda || 'US$',
