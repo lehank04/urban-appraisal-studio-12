@@ -48,61 +48,59 @@ function Row({ k, v }: { k: string; v: any }) {
   );
 }
 
+const LABEL_DOCUMENTO_LEGAL: Record<string, string> = {
+  escritura: 'Escritura pública',
+  contrato: 'Contrato',
+  plano_topografico: 'Plano topográfico',
+  razon_inscripcion: 'Razón de inscripción',
+  personalizado: 'Documento',
+};
+
+const fmtAreaLegal = (m2?: number, vr2?: number) => {
+  const partes: string[] = [];
+  if (m2 && m2 > 0) partes.push(`${fmtNum(m2)} m²`);
+  if (vr2 && vr2 > 0) partes.push(`${fmtNum(vr2)} vr²`);
+  return partes.length ? partes.join(' · ') : '—';
+};
+
+const documentoLegalLegacy = (d: any): DocumentoLegalItem | null => {
+  if (
+    !d.numeroEscritura &&
+    !d.fechaEscritura &&
+    !d.notario &&
+    !d.numeroFinca &&
+    !d.numeroRegistral &&
+    !d.numeroCatastral
+  ) {
+    return null;
+  }
+  return {
+    id: 'legacy-documento-legal',
+    tipo: 'escritura',
+    titulo: 'Escritura pública',
+    nombre: d.numeroEscritura || '',
+    fecha: d.fechaEscritura || '',
+    autorizante: d.notario || '',
+    areaM2: d.areaTerrenoEscritura || 0,
+    areaVr2: d.areaTerrenoEscrituraVr2 || 0,
+    tieneInscripcion: Boolean(
+      d.numeroFinca ||
+        d.numeroRegistral ||
+        d.tomo ||
+        d.folio ||
+        d.asiento ||
+        d.numeroCatastral
+    ),
+    numeroRegistral: d.numeroFinca || d.numeroRegistral || '',
+    tomo: d.tomo || '',
+    folio: d.folio || '',
+    asiento: d.asiento || '',
+    numeroCatastral: d.numeroCatastral || '',
+    observaciones: '',
+  };
+};
+
 function H(props: { roman: string; title: string }) {
-  const LABEL_DOCUMENTO_LEGAL: Record<string, string> = {
-    escritura: 'Escritura pública',
-    contrato: 'Contrato',
-    plano_topografico: 'Plano topográfico',
-    razon_inscripcion: 'Razón de inscripción',
-    personalizado: 'Documento',
-  };
-  
-  const fmtAreaLegal = (m2?: number, vr2?: number) => {
-    const partes: string[] = [];
-  
-    if (m2 && m2 > 0) partes.push(`${fmtNum(m2)} m²`);
-    if (vr2 && vr2 > 0) partes.push(`${fmtNum(vr2)} vr²`);
-  
-    return partes.length ? partes.join(' · ') : '—';
-  };
-  
-  const documentoLegalLegacy = (d: any): DocumentoLegalItem | null => {
-    if (
-      !d.numeroEscritura &&
-      !d.fechaEscritura &&
-      !d.notario &&
-      !d.numeroFinca &&
-      !d.numeroRegistral &&
-      !d.numeroCatastral
-    ) {
-      return null;
-    }
-  
-    return {
-      id: 'legacy-documento-legal',
-      tipo: 'escritura',
-      titulo: 'Escritura pública',
-      nombre: d.numeroEscritura || '',
-      fecha: d.fechaEscritura || '',
-      autorizante: d.notario || '',
-      areaM2: d.areaTerrenoEscritura || 0,
-      areaVr2: d.areaTerrenoEscrituraVr2 || 0,
-      tieneInscripcion: Boolean(
-        d.numeroFinca ||
-          d.numeroRegistral ||
-          d.tomo ||
-          d.folio ||
-          d.asiento ||
-          d.numeroCatastral
-      ),
-      numeroRegistral: d.numeroFinca || d.numeroRegistral || '',
-      tomo: d.tomo || '',
-      folio: d.folio || '',
-      asiento: d.asiento || '',
-      numeroCatastral: d.numeroCatastral || '',
-      observaciones: '',
-    };
-  };
   return (
     <div className="mb-4">
       <div className="text-[10px] uppercase tracking-widest text-zinc-400">Capítulo {props.roman}</div>
