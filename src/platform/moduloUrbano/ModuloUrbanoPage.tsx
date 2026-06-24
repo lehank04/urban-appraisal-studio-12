@@ -35,6 +35,7 @@ const ESTADO_TONE: Record<EstadoSeccionModuloUrbano, string> = {
   en_proceso: 'border-amber-400/30 bg-amber-500/10 text-amber-200',
   completo: 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200',
   requiere_revision: 'border-rose-400/30 bg-rose-500/10 text-rose-200',
+  no_aplica: 'border-slate-800 bg-slate-900/40 text-slate-500 italic',
 };
 
 function EstadoIcon({ estado }: { estado: EstadoSeccionModuloUrbano }) {
