@@ -143,7 +143,59 @@ export default function ModuloUrbanoPage() {
     }
   }
 
+  // Auto-sincronización de aplicabilidad según tipo de inmueble. NO borra datos:
+  // sólo cambia el estado visual de las secciones de construcción.
+  useEffect(() => {
+    if (!modulo) return;
+    const requiere = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
+    let changed = false;
+    const next = { ...modulo.estadosSeccion };
+    for (const s of SECCIONES_SOLO_CONSTRUCCION) {
+      if (requiere) {
+        if (next[s] === 'no_aplica') {
+          next[s] = 'pendiente';
+          changed = true;
+        }
+      } else if (next[s] !== 'no_aplica') {
+        next[s] = 'no_aplica';
+        changed = true;
+      }
+    }
+    if (changed) {
+      setModulo({ ...modulo, estadosSeccion: next });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modulo?.identificacion.tipoInmueble]);
+
+  const requiereConstruccion = tipoRequiereConstruccion(modulo.identificacion.tipoInmueble);
   const estadoActual = modulo.estadosSeccion[seccionActiva];
+
+  // Avance por secciones (excluye no_aplica)
+  const secciones = SECCIONES_MODULO_URBANO.map((s) => ({
+    ...s,
+    estado: modulo.estadosSeccion[s.key],
+  }));
+  const seccionesAplicables = secciones.filter((s) => s.estado !== 'no_aplica');
+  const seccionesCompletas = seccionesAplicables.filter((s) => s.estado === 'completo').length;
+  const avancePct = seccionesAplicables.length
+    ? Math.round((seccionesCompletas / seccionesAplicables.length) * 100)
+    : 0;
+
+  // Validaciones blandas para F2
+  const validaciones: { ok: boolean; label: string }[] = [
+    { ok: Boolean(expedienteId), label: 'Expediente vinculado' },
+    { ok: Boolean(modulo.identificacion.tipoInmueble), label: 'Tipo de inmueble' },
+    { ok: Boolean(modulo.ubicacion.municipio.trim()), label: 'Municipio (req. F2)' },
+    { ok: (modulo.terreno.areaTerreno ?? 0) > 0, label: 'Área de terreno (req. F2)' },
+    {
+      ok:
+        !requiereConstruccion ||
+        (modulo.construcciones.areaConstruidaPreliminar ?? 0) > 0,
+      label: 'Área construida (si aplica)',
+    },
+  ];
+  const listoParaF2 = validaciones.every((v) => v.ok);
+
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100">
