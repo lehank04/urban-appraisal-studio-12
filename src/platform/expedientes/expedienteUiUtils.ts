@@ -55,7 +55,9 @@ export function getModuloLabel(modulo: TipoModuloTecnico) {
     rural: 'Rural',
     maquinaria: 'Maquinaria',
     vehiculo: 'Vehículos',
+    vehiculos: 'Vehículos',
     especial: 'Especiales',
+    especiales: 'Especiales',
   };
 
   return labels[modulo];
