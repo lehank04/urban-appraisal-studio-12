@@ -577,6 +577,32 @@ export function crearHomologacionBloqueVacio(): HomologacionBloque {
   };
 }
 
+export function crearValoracionTerrenoItem(terrenoId: string): ValoracionTerrenoItem {
+  return {
+    id: uid('vti'),
+    terrenoId,
+    incluyeEnValorTerreno: true,
+    areaHomologable: null,
+    valorUnitarioAplicado: null,
+    factorAjusteManual: null,
+    justificacionValor: '',
+    observaciones: '',
+  };
+}
+
+export function crearValoracionTerrenoBloqueVacio(): ValoracionTerrenoBloque {
+  return {
+    criterioAdopcion: 'pendiente',
+    valorUnitarioAdoptado: null,
+    unidadBase: 'm2',
+    justificacionTecnica: '',
+    observaciones: '',
+    items: [],
+    valorTerrenoTotal: null,
+    areaTotalConsiderada: null,
+  };
+}
+
 export function crearHomologacionComparableVacio(
   comparableId: string,
   base: BaseUnitariaHomologacion = 'terreno',
