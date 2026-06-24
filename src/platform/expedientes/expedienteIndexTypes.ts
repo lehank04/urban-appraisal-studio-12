@@ -52,6 +52,17 @@ export type ExpedienteIndiceINMOVAL = {
   moneda: MonedaINMOVAL;
   estadoPago: EstadoPagoINMOVAL;
 
+  // ── Financiero extendido (heredado de cotización) ──
+  cotizacionId?: string;
+  cotizacionNumero?: string;
+  costoBaseServicio?: number;
+  otrosGastos?: number;
+  otrosGastosItems?: Array<{ id: string; concepto: string; monto: number }>;
+  aplicaIVA?: boolean;
+  ivaPorcentaje?: number;
+  impuestos?: number;
+  totalFacturable?: number;
+
   facturaEmitida: boolean;
   numeroFactura?: string;
 
