@@ -55,6 +55,7 @@ import {
   resumenComparable,
   type ComparableDisponible,
 } from './comparablesAdapter';
+import { advertenciaUnidad, nombreUnidad } from './unidadAreaUtils';
 
 const TIPO_INMUEBLE_OPCIONES: ReadonlyArray<{ value: TipoInmuebleUrbano; label: string }> = [
   { value: 'casa_habitacion', label: 'Casa de habitación' },
