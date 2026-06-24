@@ -3,6 +3,7 @@
 
 import {
   crearModuloUrbanoVacio,
+  migrarModuloUrbano,
   type ModuloUrbanoExpediente,
 } from './moduloUrbanoTypes';
 
@@ -14,7 +15,8 @@ function readAll(): ModuloUrbanoExpediente[] {
     const raw = window.localStorage.getItem(STORAGE_KEY_MODULO_URBANO);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ModuloUrbanoExpediente[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as ModuloUrbanoExpediente[]).map(migrarModuloUrbano);
   } catch {
     return [];
   }
@@ -65,7 +67,10 @@ export function upsertModuloUrbano(modulo: ModuloUrbanoExpediente): ModuloUrbano
  */
 export function ensureModuloUrbano(expedienteId: string): ModuloUrbanoExpediente {
   const existente = getModuloUrbanoPorExpediente(expedienteId);
-  if (existente) return existente;
+  if (existente) {
+    // Persiste forma migrada para que el storage refleje el esquema actual.
+    return upsertModuloUrbano(migrarModuloUrbano(existente));
+  }
   const nuevo = crearModuloUrbanoVacio(expedienteId);
   return upsertModuloUrbano(nuevo);
 }

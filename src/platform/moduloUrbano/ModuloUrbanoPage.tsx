@@ -14,10 +14,24 @@ import {
   SECCIONES_MODULO_URBANO,
   SECCIONES_SOLO_CONSTRUCCION,
   tipoRequiereConstruccion,
+  crearTerrenoVacio,
+  crearMejoraVacia,
+  crearConstruccionVacia,
+  crearAmbienteVacio,
+  type AmbienteItem,
+  type ComparablesBloque,
+  type ConstruccionItem,
   type EstadoSeccionModuloUrbano,
+  type FiltrosComparablesUrbano,
+  type MejoraItem,
   type ModuloUrbanoExpediente,
   type SeccionModuloUrbano,
+  type TerrenoItem,
   type TipoInmuebleUrbano,
+  type TipoTerrenoUrbano,
+  type TipoMejoraUrbana,
+  type TipoAmbienteUrbano,
+  type UnidadAreaUrbano,
 } from './moduloUrbanoTypes';
 import { getExpedientesIndiceINMOVAL } from '../expedientes/expedienteIndexStorage';
 
@@ -81,6 +95,56 @@ function PlaceholderSection({ titulo }: { titulo: string }) {
     </div>
   );
 }
+
+// ── Constantes de opciones para selects relacionales ────────────────────────
+const TIPO_TERRENO_OPCIONES: ReadonlyArray<{ value: TipoTerrenoUrbano; label: string }> = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'secundario', label: 'Secundario' },
+  { value: 'excedente', label: 'Excedente' },
+  { value: 'afectado', label: 'Afectado' },
+  { value: 'util', label: 'Útil' },
+  { value: 'registral', label: 'Registral' },
+  { value: 'catastral', label: 'Catastral' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const UNIDAD_AREA_OPCIONES: ReadonlyArray<{ value: UnidadAreaUrbano; label: string }> = [
+  { value: 'm2', label: 'm²' },
+  { value: 'vara2', label: 'vara²' },
+  { value: 'mz', label: 'mz' },
+  { value: 'ha', label: 'ha' },
+  { value: 'otro', label: 'otro' },
+];
+
+const TIPO_MEJORA_OPCIONES: ReadonlyArray<{ value: TipoMejoraUrbana; label: string }> = [
+  { value: 'cerco', label: 'Cerco' },
+  { value: 'muro', label: 'Muro' },
+  { value: 'porton', label: 'Portón' },
+  { value: 'patio', label: 'Patio' },
+  { value: 'losa', label: 'Losa' },
+  { value: 'cisterna', label: 'Cisterna' },
+  { value: 'pozo', label: 'Pozo' },
+  { value: 'tanque', label: 'Tanque' },
+  { value: 'piscina', label: 'Piscina' },
+  { value: 'jardin', label: 'Jardín' },
+  { value: 'estacionamiento', label: 'Estacionamiento' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const TIPO_AMBIENTE_OPCIONES: ReadonlyArray<{ value: TipoAmbienteUrbano; label: string }> = [
+  { value: 'dormitorio', label: 'Dormitorio' },
+  { value: 'sala', label: 'Sala' },
+  { value: 'comedor', label: 'Comedor' },
+  { value: 'cocina', label: 'Cocina' },
+  { value: 'bano', label: 'Baño' },
+  { value: 'estudio', label: 'Estudio' },
+  { value: 'oficina', label: 'Oficina' },
+  { value: 'patio_interior', label: 'Patio interior' },
+  { value: 'garaje', label: 'Garaje' },
+  { value: 'bodega_interna', label: 'Bodega interna' },
+  { value: 'otro', label: 'Otro' },
+];
+
 
 function NoAplicaNotice({ motivo }: { motivo: string }) {
   return (
@@ -167,6 +231,67 @@ export default function ModuloUrbanoPage() {
         : prev,
     );
   }
+
+  // ── Managers relacionales (F1.6) ──────────────────────────────────────────
+  function addTerreno() {
+    setModulo((prev) => prev ? { ...prev, terrenos: [...prev.terrenos, crearTerrenoVacio()] } : prev);
+  }
+  function updateTerreno(id: string, patchT: Partial<TerrenoItem>) {
+    setModulo((prev) => prev ? { ...prev, terrenos: prev.terrenos.map((t) => t.id === id ? { ...t, ...patchT } : t) } : prev);
+  }
+  function removeTerreno(id: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      terrenos: prev.terrenos.filter((t) => t.id !== id),
+      mejoras: prev.mejoras.map((m) => m.terrenoId === id ? { ...m, terrenoId: null } : m),
+      construccionesDetalle: prev.construccionesDetalle.map((c) => c.terrenoId === id ? { ...c, terrenoId: null } : c),
+    } : prev);
+  }
+
+  function addMejora() {
+    setModulo((prev) => prev ? { ...prev, mejoras: [...prev.mejoras, crearMejoraVacia()] } : prev);
+  }
+  function updateMejora(id: string, patchM: Partial<MejoraItem>) {
+    setModulo((prev) => prev ? { ...prev, mejoras: prev.mejoras.map((m) => m.id === id ? { ...m, ...patchM } : m) } : prev);
+  }
+  function removeMejora(id: string) {
+    setModulo((prev) => prev ? { ...prev, mejoras: prev.mejoras.filter((m) => m.id !== id) } : prev);
+  }
+
+  function addConstruccion() {
+    setModulo((prev) => prev ? { ...prev, construccionesDetalle: [...prev.construccionesDetalle, crearConstruccionVacia()] } : prev);
+  }
+  function updateConstruccion(id: string, patchC: Partial<ConstruccionItem>) {
+    setModulo((prev) => prev ? { ...prev, construccionesDetalle: prev.construccionesDetalle.map((c) => c.id === id ? { ...c, ...patchC } : c) } : prev);
+  }
+  function removeConstruccion(id: string) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      construccionesDetalle: prev.construccionesDetalle.filter((c) => c.id !== id),
+      ambientesDetalle: prev.ambientesDetalle.filter((a) => a.construccionId !== id),
+    } : prev);
+  }
+
+  function addAmbiente(construccionId: string) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: [...prev.ambientesDetalle, crearAmbienteVacio(construccionId)] } : prev);
+  }
+  function updateAmbiente(id: string, patchA: Partial<AmbienteItem>) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: prev.ambientesDetalle.map((a) => a.id === id ? { ...a, ...patchA } : a) } : prev);
+  }
+  function removeAmbiente(id: string) {
+    setModulo((prev) => prev ? { ...prev, ambientesDetalle: prev.ambientesDetalle.filter((a) => a.id !== id) } : prev);
+  }
+
+  function updateFiltrosComparables(patchF: Partial<FiltrosComparablesUrbano>) {
+    setModulo((prev) => prev ? {
+      ...prev,
+      comparablesBloque: { ...prev.comparablesBloque, filtros: { ...prev.comparablesBloque.filtros, ...patchF } },
+    } : prev);
+  }
+  function setComparablesBloque(patchB: Partial<ComparablesBloque>) {
+    setModulo((prev) => prev ? { ...prev, comparablesBloque: { ...prev.comparablesBloque, ...patchB } } : prev);
+  }
+
 
   function guardar() {
     if (!modulo) return;
@@ -737,8 +862,106 @@ export default function ModuloUrbanoPage() {
                     }
                   />
                 </Field>
+
+
+
+                {/* Lista relacional de terrenos (F1.6) */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Terrenos</p>
+                      <p className="text-[11px] text-slate-500">Múltiples terrenos vinculados al expediente. Mejoras y construcciones pueden referenciar uno.</p>
+                    </div>
+                    <button type="button" onClick={addTerreno} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Terreno</button>
+                  </div>
+                  {modulo.terrenos.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin terrenos agregados.</p>
+                  )}
+                  <div className="space-y-3">
+                    {modulo.terrenos.map((t, idx) => (
+                      <div key={t.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-200">Terreno #{idx + 1} {t.codigo && `· ${t.codigo}`}</p>
+                          <button type="button" onClick={() => removeTerreno(t.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Field label="Código"><input className={inputClass()} value={t.codigo} onChange={(e) => updateTerreno(t.id, { codigo: e.target.value })} /></Field>
+                          <Field label="Nombre"><input className={inputClass()} value={t.nombre} onChange={(e) => updateTerreno(t.id, { nombre: e.target.value })} /></Field>
+                          <Field label="Tipo">
+                            <select className={inputClass()} value={t.tipo} onChange={(e) => updateTerreno(t.id, { tipo: e.target.value as TipoTerrenoUrbano })}>
+                              {TIPO_TERRENO_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Área"><input type="number" className={inputClass()} value={t.area ?? ''} onChange={(e) => updateTerreno(t.id, { area: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Unidad">
+                            <select className={inputClass()} value={t.unidad} onChange={(e) => updateTerreno(t.id, { unidad: e.target.value as UnidadAreaUrbano })}>
+                              {UNIDAD_AREA_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Frente (m)"><input type="number" className={inputClass()} value={t.frente ?? ''} onChange={(e) => updateTerreno(t.id, { frente: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Fondo (m)"><input type="number" className={inputClass()} value={t.fondo ?? ''} onChange={(e) => updateTerreno(t.id, { fondo: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Forma"><input className={inputClass()} value={t.forma} onChange={(e) => updateTerreno(t.id, { forma: e.target.value })} /></Field>
+                          <Field label="Topografía"><input className={inputClass()} value={t.topografia} onChange={(e) => updateTerreno(t.id, { topografia: e.target.value })} /></Field>
+                          <Field label="Uso actual"><input className={inputClass()} value={t.usoActual} onChange={(e) => updateTerreno(t.id, { usoActual: e.target.value })} /></Field>
+                          <Field label="Estado">
+                            <select className={inputClass()} value={t.estado} onChange={(e) => updateTerreno(t.id, { estado: e.target.value as 'activo' | 'descartado' })}>
+                              <option value="activo">Activo</option>
+                              <option value="descartado">Descartado</option>
+                            </select>
+                          </Field>
+                          <div className="sm:col-span-3"><Field label="Linderos"><textarea rows={2} className={inputClass()} value={t.linderos} onChange={(e) => updateTerreno(t.id, { linderos: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Afectaciones"><textarea rows={2} className={inputClass()} value={t.afectaciones} onChange={(e) => updateTerreno(t.id, { afectaciones: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={t.observaciones} onChange={(e) => updateTerreno(t.id, { observaciones: e.target.value })} /></Field></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mejoras / infraestructuras (F1.6) */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Mejoras / infraestructuras</p>
+                      <p className="text-[11px] text-slate-500">Vinculables opcionalmente a un terreno.</p>
+                    </div>
+                    <button type="button" onClick={addMejora} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Mejora</button>
+                  </div>
+                  {modulo.mejoras.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin mejoras registradas.</p>
+                  )}
+                  <div className="space-y-3">
+                    {modulo.mejoras.map((mej, idx) => (
+                      <div key={mej.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-200">Mejora #{idx + 1}</p>
+                          <button type="button" onClick={() => removeMejora(mej.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Field label="Tipo">
+                            <select className={inputClass()} value={mej.tipo} onChange={(e) => updateMejora(mej.id, { tipo: e.target.value as TipoMejoraUrbana })}>
+                              {TIPO_MEJORA_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Terreno vinculado">
+                            <select className={inputClass()} value={mej.terrenoId ?? ''} onChange={(e) => updateMejora(mej.id, { terrenoId: e.target.value || null })}>
+                              <option value="">— Sin vincular —</option>
+                              {modulo.terrenos.map((t) => (<option key={t.id} value={t.id}>{t.codigo || t.nombre || `Terreno ${t.id.slice(-4)}`}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Unidad"><input className={inputClass()} value={mej.unidad} onChange={(e) => updateMejora(mej.id, { unidad: e.target.value })} /></Field>
+                          <Field label="Cantidad"><input type="number" className={inputClass()} value={mej.cantidad ?? ''} onChange={(e) => updateMejora(mej.id, { cantidad: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Estado conservación"><input className={inputClass()} value={mej.estadoConservacion} onChange={(e) => updateMejora(mej.id, { estadoConservacion: e.target.value })} /></Field>
+                          <div className="sm:col-span-3"><Field label="Descripción"><textarea rows={2} className={inputClass()} value={mej.descripcion} onChange={(e) => updateMejora(mej.id, { descripcion: e.target.value })} /></Field></div>
+                          <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={mej.observaciones} onChange={(e) => updateMejora(mej.id, { observaciones: e.target.value })} /></Field></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
+
 
             {seccionActiva === 'construcciones' && !requiereConstruccion && (
               <NoAplicaNotice motivo="El tipo de inmueble seleccionado (lote vacío) no tiene construcciones que valuar." />
@@ -809,14 +1032,157 @@ export default function ModuloUrbanoPage() {
                     }
                   />
                 </Field>
+
+                {/* Construcciones detalladas (F1.6) */}
+                <div className="sm:col-span-2 mt-2 border-t border-slate-800 pt-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Construcciones detalladas</p>
+                      <p className="text-[11px] text-slate-500">Múltiples construcciones, opcionalmente vinculadas a un terreno.</p>
+                    </div>
+                    <button type="button" onClick={addConstruccion} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Construcción</button>
+                  </div>
+                  {modulo.construccionesDetalle.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin construcciones registradas.</p>
+                  )}
+                  <div className="space-y-3">
+                    {modulo.construccionesDetalle.map((c, idx) => (
+                      <div key={c.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-200">Construcción #{idx + 1} {c.codigo && `· ${c.codigo}`}</p>
+                          <button type="button" onClick={() => removeConstruccion(c.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Field label="Código"><input className={inputClass()} value={c.codigo} onChange={(e) => updateConstruccion(c.id, { codigo: e.target.value })} /></Field>
+                          <Field label="Nombre"><input className={inputClass()} value={c.nombre} onChange={(e) => updateConstruccion(c.id, { nombre: e.target.value })} /></Field>
+                          <Field label="Tipo"><input className={inputClass()} value={c.tipo} onChange={(e) => updateConstruccion(c.id, { tipo: e.target.value })} /></Field>
+                          <Field label="Terreno vinculado">
+                            <select className={inputClass()} value={c.terrenoId ?? ''} onChange={(e) => updateConstruccion(c.id, { terrenoId: e.target.value || null })}>
+                              <option value="">— Sin vincular —</option>
+                              {modulo.terrenos.map((t) => (<option key={t.id} value={t.id}>{t.codigo || t.nombre || `Terreno ${t.id.slice(-4)}`}</option>))}
+                            </select>
+                          </Field>
+                          <Field label="Área construida (m²)"><input type="number" className={inputClass()} value={c.areaConstruida ?? ''} onChange={(e) => updateConstruccion(c.id, { areaConstruida: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Niveles"><input type="number" className={inputClass()} value={c.niveles ?? ''} onChange={(e) => updateConstruccion(c.id, { niveles: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Año construcción"><input type="number" className={inputClass()} value={c.anioConstruccion ?? ''} onChange={(e) => updateConstruccion(c.id, { anioConstruccion: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Edad aparente (años)"><input type="number" className={inputClass()} value={c.edadAparente ?? ''} onChange={(e) => updateConstruccion(c.id, { edadAparente: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Vida útil estimada"><input type="number" className={inputClass()} value={c.vidaUtilEstimada ?? ''} onChange={(e) => updateConstruccion(c.id, { vidaUtilEstimada: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                          <Field label="Sistema constructivo"><input className={inputClass()} value={c.sistemaConstructivo} onChange={(e) => updateConstruccion(c.id, { sistemaConstructivo: e.target.value })} /></Field>
+                          <Field label="Estado conservación"><input className={inputClass()} value={c.estadoConservacion} onChange={(e) => updateConstruccion(c.id, { estadoConservacion: e.target.value })} /></Field>
+                          <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={c.observaciones} onChange={(e) => updateConstruccion(c.id, { observaciones: e.target.value })} /></Field></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {seccionActiva === 'ambientes' && (requiereConstruccion
-              ? <PlaceholderSection titulo="Ambientes (F1: placeholder)" />
-              : <NoAplicaNotice motivo="Lote vacío: no hay ambientes a relevar." />)}
+            {seccionActiva === 'ambientes' && !requiereConstruccion && (
+              <NoAplicaNotice motivo="Lote vacío: no hay ambientes a relevar." />
+            )}
+            {seccionActiva === 'ambientes' && requiereConstruccion && (
+              <div className="space-y-4">
+                {modulo.construccionesDetalle.length === 0 && (
+                  <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">
+                    Agregá primero al menos una construcción para poder registrar ambientes.
+                  </p>
+                )}
+                {modulo.construccionesDetalle.map((c) => {
+                  const ambientesDeC = modulo.ambientesDetalle.filter((a) => a.construccionId === c.id);
+                  return (
+                    <div key={c.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-100">{c.codigo || c.nombre || 'Construcción'}</p>
+                          <p className="text-[11px] text-slate-500">{ambientesDeC.length} ambiente(s)</p>
+                        </div>
+                        <button type="button" onClick={() => addAmbiente(c.id)} className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100 hover:bg-cyan-400/20">+ Ambiente</button>
+                      </div>
+                      {ambientesDeC.length === 0 && (
+                        <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin ambientes registrados.</p>
+                      )}
+                      <div className="space-y-3">
+                        {ambientesDeC.map((a, idx) => (
+                          <div key={a.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <p className="text-xs font-semibold text-slate-200">Ambiente #{idx + 1}</p>
+                              <button type="button" onClick={() => removeAmbiente(a.id)} className="text-[11px] text-rose-300 hover:text-rose-200">Eliminar</button>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                              <Field label="Tipo">
+                                <select className={inputClass()} value={a.tipo} onChange={(e) => updateAmbiente(a.id, { tipo: e.target.value as TipoAmbienteUrbano })}>
+                                  {TIPO_AMBIENTE_OPCIONES.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+                                </select>
+                              </Field>
+                              <Field label="Nombre"><input className={inputClass()} value={a.nombre} onChange={(e) => updateAmbiente(a.id, { nombre: e.target.value })} /></Field>
+                              <Field label="Cantidad"><input type="number" className={inputClass()} value={a.cantidad ?? ''} onChange={(e) => updateAmbiente(a.id, { cantidad: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                              <Field label="Área (m²)"><input type="number" className={inputClass()} value={a.area ?? ''} onChange={(e) => updateAmbiente(a.id, { area: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                              <Field label="Estado"><input className={inputClass()} value={a.estado} onChange={(e) => updateAmbiente(a.id, { estado: e.target.value })} /></Field>
+                              <div className="sm:col-span-3"><Field label="Observaciones"><textarea rows={2} className={inputClass()} value={a.observaciones} onChange={(e) => updateAmbiente(a.id, { observaciones: e.target.value })} /></Field></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {seccionActiva === 'fotografias' && <PlaceholderSection titulo="Fotografías (F1: placeholder)" />}
-            {seccionActiva === 'comparables' && <PlaceholderSection titulo="Comparables (F2)" />}
+            {seccionActiva === 'comparables' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Filtros de búsqueda (preparado para Biblioteca)</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Field label="Municipio"><input className={inputClass()} value={modulo.comparablesBloque.filtros.municipio} onChange={(e) => updateFiltrosComparables({ municipio: e.target.value })} /></Field>
+                    <Field label="Zona"><input className={inputClass()} value={modulo.comparablesBloque.filtros.zona} onChange={(e) => updateFiltrosComparables({ zona: e.target.value })} /></Field>
+                    <Field label="Tipo de inmueble"><input className={inputClass()} value={modulo.comparablesBloque.filtros.tipoInmueble} onChange={(e) => updateFiltrosComparables({ tipoInmueble: e.target.value })} /></Field>
+                    <Field label="Uso"><input className={inputClass()} value={modulo.comparablesBloque.filtros.uso} onChange={(e) => updateFiltrosComparables({ uso: e.target.value })} /></Field>
+                    <Field label="Fuente"><input className={inputClass()} value={modulo.comparablesBloque.filtros.fuente} onChange={(e) => updateFiltrosComparables({ fuente: e.target.value })} /></Field>
+                    <Field label="Estado"><input className={inputClass()} value={modulo.comparablesBloque.filtros.estado} onChange={(e) => updateFiltrosComparables({ estado: e.target.value })} /></Field>
+                    <Field label="Área mín. (m²)"><input type="number" className={inputClass()} value={modulo.comparablesBloque.filtros.areaMin ?? ''} onChange={(e) => updateFiltrosComparables({ areaMin: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                    <Field label="Área máx. (m²)"><input type="number" className={inputClass()} value={modulo.comparablesBloque.filtros.areaMax ?? ''} onChange={(e) => updateFiltrosComparables({ areaMax: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                    <Field label="Precio mín."><input type="number" className={inputClass()} value={modulo.comparablesBloque.filtros.precioMin ?? ''} onChange={(e) => updateFiltrosComparables({ precioMin: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                    <Field label="Precio máx."><input type="number" className={inputClass()} value={modulo.comparablesBloque.filtros.precioMax ?? ''} onChange={(e) => updateFiltrosComparables({ precioMax: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
+                    <Field label="Fecha desde"><input type="date" className={inputClass()} value={modulo.comparablesBloque.filtros.fechaDesde} onChange={(e) => updateFiltrosComparables({ fechaDesde: e.target.value })} /></Field>
+                    <Field label="Fecha hasta"><input type="date" className={inputClass()} value={modulo.comparablesBloque.filtros.fechaHasta} onChange={(e) => updateFiltrosComparables({ fechaHasta: e.target.value })} /></Field>
+                    <Field label="Vía de acceso"><input className={inputClass()} value={modulo.comparablesBloque.filtros.viaAcceso} onChange={(e) => updateFiltrosComparables({ viaAcceso: e.target.value })} /></Field>
+                    <Field label="Servicios"><input className={inputClass()} value={modulo.comparablesBloque.filtros.servicios} onChange={(e) => updateFiltrosComparables({ servicios: e.target.value })} /></Field>
+                    <Field label="Topografía"><input className={inputClass()} value={modulo.comparablesBloque.filtros.topografia} onChange={(e) => updateFiltrosComparables({ topografia: e.target.value })} /></Field>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Comparables seleccionados</p>
+                    {modulo.comparablesBloque.seleccionados.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Aún no se ha conectado la biblioteca de comparables. Estructura lista para F2.</p>
+                    ) : (
+                      <ul className="space-y-1 text-xs text-slate-300">
+                        {modulo.comparablesBloque.seleccionados.map((s) => (<li key={s.id}>{s.comparableId} — {s.notas}</li>))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Comparables descartados</p>
+                    {modulo.comparablesBloque.descartados.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-slate-700 p-3 text-xs text-slate-500">Sin descartes registrados.</p>
+                    ) : (
+                      <ul className="space-y-1 text-xs text-slate-300">
+                        {modulo.comparablesBloque.descartados.map((d) => (<li key={d.id}>{d.comparableId} — {d.motivo}</li>))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500">
+                  Snapshots almacenados: {modulo.comparablesBloque.snapshots.length}. Al seleccionar comparables desde Biblioteca (F2) se generará una copia inmutable para conservar evidencia histórica.
+                </p>
+              </div>
+            )}
+
             {seccionActiva === 'homologacion' && <PlaceholderSection titulo="Homologación (F2)" />}
             {seccionActiva === 'costo_reposicion' && (requiereConstruccion
               ? <PlaceholderSection titulo="Costo / reposición (F3)" />
