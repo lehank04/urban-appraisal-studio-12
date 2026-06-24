@@ -15,7 +15,9 @@ export type TipoModuloTecnico =
   | 'rural'
   | 'maquinaria'
   | 'vehiculo'
-  | 'especial';
+  | 'vehiculos'
+  | 'especial'
+  | 'especiales';
 
 export type EstadoModuloTecnico =
   | 'activo'
