@@ -12,6 +12,8 @@ import {
 } from './moduloUrbanoStorage';
 import {
   SECCIONES_MODULO_URBANO,
+  SECCIONES_SOLO_CONSTRUCCION,
+  tipoRequiereConstruccion,
   type EstadoSeccionModuloUrbano,
   type ModuloUrbanoExpediente,
   type SeccionModuloUrbano,
