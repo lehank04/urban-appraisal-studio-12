@@ -285,13 +285,95 @@ export interface ComparablesBloque {
   snapshots: ComparableSnapshot[];
 }
 
-// Placeholder para fases posteriores
+// Placeholder reservado de F1.6 (no se elimina por compatibilidad)
 export interface FactorHomologacion {
   id: string;
   nombre: string;
   tipo: string;
   valor: number | null;
   observaciones: string;
+}
+
+// ── Homologación preliminar (F2B) ────────────────────────────────────────────
+
+export type TipoFactorHomologacion =
+  | 'superficie'
+  | 'ubicacion'
+  | 'ambientes'
+  | 'negociacion'
+  | 'tipo_zona'
+  | 'via_acceso'
+  | 'servicios'
+  | 'equipamiento'
+  | 'topografia'
+  | 'forma_posicion'
+  | 'conservacion'
+  | 'fuente_confiabilidad'
+  | 'manual'
+  | 'otro';
+
+export const FACTORES_HOMOLOGACION_DEF: ReadonlyArray<{
+  tipo: TipoFactorHomologacion;
+  nombre: string;
+}> = [
+  { tipo: 'superficie', nombre: 'Superficie' },
+  { tipo: 'ubicacion', nombre: 'Ubicación' },
+  { tipo: 'ambientes', nombre: 'Ambientes' },
+  { tipo: 'negociacion', nombre: 'Negociación / tiempo en mercado' },
+  { tipo: 'tipo_zona', nombre: 'Tipo de zona' },
+  { tipo: 'via_acceso', nombre: 'Vía de acceso' },
+  { tipo: 'servicios', nombre: 'Servicios públicos' },
+  { tipo: 'equipamiento', nombre: 'Equipamiento urbano' },
+  { tipo: 'topografia', nombre: 'Topografía' },
+  { tipo: 'forma_posicion', nombre: 'Forma / posición del terreno' },
+  { tipo: 'conservacion', nombre: 'Estado de conservación' },
+  { tipo: 'fuente_confiabilidad', nombre: 'Fuente / confiabilidad' },
+  { tipo: 'manual', nombre: 'Factor manual adicional' },
+];
+
+export type OrigenFactorHomologacion = 'manual' | 'catalogo' | 'calculado';
+
+export interface FactorHomologacionDetalle {
+  id: string;
+  comparableId: string;
+  tipoFactor: TipoFactorHomologacion;
+  nombre: string;
+  valorSujeto: string;
+  valorComparable: string;
+  coeficiente: number;
+  ponderacion: number | null;
+  aplica: boolean;
+  justificacion: string;
+  origen: OrigenFactorHomologacion;
+  fechaActualizacion: string;
+}
+
+export type BaseUnitariaHomologacion = 'terreno' | 'construccion';
+
+export interface HomologacionComparable {
+  comparableId: string;
+  baseUnitaria: BaseUnitariaHomologacion;
+  precioBase: number | null;
+  /** Si el comparable no trae precio unitario, el perito puede capturarlo. */
+  precioUnitarioBaseManual: number | null;
+  observaciones: string;
+  factores: FactorHomologacionDetalle[];
+  fechaActualizacion: string;
+}
+
+export type CriterioAdopcionHomologacion =
+  | 'pendiente'
+  | 'promedio'
+  | 'mediana'
+  | 'manual';
+
+export interface HomologacionBloque {
+  comparables: HomologacionComparable[];
+  valorUnitarioPromedio: number | null;
+  valorUnitarioMediana: number | null;
+  valorUnitarioAdoptado: number | null;
+  criterioAdopcion: CriterioAdopcionHomologacion;
+  observacionesHomologacion: string;
 }
 
 export interface PlaceholderModuloUrbano {
